@@ -1,7 +1,4 @@
-import "../global.css";
-
 import { Stack } from "expo-router";
-import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import {
   useFonts,
@@ -11,6 +8,7 @@ import {
 } from "@expo-google-fonts/inter";
 
 import {
+  PlayfairDisplay_600SemiBold,
   PlayfairDisplay_700Bold,
 } from "@expo-google-fonts/playfair-display";
 
@@ -20,31 +18,28 @@ import { useEffect } from "react";
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+
   const [loaded] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
+
+    PlayfairDisplay_600SemiBold,
     PlayfairDisplay_700Bold,
   });
 
   useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
+    if (loaded) SplashScreen.hideAsync();
   }, [loaded]);
 
-  if (!loaded) {
-    return null;
-  }
+  if (!loaded) return null;
 
   return (
-    <SafeAreaProvider>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          animation: "fade",
-        }}
-      />
-    </SafeAreaProvider>
+    <Stack
+      screenOptions={{
+        headerShown:false,
+      }}
+    />
   );
+
 }
