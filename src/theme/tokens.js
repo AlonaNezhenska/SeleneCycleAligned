@@ -10,6 +10,7 @@ export const tokens = {
   ink: "#2A2622", // body text
   inkMuted: "#5E574E", // secondary text
   aegean: "#1F3A5F", // privacy / rest / Inward, Triad Tracker
+  forest: "#14211C", // Cycle Calendar background
   sage: "#5B6B4A", // success, checkmarks, Steady
   terracotta: "#A44A33", // high energy / Outward
 };
@@ -30,6 +31,7 @@ export const T = {
   inkFaint: tokens.inkMuted,
   hair: "rgba(42,38,34,0.14)",
   mental: "#4E5288",
+  forest: tokens.forest,
 };
 
 /** Text colours used on the dark Aegean screens. Alpha is kept high

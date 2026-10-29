@@ -6,4 +6,4 @@ export * from "./fuel.js";
 export * from "./training.js";
 export * from "./notify.js";
 export * from "./copy.js";
-export * from "./wave.js";
+export * from "./calendar.js";

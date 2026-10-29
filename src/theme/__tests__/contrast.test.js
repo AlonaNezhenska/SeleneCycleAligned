@@ -35,6 +35,8 @@ const BODY_PAIRS = [
   ["aegean on paper", tokens.aegean, tokens.paper],
   ["soft text on aegean", DARK_TEXT.textSoft, tokens.aegean],
   ["faint text on aegean", DARK_TEXT.textFaint, tokens.aegean],
+  ["alabaster on forest", tokens.alabaster, tokens.forest],
+  ["soft text on forest", DARK_TEXT.textSoft, tokens.forest],
 ];
 
 describe("WCAG AA — body text (4.5:1)", () => {

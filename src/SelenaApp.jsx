@@ -26,6 +26,7 @@ const NAV = [
 
 /** App tabs that carry their own backdrop instead of the plain canvas. */
 const APP_BG = {
+  cycle: { color: T.forest },
   tracker: { color: T.aegean },
 };
 

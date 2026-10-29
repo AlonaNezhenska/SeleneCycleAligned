@@ -226,20 +226,45 @@ describe("Progressive disclosure", () => {
   });
 });
 
-describe("Cycle Rhythm", () => {
-  it("moves the wave cursor with the keyboard and updates the phase", async () => {
+describe("Cycle Calendar", () => {
+  const status = () => screen.getByRole("status", { name: "Selected day" });
+
+  it("marks today and highlights the luteal phase on day 21", () => {
+    renderApp({ tab: "cycle" });
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/cycle calendar/i);
+    expect(screen.getByText("YOU ARE HERE")).toBeInTheDocument();
+    expect(status()).toHaveTextContent("Today · Day 21 of 28 · Early luteal");
+    expect(screen.getByRole("button", { name: /^Luteal, days 17 to 28/ })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: /^Follicular/ })).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("moves the marker with the keyboard and updates the phase", async () => {
     const user = userEvent.setup();
     renderApp({ tab: "cycle" });
     const slider = screen.getByRole("slider", { name: "Cycle day" });
     expect(slider).toHaveAttribute("aria-valuenow", "21");
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Early luteal");
 
     slider.focus();
     await user.keyboard("{End}");
     expect(slider).toHaveAttribute("aria-valuenow", "28");
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Late luteal");
+    expect(status()).toHaveTextContent("Late luteal");
     await user.keyboard("{Home}");
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Menstrual");
+    expect(status()).toHaveTextContent("Exploring · Day 1 of 28 · Menstrual");
+    expect(screen.getByText("DAY 1")).toBeInTheDocument();
+  });
+
+  it("jumps to a phase when its label is tapped, and back to today", async () => {
+    const user = userEvent.setup();
+    renderApp({ tab: "cycle" });
+    await user.click(screen.getByRole("button", { name: /^Ovulation, days 14 to 16/ }));
+    expect(status()).toHaveTextContent("Day 14 of 28 · Ovulatory");
+    await user.click(screen.getByRole("button", { name: "Back to today" }));
+    expect(status()).toHaveTextContent("Today · Day 21 of 28");
+  });
+
+  it("scales the day ranges to a 35-day cycle", () => {
+    renderApp({ tab: "cycle", profile: { cycleLength: 35 } });
+    expect(screen.getByRole("button", { name: /^Luteal, days 21 to 35/ })).toBeInTheDocument();
   });
 
   it("has no calendar grid", () => {
