@@ -40,6 +40,15 @@ export const IMG = {
   orbBody: require("../../assets/images/orbs/orb-body.jpg"),
   orbMind: require("../../assets/images/orbs/orb-mind.jpg"),
   orbFuel: require("../../assets/images/orbs/orb-fuel.jpg"),
+  backgrounds: {
+    home: require("../../assets/images/backgrounds/home-pink.png"),
+    tracker: require("../../assets/images/backgrounds/tracker-moss.jpg"),
+  },
+  vibes: {
+    Inward: require("../../assets/images/vibes/inward-marble.jpg"),
+    Steady: require("../../assets/images/vibes/steady-pink.jpg"),
+    Outward: require("../../assets/images/vibes/outward-spiral.jpg"),
+  },
   glow: {
     menstruation: require("../../assets/images/cycle/menstruation-glow.png"),
     follicular: require("../../assets/images/cycle/follicular-glow.png"),

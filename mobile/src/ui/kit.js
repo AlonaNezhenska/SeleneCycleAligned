@@ -12,15 +12,28 @@ import { T, F, tone, IMG, MIN_TOUCH } from "./theme";
 
 const BACKGROUNDS = { canvas: T.canvas, aegean: T.aegean, forest: T.forest };
 
-/** A full screen: background, paper grain, safe area and scrolling. */
-export const Screen = ({ bg = "canvas", children, scroll = true, testID }) => {
+/** A full screen: background (a colour, or a photo that stays still while
+ *  the content scrolls), paper grain, safe area and scrolling. A scrim over
+ *  the photo keeps text on it readable. */
+export const Screen = ({ bg = "canvas", image, blur = 0, scrim, children, scroll = true, testID }) => {
   const Body = scroll ? ScrollView : View;
   return (
     <View style={[s.fill, { backgroundColor: BACKGROUNDS[bg] }]} testID={testID}>
+      {image && (
+        <Image
+          source={image}
+          blurRadius={blur}
+          resizeMode="cover"
+          style={[StyleSheet.absoluteFill, { width: "100%", height: "100%" }]}
+          accessibilityElementsHidden
+          importantForAccessibility="no"
+        />
+      )}
+      {scrim && <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: scrim }]} />}
       <Image
         source={IMG.grain}
         resizeMode="repeat"
-        style={[StyleSheet.absoluteFill, { width: "100%", height: "100%", opacity: bg === "canvas" ? 0.9 : 0.35, mixBlendMode: "multiply" }]}
+        style={[StyleSheet.absoluteFill, { width: "100%", height: "100%", opacity: image ? 0.3 : bg === "canvas" ? 0.9 : 0.35, mixBlendMode: "multiply" }]}
         accessibilityElementsHidden
         importantForAccessibility="no"
       />

@@ -193,6 +193,7 @@ export const AppProvider = ({ children, now: fixedNow, initial }) => {
     restartOnboarding: () => setData((d) => ({ ...d, onboarded: false })),
     today,
     setToday,
+    days: data.days,
     ctx,
     history,
     markDone: (kind = ctx.prescription.kind) => setToday({ entry: { prescribed: kind, completed: true } }),

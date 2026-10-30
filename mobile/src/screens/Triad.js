@@ -345,7 +345,7 @@ export function Triad() {
   const total = Object.values(log).reduce((n, v) => n + v.length, 0);
 
   return (
-    <Screen bg="aegean">
+    <Screen bg="forest" image={IMG.backgrounds.tracker} blur={6} scrim="rgba(10,18,12,0.55)">
       <View style={[s.row, { justifyContent: "space-between", marginBottom: 22 }]}>
         <Eyebrow dark>Triad Tracker</Eyebrow>
         <Pressable onPress={save} accessibilityRole="button" accessibilityLabel="Save" style={{ minHeight: 44, minWidth: 44, justifyContent: "center", alignItems: "flex-end" }}>

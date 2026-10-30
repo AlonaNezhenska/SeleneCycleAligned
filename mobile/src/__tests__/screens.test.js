@@ -27,7 +27,7 @@ const periodDaysAgo = (n) => {
 /** Children render only once saved data has loaded, as in the app. */
 const Ready = ({ children }) => (useApp().ready ? <View testID="ready" style={{ flex: 1 }}>{children}</View> : null);
 
-const mount = async (Screen, { profile = {}, onboarded = true, now = NOW } = {}) => {
+const mount = async (Screen, { profile = {}, onboarded = true, now = NOW, days } = {}) => {
   await render(
     <AppProvider
       now={now}
@@ -35,6 +35,7 @@ const mount = async (Screen, { profile = {}, onboarded = true, now = NOW } = {})
         onboarded,
         agreement: onboarded ? { version: AGREEMENT_VERSION, acceptedAt: "2026-10-01T09:00:00.000Z" } : null,
         profile: { lastPeriod: periodDaysAgo(20), ...profile },
+        ...(days ? { days } : {}),
       }}
     >
       <Ready>
@@ -116,12 +117,46 @@ describe("Vibe Check", () => {
   });
 });
 
-describe("Imprint Zone", () => {
-  it.each([0, 8, 14, 20, 26])("has no digits when the period started %i days ago", async (ago) => {
-    await mount(Home, { profile: { lastPeriod: periodDaysAgo(ago) } });
-    const text = allText(screen.getByTestId("imprint").props.children ? screen.getByTestId("imprint") : null);
-    expect(text.trim().length).toBeGreaterThan(0);
-    expect(text).not.toMatch(/\d/);
+describe("Weekly mood bubble", () => {
+  it("fills with each vibe chosen this week", async () => {
+    await mount(Home);
+    expect(screen.getByTestId("week-headline")).toHaveTextContent(/fills as you check in/);
+    await fireEvent.press(screen.getByRole("radio", { name: /^Inward/ }));
+    expect(screen.getByTestId("week-headline")).toHaveTextContent("All Inward so far.");
+    expect(screen.getByLabelText(/Mood bubble, 1 Inward, 0 Balance, 0 Outward, 1 of 7 days/)).toBeOnTheScreen();
+  });
+
+  it("shows earlier weeks when their bubble is tapped", async () => {
+    // NOW is Thursday 29 October; the week before starts Monday 19 October
+    await mount(Home, {
+      days: {
+        "2026-10-19": { vibe: "Outward" },
+        "2026-10-20": { vibe: "Outward" },
+        "2026-10-21": { vibe: "Steady" },
+      },
+    });
+    await fireEvent.press(screen.getByRole("button", { name: /^Last week: 0 Inward, 1 Balance, 2 Outward/ }));
+    expect(screen.getByTestId("week-headline")).toHaveTextContent(/Mostly Outward/);
+  });
+
+  it("uses the new names on the Vibe Check", async () => {
+    await mount(Home);
+    expect(screen.getByRole("radio", { name: "Steady, Balance" })).toBeOnTheScreen();
+  });
+});
+
+describe("Today's motivation", () => {
+  it("shows a picture at the top of Home and opens it full size", async () => {
+    await mount(Home);
+    const card = screen.getByRole("imagebutton", { name: /Today's motivation/ });
+    await fireEvent.press(card);
+    expect(screen.getByRole("button", { name: "Close picture" })).toBeOnTheScreen();
+  });
+
+  it("no longer shows the Showing up streak", async () => {
+    await mount(Home);
+    expect(screen.queryByText(/Showing up/i)).toBeNull();
+    expect(screen.queryByLabelText("Paused")).toBeNull();
   });
 });
 
@@ -340,7 +375,7 @@ describe("What Selena follows", () => {
   it("hides the training plan on Home when training is switched off", async () => {
     await mount(Home, { profile: { tracking: { training: false, nutrition: true } } });
     expect(screen.queryByTestId("prescription")).toBeNull();
-    expect(screen.getByTestId("imprint")).toBeOnTheScreen();
+    expect(screen.getByTestId("motivation")).toBeOnTheScreen();
   });
 
   it("can be changed later from You & your data, with the cycle locked on", async () => {
