@@ -20,6 +20,52 @@ const nav = (name) => within(screen.getByRole("navigation", { name: "Main" })).g
 
 afterEach(() => vi.useRealTimers());
 
+/** Tick the privacy agreement and move on. */
+const agree = async (user) => {
+  await user.click(screen.getByRole("checkbox", { name: /never shared/i }));
+  await user.click(screen.getByRole("button", { name: "Agree and continue" }));
+};
+
+describe("Privacy agreement", () => {
+  it("must be ticked before any data is asked for", async () => {
+    const user = userEvent.setup();
+    render(<SelenaApp now={NOW} />);
+    await user.click(screen.getByRole("button", { name: /get started/i }));
+    expect(screen.getByRole("heading", { name: /your data stays yours/i })).toBeInTheDocument();
+    expect(screen.getByText(/never shared, sold or used for ads/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Tick the box to continue" })).toBeDisabled();
+    await agree(user);
+    expect(screen.getByRole("radiogroup", { name: "Your intention" })).toBeInTheDocument();
+  });
+
+  it("remembers the finished onboarding after a reload", async () => {
+    const user = userEvent.setup();
+    const first = render(<SelenaApp now={NOW} />);
+    await user.click(screen.getByRole("button", { name: /get started/i }));
+    await agree(user);
+    for (let i = 0; i < 3; i++) await user.click(screen.getByRole("button", { name: "Next" }));
+    await user.click(screen.getByRole("button", { name: "Skip for now" }));
+    expect(screen.getByRole("navigation", { name: "Main" })).toBeInTheDocument();
+    first.unmount();
+
+    render(<SelenaApp now={NOW} />);
+    expect(screen.getByRole("navigation", { name: "Main" })).toBeInTheDocument();
+  });
+
+  it("deletes everything from Privacy & data and starts over", async () => {
+    const user = userEvent.setup();
+    renderApp();
+    localStorage.setItem("selena.onboarded", "true");
+    await user.click(screen.getByRole("button", { name: "Privacy & data" }));
+    expect(screen.getAllByText(/never shared/i).length).toBeGreaterThan(0);
+    await user.click(screen.getByRole("button", { name: /delete all my data/i }));
+    await user.click(screen.getByRole("button", { name: "Yes, delete everything" }));
+    expect(screen.getByRole("button", { name: /get started/i })).toBeInTheDocument();
+    expect(localStorage.getItem("selena.onboarded")).not.toBe("true");
+    expect(localStorage.getItem("selena.agreement") ?? "").not.toContain("acceptedAt");
+  });
+});
+
 describe("Hide Numbers", () => {
   it("is on by default", () => {
     renderApp({ tab: "nutrition" });
@@ -286,6 +332,8 @@ describe("Copy on screen", () => {
     const seen = [];
     seen.push(document.body.textContent);
     await user.click(screen.getByRole("button", { name: /get started/i }));
+    seen.push(document.body.textContent);
+    await agree(user);
     for (let i = 0; i < 3; i++) {
       seen.push(document.body.textContent);
       await user.click(screen.getByRole("button", { name: "Next" }));
@@ -306,6 +354,7 @@ describe("Accessibility basics", () => {
     const user = userEvent.setup();
     render(<SelenaApp now={NOW} />);
     await user.click(screen.getByRole("button", { name: /get started/i }));
+    await agree(user);
     await user.click(screen.getByRole("button", { name: "Next" }));
     expect(screen.getByLabelText("Last period started")).toHaveAttribute("type", "date");
     expect(screen.getByLabelText("Cycle length (days)")).toHaveAttribute("type", "number");

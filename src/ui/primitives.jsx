@@ -133,7 +133,7 @@ export const Button = ({ children, onClick, tone: variant = "primary", full = tr
       type="button"
       onClick={onClick}
       className={`sel-sans font-medium rounded-full sel-press ${sizes[size]} ${full ? "w-full" : ""}`}
-      style={variants[variant]}
+      style={{ ...variants[variant], opacity: rest.disabled ? 0.55 : 1, cursor: rest.disabled ? "not-allowed" : undefined }}
       {...rest}
     >
       {children}

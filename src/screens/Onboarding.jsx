@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { ChevronLeft, Camera, Check, Leaf, Sun, Moon, Waves, CloudFog, Candy, ArrowRight } from "lucide-react";
+import { ChevronLeft, Camera, Check, Leaf, Sun, Moon, Waves, CloudFog, Candy, ArrowRight, ShieldCheck } from "lucide-react";
 import { T, tone } from "../theme/tokens.js";
 import { MIN_LENGTH, MAX_LENGTH } from "../engine/phase.js";
+import { PRIVACY_HEADLINE, PRIVACY_SUMMARY, AGREE_LABEL } from "../engine/privacy.js";
+import { AgreementText } from "./Privacy.jsx";
 import { Eyebrow, IconBtn, Button, Card, Tile, ToggleRow, Dots, Plate, IMG_VAULT } from "../ui/primitives.jsx";
 
 /* ---------------------------------------------------------------
@@ -17,6 +19,10 @@ export const ONBOARDING_BG = [
     img: "/assets/hero-moon-woman.png",
     scrim:
       "linear-gradient(180deg, rgba(20,28,26,0.30) 0%, rgba(20,28,26,0.10) 38%, rgba(16,22,20,0.72) 78%, rgba(16,22,20,0.88) 100%)",
+  },
+  {
+    img: "/assets/wash-pink-soft.jpg",
+    scrim: "linear-gradient(180deg, rgba(242,239,230,0.94) 0%, rgba(242,239,230,0.88) 100%)",
   },
   {
     img: "/assets/wash-pink-ombre.jpg",
@@ -65,17 +71,21 @@ const StepHeader = ({ step, label, back, dark = false }) => (
   </div>
 );
 
-const Footer = ({ step, back, next, dark = false, nextLabel = "Next" }) => (
+const TOTAL_DOTS = 5;
+
+const Footer = ({ step, back, next, dark = false, nextLabel = "Next", disabled = false }) => (
   <div className="mt-auto pt-6">
     <div className="flex gap-3 mb-6">
       <Button tone="outline" full={false} onClick={back} dark={dark}>
         Back
       </Button>
       <div className="flex-1">
-        <Button onClick={next}>{nextLabel}</Button>
+        <Button onClick={next} disabled={disabled}>
+          {nextLabel}
+        </Button>
       </div>
     </div>
-    <Dots total={4} active={step} dark={dark} />
+    <Dots total={TOTAL_DOTS} active={step} dark={dark} />
   </div>
 );
 
@@ -112,7 +122,7 @@ const Welcome = ({ next }) => (
 /* ---- 1.1 Intention ---- */
 const Intention = ({ data, set, next, back }) => (
   <div className="flex flex-col h-full sel-rise">
-    <StepHeader step={1} label="Onboarding" back={back} />
+    <StepHeader step={2} label="Onboarding" back={back} />
 
     <h1 className="sel-serif mb-3" style={{ fontSize: 30, lineHeight: 1.2, color: T.ink }}>
       How do you want
@@ -157,7 +167,7 @@ const Intention = ({ data, set, next, back }) => (
       <div className="mb-6">
         <Button onClick={next}>Next</Button>
       </div>
-      <Dots total={4} active={0} />
+      <Dots total={TOTAL_DOTS} active={1} />
     </div>
   </div>
 );
@@ -177,7 +187,7 @@ const BiologicalBaseline = ({ data, set, next, back }) => {
 
   return (
     <div className="flex flex-col h-full sel-rise">
-      <StepHeader step={2} label="Your cycle" back={back} dark />
+      <StepHeader step={3} label="Your cycle" back={back} dark />
 
       <h1 className="sel-serif mb-3" style={{ fontSize: 28, lineHeight: 1.22, color: c.text }}>
         Let's get to know
@@ -252,7 +262,7 @@ const BiologicalBaseline = ({ data, set, next, back }) => {
         ))}
       </div>
 
-      <Footer step={1} back={back} next={next} dark />
+      <Footer step={2} back={back} next={next} dark />
     </div>
   );
 };
@@ -260,7 +270,7 @@ const BiologicalBaseline = ({ data, set, next, back }) => {
 /* ---- 1.3 Tracking style ---- */
 const TrackingStyle = ({ data, set, next, back }) => (
   <div className="flex flex-col h-full sel-rise">
-    <StepHeader step={3} label="Onboarding" back={back} />
+    <StepHeader step={4} label="Onboarding" back={back} />
 
     <h1 className="sel-serif mb-3" style={{ fontSize: 28, lineHeight: 1.22, color: T.ink }}>
       How do you prefer
@@ -302,7 +312,7 @@ const TrackingStyle = ({ data, set, next, back }) => (
       })}
     </div>
 
-    <Footer step={2} back={back} next={next} />
+    <Footer step={3} back={back} next={next} />
   </div>
 );
 
@@ -349,7 +359,7 @@ const BaselinePhoto = ({ data, set, next, back }) => {
 
   return (
     <div className="flex flex-col h-full sel-rise">
-      <StepHeader step={4} label="Baseline photo" back={back} dark />
+      <StepHeader step={5} label="Baseline photo" back={back} dark />
 
       <h1 className="sel-serif mb-3" style={{ fontSize: 28, lineHeight: 1.22, color: c.text }}>
         Scales lie.
@@ -380,20 +390,61 @@ const BaselinePhoto = ({ data, set, next, back }) => {
       </div>
 
       <div className="mt-auto pt-6">
-        <Dots total={4} active={3} dark />
+        <Dots total={TOTAL_DOTS} active={4} dark />
       </div>
     </div>
   );
 };
 
-export const Onboarding = ({ step, setStep, data, set, done }) => {
+/* ---- Privacy agreement — before Selena asks for anything ---- */
+const Agreement = ({ accepted, accept, next, back }) => {
+  const [checked, setChecked] = useState(!!accepted);
+  return (
+    <div className="flex flex-col h-full sel-rise">
+      <StepHeader step={1} label="Privacy" back={back} />
+      <h1 className="sel-serif flex items-center gap-2.5 mb-3" style={{ fontSize: 28, lineHeight: 1.2, color: T.ink }}>
+        <ShieldCheck size={24} color={T.sage} strokeWidth={1.6} aria-hidden="true" />
+        {PRIVACY_HEADLINE}
+      </h1>
+      <p className="sel-sans text-[14px] mb-5" style={{ color: T.ink, lineHeight: 1.55 }}>
+        {PRIVACY_SUMMARY}
+      </p>
+      <Card className="px-5 py-5 mb-5">
+        <AgreementText />
+      </Card>
+      <label className="flex items-start gap-3 cursor-pointer sel-sans text-[13.5px]" style={{ color: T.ink, lineHeight: 1.45 }}>
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => setChecked(e.target.checked)}
+          className="mt-0.5 flex-shrink-0"
+          style={{ width: 22, height: 22, minHeight: 22, accentColor: T.sage }}
+        />
+        {AGREE_LABEL}
+      </label>
+      <Footer
+        step={0}
+        back={back}
+        next={() => {
+          accept();
+          next();
+        }}
+        disabled={!checked}
+        nextLabel={checked ? "Agree and continue" : "Tick the box to continue"}
+      />
+    </div>
+  );
+};
+
+export const Onboarding = ({ step, setStep, data, set, done, agreement, acceptAgreement }) => {
   const go = (n) => () => setStep(n);
   const screens = [
     <Welcome key="0" next={go(1)} />,
-    <Intention key="1" data={data} set={set} next={go(2)} back={go(0)} />,
-    <BiologicalBaseline key="2" data={data} set={set} next={go(3)} back={go(1)} />,
-    <TrackingStyle key="3" data={data} set={set} next={go(4)} back={go(2)} />,
-    <BaselinePhoto key="4" data={data} set={set} next={done} back={go(3)} />,
+    <Agreement key="1" accepted={agreement} accept={acceptAgreement} next={go(2)} back={go(0)} />,
+    <Intention key="2" data={data} set={set} next={go(3)} back={go(1)} />,
+    <BiologicalBaseline key="3" data={data} set={set} next={go(4)} back={go(2)} />,
+    <TrackingStyle key="4" data={data} set={set} next={go(5)} back={go(3)} />,
+    <BaselinePhoto key="5" data={data} set={set} next={done} back={go(4)} />,
   ];
   return screens[step];
 };

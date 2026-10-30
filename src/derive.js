@@ -11,20 +11,27 @@ import {
   prescribe,
   lutealBuffer,
   affirmationFor,
+  resolveCycleLength,
 } from "./engine/index.js";
 
 export const deriveToday = ({ profile, today, now = new Date(), dayOverride = null }) => {
-  const length = normalizeLength(profile.cycleLength);
-  const rawDay = dayOverride ?? cycleDay(profile.lastPeriod, now);
+  const cycle = resolveCycleLength(profile);
+  const length = normalizeLength(cycle.length);
+  // Without a last period start there is no calendar to read, so Selena
+  // follows the Vibe Check alone, exactly as it does on birth control.
+  const calendarKnown = Boolean(profile.lastPeriod);
+  const rawDay = dayOverride ?? (calendarKnown ? cycleDay(profile.lastPeriod, now) : 1);
   const day = clampDay(rawDay, length);
   const phase = getPhase(day, length);
-  const base = { day, length, onBirthControl: profile.onBirthControl };
+  const base = { day, length, onBirthControl: profile.onBirthControl || !calendarKnown };
 
   const mode = resolveMode({ ...base, vibe: today.vibe, checkIn: today.checkIn });
 
   return {
     day,
     length,
+    calendarKnown,
+    cycleLengthSource: cycle.source,
     phase,
     phaseLabel: PHASES.find((p) => p.key === phase).label,
     ...mode,

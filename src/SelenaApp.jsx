@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Home as HomeIcon, ClipboardList, Moon, Activity, UtensilsCrossed } from "lucide-react";
 import { T } from "./theme/tokens.js";
-import { sunset, resumeOnOpen } from "./engine/index.js";
+import { sunset, resumeOnOpen, AGREEMENT_VERSION } from "./engine/index.js";
 import { deriveToday } from "./derive.js";
 import { GlobalStyles, DrawerHost } from "./ui/primitives.jsx";
 import { usePersistent } from "./ui/usePersistent.js";
@@ -11,6 +11,7 @@ import { Triad } from "./screens/Triad.jsx";
 import { Rhythm } from "./screens/Rhythm.jsx";
 import { Training } from "./screens/Training.jsx";
 import { Fuel } from "./screens/Fuel.jsx";
+import { Privacy } from "./screens/Privacy.jsx";
 
 /* ---------------------------------------------------------------
    GLOBAL BOTTOM NAVIGATION
@@ -86,23 +87,26 @@ const PAST_DAYS = [
 ];
 
 const LAST_ACTIVE_KEY = "selena.lastActive";
+const KEYS = { profile: "selena.profile", onboarded: "selena.onboarded", agreement: "selena.agreement", hide: "selena.hideNumbers" };
 
-export default function SelenaApp({ initialPhase = "onboarding", initialProfile, initialTab = "home", now: fixedNow }) {
+export default function SelenaApp({ initialPhase, initialProfile, initialTab = "home", now: fixedNow }) {
   const now = useMemo(() => fixedNow ?? new Date(), [fixedNow]);
-  const [phase, setPhase] = useState(initialPhase);
+  // Everything stays in this browser only. Nothing is sent anywhere.
+  const [profile, setProfile] = usePersistent(KEYS.profile, { ...defaultProfile(now), ...initialProfile });
+  const [onboarded, setOnboarded] = usePersistent(KEYS.onboarded, false);
+  const [agreement, setAgreement] = usePersistent(KEYS.agreement, null);
+  const agreed = agreement?.version === AGREEMENT_VERSION;
+  const [phase, setPhase] = useState(initialPhase ?? (onboarded && agreed ? "app" : "onboarding"));
   const [step, setStep] = useState(0);
   const [tab, setTab] = useState(initialTab);
-  const [dayOverride, setDayOverride] = useState(null);
   const [drawerHost, setDrawerHost] = useState(null);
-
-  const [profile, setProfile] = useState(() => ({ ...defaultProfile(now), ...initialProfile }));
   const [today, setTodayState] = useState({ vibe: null, checkIn: { social: null, drive: null }, cardio: null });
   const [triad, setTriad] = useState({
     flow: ["Heavy"],
     pain: ["Uterine cramps"],
     cognition: ["Brain fog"],
   });
-  const [hideNumbers, setHideNumbers] = usePersistent("selena.hideNumbers", true);
+  const [hideNumbers, setHideNumbers] = usePersistent(KEYS.hide, true);
   const [fuelState, setFuelState] = useState({ bufferAccepted: false, bufferDismissed: false, saved: {} });
   const [session, setSessionState] = useState({ startedAt: null, endedAt: null, bailoutOffered: false, bailoutVisible: false });
   const [todayEntry, setTodayEntry] = useState(null);
@@ -127,11 +131,32 @@ export default function SelenaApp({ initialPhase = "onboarding", initialProfile,
     if (Object.keys(patch).length) setFuelState((p) => ({ ...p, ...patch }));
   };
 
-  const ctx = useMemo(() => deriveToday({ profile, today, now, dayOverride }), [profile, today, now, dayOverride]);
+  const ctx = useMemo(() => deriveToday({ profile, today, now }), [profile, today, now]);
   const markDone = (kind = ctx.prescription.kind) => setTodayEntry({ prescribed: kind, completed: true });
   const history = [...PAST_DAYS, todayEntry];
 
   const screenBg = phase === "onboarding" ? ONBOARDING_BG[step] : APP_BG[tab];
+
+  const finishOnboarding = () => {
+    setOnboarded(true);
+    setTab("home");
+    setPhase("app");
+  };
+
+  /** Wipe every key Selena has written and start again from the welcome screen. */
+  const deleteAllData = () => {
+    try {
+      for (const k of [...Object.values(KEYS), LAST_ACTIVE_KEY]) localStorage.removeItem(k);
+    } catch {
+      /* storage unavailable — nothing to remove */
+    }
+    setProfile(defaultProfile(now));
+    setOnboarded(false);
+    setAgreement(null);
+    setHideNumbers(true);
+    setStep(0);
+    setPhase("onboarding");
+  };
 
   const tabs = {
     home: <Home ctx={ctx} today={today} setToday={setToday} history={history} goTo={setTab} />,
@@ -150,58 +175,19 @@ export default function SelenaApp({ initialPhase = "onboarding", initialProfile,
       />
     ),
     nutrition: <Fuel ctx={ctx} fuel={fuel} setFuel={setFuel} trackingStyle={profile.trackingStyle} />,
+    privacy: <Privacy agreement={agreement} onDelete={deleteAllData} back={() => setTab("home")} />,
   };
-
-  const devBtn = (on) => ({
-    background: on ? T.ink : "transparent",
-    color: on ? T.canvas : T.ink,
-    border: `1px solid ${T.hair}`,
-  });
 
   return (
     <div className="sel-app w-full min-h-screen flex flex-col items-center py-6 px-4" style={{ background: "#E2DCCD" }}>
       <GlobalStyles />
-
-      {/* dev-only controls — not part of the product UI */}
-      <div className="flex gap-2 mb-4 flex-wrap justify-center items-center sel-sans" aria-label="Mockup controls" role="toolbar">
-        <button
-          type="button"
-          onClick={() => {
-            setPhase("onboarding");
-            setStep(0);
-          }}
-          className="text-[12px] rounded-full px-3"
-          style={devBtn(phase === "onboarding")}
-        >
-          Onboarding
-        </button>
-        <button type="button" onClick={() => setPhase("app")} className="text-[12px] rounded-full px-3" style={devBtn(phase === "app")}>
-          App
-        </button>
-        <label className="text-[12px] flex items-center gap-2 ml-2" style={{ color: T.ink }}>
-          Simulate day {ctx.day}
-          <input
-            type="range"
-            min={1}
-            max={ctx.length}
-            value={ctx.day}
-            onChange={(e) => setDayOverride(Number(e.target.value))}
-            style={{ accentColor: T.terracotta }}
-          />
-        </label>
-        {dayOverride != null && (
-          <button type="button" onClick={() => setDayOverride(null)} className="text-[12px] rounded-full px-3" style={devBtn(false)}>
-            Real day
-          </button>
-        )}
-      </div>
 
       <div
         ref={setDrawerHost}
         className="w-full flex flex-col overflow-hidden sel-canvas"
         style={{
           maxWidth: 392,
-          height: "min(812px, calc(100vh - 90px))",
+          height: "min(812px, calc(100vh - 48px))",
           minHeight: 640,
           borderRadius: 38,
           boxShadow: "0 26px 70px rgba(31,58,95,0.20)",
@@ -229,7 +215,15 @@ export default function SelenaApp({ initialPhase = "onboarding", initialProfile,
         <DrawerHost.Provider value={drawerHost}>
           <main className="flex-1 overflow-y-auto sel-scroll px-6 pt-7 pb-7" style={{ position: "relative", zIndex: 1 }}>
             {phase === "onboarding" ? (
-              <Onboarding step={step} setStep={setStep} data={profile} set={setOn} done={() => setPhase("app")} />
+              <Onboarding
+                step={step}
+                setStep={setStep}
+                data={profile}
+                set={setOn}
+                done={finishOnboarding}
+                agreement={agreed ? agreement : null}
+                acceptAgreement={() => setAgreement({ version: AGREEMENT_VERSION, acceptedAt: new Date().toISOString() })}
+              />
             ) : (
               tabs[tab]
             )}

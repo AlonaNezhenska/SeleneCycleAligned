@@ -7,3 +7,5 @@ export * from "./training.js";
 export * from "./notify.js";
 export * from "./copy.js";
 export * from "./calendar.js";
+export * from "./privacy.js";
+export * from "./cycleInfo.js";

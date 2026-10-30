@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { Menu, Bell, Check, ArrowRight, Users, User, UserMinus, TrendingUp, Pause } from "lucide-react";
+import { ShieldCheck, Leaf, Check, ArrowRight, Users, User, UserMinus, TrendingUp, Pause } from "lucide-react";
 import { T } from "../theme/tokens.js";
 import { MODES, UI_COPY, timeline, streak, STATUS } from "../engine/index.js";
 import { IconBtn, Card, Button, SectionLabel, Instruction, IMG } from "../ui/primitives.jsx";
@@ -226,14 +226,12 @@ const Streak = ({ history }) => {
 export const Home = ({ ctx, today, setToday, history, goTo }) => (
   <div className="sel-rise">
     <div className="flex items-center justify-between mb-6">
-      <IconBtn label="Menu">
-        <Menu size={17} color={T.ink} />
-      </IconBtn>
-      <span className="sel-serif text-[19px]" style={{ color: T.ink }}>
-        Selena
+      <div className="w-11" />
+      <span className="sel-serif text-[19px] flex items-center gap-1.5" style={{ color: T.ink }}>
+        <Leaf size={14} strokeWidth={1.5} aria-hidden="true" /> Selena
       </span>
-      <IconBtn label="Notifications">
-        <Bell size={16} color={T.ink} />
+      <IconBtn label="Privacy & data" onClick={() => goTo("privacy")}>
+        <ShieldCheck size={17} color={T.ink} strokeWidth={1.6} />
       </IconBtn>
     </div>
 
