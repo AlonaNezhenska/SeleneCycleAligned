@@ -339,6 +339,15 @@ describe("one flower for intensity", () => {
   });
 });
 
+describe("watercolour companions", () => {
+  it("gives every category its own animal", async () => {
+    for (const cat of CATEGORIES) {
+      await mount(<TrackCategory categoryKey={cat.key} />);
+      expect(screen.getByTestId(`companion-${cat.key}`, { includeHiddenElements: true })).toBeTruthy();
+    }
+  });
+});
+
 describe("privacy and copy", () => {
   it("never puts private categories into a backup", () => {
     const data = {

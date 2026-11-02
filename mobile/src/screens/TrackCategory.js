@@ -3,7 +3,6 @@ import { View, Text, Pressable, TextInput, Image, ScrollView, Modal, StyleSheet 
 import { router, useLocalSearchParams } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Svg, { Path, Circle } from "react-native-svg";
 import { ArrowLeft, Check, Lock, Minus, Plus, Trash2, CalendarDays } from "lucide-react-native";
 import { useApp, dateKey } from "../state/AppState";
 import { useTracker } from "../state/TrackerSession";
@@ -14,8 +13,8 @@ import { Calendar, shortDate } from "../ui/Calendar";
 import { FlowerIntensity } from "../ui/FlowerIntensity";
 
 /* ---------------------------------------------------------------
-   CATEGORY SHEET — one category of today's journal on the Amén canopy:
-   a spaced capital label, an italic serif heading, a botanical sprig,
+   CATEGORY SHEET — one category of today's journal on the blurred moss:
+   a spaced capital label, an italic serif heading, the category's animal,
    glass tiles for the options, then the intensity and note panels.
 
    Everything here edits the tracking session only; Continue closes the
@@ -27,29 +26,50 @@ const GLASS = "rgba(242,239,230,0.74)";
 /** Line and text colour on the dark moss background. */
 const CREAM = DARK_TEXT.text;
 
-/* ---- line-art ornaments ---- */
+/* ---- watercolour companions ---- */
 
-/** The botanical sprig in the top corner. */
-const Sprig = () => (
-  <Svg width={92} height={112} viewBox="0 0 92 112" accessibilityElementsHidden importantForAccessibility="no">
-    <Path d="M 46 110 C 46 80, 44 50, 52 18" stroke={CREAM} strokeWidth={1} fill="none" />
-    <Path d="M 46 84 C 34 78, 22 80, 14 72 C 24 70, 36 72, 46 84 Z" stroke={CREAM} strokeWidth={0.9} fill="rgba(124,138,85,0.25)" />
-    <Path d="M 46 70 C 58 62, 72 62, 80 54 C 70 52, 56 56, 46 70 Z" stroke={CREAM} strokeWidth={0.9} fill="rgba(124,138,85,0.25)" />
-    <Path d="M 47 52 C 38 46, 30 40, 26 30 C 36 32, 44 40, 47 52 Z" stroke={CREAM} strokeWidth={0.9} fill="rgba(124,138,85,0.25)" />
-    <Path d="M 52 18 L 44 8 M 52 18 L 52 5 M 52 18 L 61 9 M 52 18 L 66 16" stroke={CREAM} strokeWidth={0.8} />
-    {[[44, 7], [52, 4], [61, 8], [66, 15]].map(([x, y], i) => (
-      <Circle key={i} cx={x} cy={y} r={3.2} stroke={CREAM} strokeWidth={0.8} fill="rgba(231,181,156,0.55)" />
-    ))}
-  </Svg>
-);
+/** Each category has its own watercolour animal in the top corner. */
+const ANIMALS = {
+  physical: require("../../assets/images/animals/physical.png"),
+  emotional: require("../../assets/images/animals/emotional.png"),
+  energy: require("../../assets/images/animals/energy.png"),
+  sleep: require("../../assets/images/animals/sleep.png"),
+  skin: require("../../assets/images/animals/skin.png"),
+  digestion: require("../../assets/images/animals/digestion.png"),
+  flow: require("../../assets/images/animals/flow.png"),
+  cravings: require("../../assets/images/animals/cravings.png"),
+  intimacy: require("../../assets/images/animals/intimacy.png"),
+  activities: require("../../assets/images/animals/activities.png"),
+  disruptions: require("../../assets/images/animals/disruptions.png"),
+  contraception: require("../../assets/images/animals/contraception.png"),
+  medication: require("../../assets/images/animals/medication.png"),
+  supplements: require("../../assets/images/animals/supplements.png"),
+  conditions: require("../../assets/images/animals/conditions.png"),
+};
 
-/** The small leaf spray inside the note panel. */
-const LeafSpray = () => (
-  <Svg width={46} height={46} viewBox="0 0 46 46" accessibilityElementsHidden importantForAccessibility="no">
-    <Path d="M 8 42 C 18 30, 28 20, 40 6" stroke={OLIVE} strokeWidth={0.9} fill="none" />
-    <Path d="M 20 27 C 14 20, 14 12, 16 6 C 22 12, 23 20, 20 27 Z" stroke={OLIVE} strokeWidth={0.8} fill="rgba(124,138,85,0.22)" />
-    <Path d="M 27 19 C 34 18, 40 20, 44 26 C 37 27, 31 24, 27 19 Z" stroke={OLIVE} strokeWidth={0.8} fill="rgba(124,138,85,0.22)" />
-  </Svg>
+const Companion = ({ categoryKey }) =>
+  ANIMALS[categoryKey] ? (
+    <Image
+      source={ANIMALS[categoryKey]}
+      resizeMode="contain"
+      fadeDuration={0}
+      accessibilityElementsHidden
+      importantForAccessibility="no"
+      testID={`companion-${categoryKey}`}
+      style={{ width: 104, height: 112 }}
+    />
+  ) : null;
+
+/** The watercolour mushrooms inside the note panel. */
+const Mushrooms = () => (
+  <Image
+    source={require("../../assets/images/mushroom.png")}
+    resizeMode="contain"
+    fadeDuration={0}
+    accessibilityElementsHidden
+    importantForAccessibility="no"
+    style={{ width: 48, height: 60 }}
+  />
 );
 
 /* ---- small building blocks ---- */
@@ -136,7 +156,7 @@ const NotePanel = ({ label, value, onChange, a11y }) => (
         style={{ minHeight: 40, fontFamily: F.serifItalic, fontSize: 14, color: T.ink, paddingVertical: 6 }}
       />
     </View>
-    <LeafSpray />
+    <Mushrooms />
   </Glass>
 );
 
@@ -573,7 +593,7 @@ export function CategorySheet({ categoryKey, onClose }) {
               </Body>
             )}
           </View>
-          <Sprig />
+          <Companion categoryKey={cat.key} />
         </View>
 
         <View style={{ gap: 12, marginTop: 14 }}>
