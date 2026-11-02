@@ -1,7 +1,7 @@
 /* ---------------------------------------------------------------
    BACKUP CATEGORIES — what each ticked box sends, and how it comes back.
    Pure functions only; the network lives in useBackup.
-   The baseline photo is never part of any category.
+   The baseline photo and body measurements are never part of any category.
    --------------------------------------------------------------- */
 
 import { CATEGORIES } from "../content/journal";
@@ -28,7 +28,7 @@ export const BACKUP_CATEGORIES = [
   {
     key: "nutrition",
     label: "Nutrition",
-    sub: "Food log and Luteal Buffer choices.",
+    sub: "Food diary, your own foods, meals and recipes, and Luteal Buffer choices.",
   },
 ];
 
@@ -47,7 +47,8 @@ const pick = (obj, keys) => Object.fromEntries(keys.filter((k) => obj[k] !== und
 /** The payload one category sends. Never contains the photo. */
 export const toBackup = (data, category) => {
   if (category === "cycle") {
-    const { baselinePhoto, ...profile } = data.profile; // eslint-disable-line no-unused-vars
+    // the photo and body measurements never leave the phone
+    const { baselinePhoto, body, ...profile } = data.profile; // eslint-disable-line no-unused-vars
     return { profile, agreement: data.agreement, onboarded: data.onboarded };
   }
   const fields = DAY_FIELDS[category];
@@ -60,7 +61,8 @@ export const toBackup = (data, category) => {
     }
     if (Object.keys(part).length) days[date] = part;
   }
-  return { days };
+  // your own foods, meals and recipes travel with the food diary
+  return category === "nutrition" && data.foodLibrary ? { days, foodLibrary: data.foodLibrary } : { days };
 };
 
 /** Fold one downloaded category into local data. On the same day, what is on
@@ -72,12 +74,22 @@ export const mergeBackup = (data, category, payload) => {
       ...data,
       onboarded: data.onboarded || !!payload.onboarded,
       agreement: data.agreement ?? payload.agreement ?? null,
-      profile: { ...data.profile, ...payload.profile, baselinePhoto: data.profile.baselinePhoto },
+      profile: { ...data.profile, ...payload.profile, baselinePhoto: data.profile.baselinePhoto, body: data.profile.body },
     };
   }
   const days = { ...data.days };
   for (const [date, remote] of Object.entries(payload.days ?? {})) {
     days[date] = { ...remote, ...days[date] };
+  }
+  if (category === "nutrition" && payload.foodLibrary) {
+    // keep everything from both sides; the copy on this phone wins on the same item
+    const lib = data.foodLibrary ?? {};
+    const join = (kind) => {
+      const local = lib[kind] ?? [];
+      const ids = new Set(local.map((x) => x.id));
+      return [...local, ...(payload.foodLibrary[kind] ?? []).filter((x) => !ids.has(x.id))];
+    };
+    return { ...data, days, foodLibrary: { foods: join("foods"), meals: join("meals"), recipes: join("recipes"), recent: join("recent").slice(0, 40) } };
   }
   return { ...data, days };
 };

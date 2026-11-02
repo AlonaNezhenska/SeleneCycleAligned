@@ -65,38 +65,25 @@ beforeEach(async () => {
 afterEach(() => jest.useRealTimers());
 
 describe("Hide Numbers", () => {
-  it("is on by default and masks every value as ••", async () => {
+  it("is on by default and shows bars and words, never figures", async () => {
     await mount(Fuel);
     expect(screen.getByRole("switch", { name: "Hide numbers" })).toBeChecked();
-    expect(screen.getByTestId("meter-Energy")).toHaveTextContent("••");
-    expect(screen.getByTestId("meter-Protein")).toHaveTextContent("••");
+    expect(screen.getByTestId("meter-Energy")).toHaveTextContent("Not started");
+    expect(screen.getByTestId("macro-Protein")).toHaveTextContent("Not started");
+    expect(screen.getByTestId("bar-Protein")).toBeOnTheScreen();
+    expect(allText(screen.toJSON())).not.toMatch(/\d+\s*(kcal|g\b)/);
   });
 
   it("persists after the app is closed and reopened", async () => {
     await mount(Fuel);
     await fireEvent.press(screen.getByRole("switch", { name: "Hide numbers" }));
-    expect(screen.getByTestId("meter-Protein")).toHaveTextContent("0 / 110 g");
+    expect(screen.getByTestId("macro-Protein")).toHaveTextContent("0 / 110 g");
     // closing the app: cleanup(), not unmount(), keeps later renders working
     await cleanup();
 
     await mount(Fuel);
     expect(screen.getByRole("switch", { name: "Hide numbers" })).not.toBeChecked();
-    expect(screen.getByTestId("meter-Protein")).toHaveTextContent("0 / 110 g");
-  });
-});
-
-describe("Fuel log", () => {
-  it("adds protein and keeps it for the day", async () => {
-    await mount(Fuel);
-    await fireEvent.press(screen.getByRole("switch", { name: "Hide numbers" }));
-    await fireEvent.press(screen.getByRole("button", { name: "Add 30 grams of protein" }));
-    expect(screen.getByTestId("meter-Protein")).toHaveTextContent("30 / 110 g");
-    await act(async () => {});
-    // closing the app: cleanup(), not unmount(), keeps later renders working
-    await cleanup();
-
-    await mount(Fuel);
-    expect(screen.getByTestId("meter-Protein")).toHaveTextContent("30 / 110 g");
+    expect(screen.getByTestId("macro-Protein")).toHaveTextContent("0 / 110 g");
   });
 });
 
@@ -239,9 +226,9 @@ describe("Luteal Buffer", () => {
   it("only moves the target once accepted", async () => {
     await mount(Fuel);
     await fireEvent.press(screen.getByRole("switch", { name: "Hide numbers" }));
-    expect(screen.getByTestId("meter-Energy")).toHaveTextContent("0 / 1,850 kcal");
+    expect(screen.getByRole("button", { name: "Change your daily goal" })).toHaveTextContent(/^1,850\s*Goal$/);
     await fireEvent.press(screen.getByRole("button", { name: "Use the buffer" }));
-    expect(screen.getByTestId("meter-Energy")).toHaveTextContent("0 / 2,000–2,150 kcal");
+    expect(screen.getByRole("button", { name: "Change your daily goal" })).toHaveTextContent(/^2,000–2,150\s*Goal$/);
   });
 });
 

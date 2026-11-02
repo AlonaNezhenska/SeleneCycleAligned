@@ -31,6 +31,13 @@
           "cameraPermission": "Selena uses the camera only for your private baseline photo, stored on this device."
         }
       ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Selena uses the camera only to read food barcodes. Nothing is recorded or kept.",
+          "recordAudioAndroid": false
+        }
+      ],
       "expo-splash-screen",
       "expo-sqlite"
     ],

@@ -8,7 +8,7 @@
    must go up so every user is asked again.
    --------------------------------------------------------------- */
 
-export const AGREEMENT_VERSION = 2;
+export const AGREEMENT_VERSION = 3;
 
 export const PRIVACY_HEADLINE = "Your data stays yours.";
 
@@ -19,11 +19,15 @@ export const PRIVACY_SUMMARY =
 export const PRIVACY_AGREEMENT = [
   {
     title: "Stored on your device",
-    body: "Your cycle dates, symptoms, moods, food logs, workouts and photo are saved on this device. Without an account there is no copy anywhere else.",
+    body: "Your cycle dates, symptoms, moods, food logs, workouts, body measurements and photo are saved on this device. Without an account there is no copy anywhere else.",
   },
   {
     title: "Backup only if you choose it",
     body: "Signing in is optional. If you do, only the categories you tick are copied to Selena's secure database (Supabase), sent encrypted and locked so that only your account can read them. Untick a category and its copy is deleted.",
+  },
+  {
+    title: "Looking up food",
+    body: "When you scan a barcode or search for a packaged food, only that barcode number or the words you typed are sent to Open Food Facts, a free public food database, to fetch the product. Nothing about you, your cycle or what you ate goes with it.",
   },
   {
     title: "Never shared with anyone",
@@ -34,8 +38,8 @@ export const PRIVACY_AGREEMENT = [
     body: "No other user can ever see your data, and the Selena team does not look at backups. Anyone who can unlock your device can open the app, so keep your device locked.",
   },
   {
-    title: "Your baseline photo",
-    body: "If you add a photo, it stays on this device and is never uploaded, even with backup on. Your face is blurred on screen.",
+    title: "Your photo and body measurements",
+    body: "If you add a photo, or your weight, height and measurements for a food goal, they stay on this device and are never uploaded, even with backup on. Your face is blurred on screen.",
   },
   {
     title: "You are in control",
@@ -48,7 +52,7 @@ export const PRIVACY_AGREEMENT = [
 ];
 
 export const AGREE_LABEL =
-  "I have read this and agree. My data is never shared, and nothing leaves this device unless I choose to back it up.";
+  "I have read this and agree. My data is never shared, and nothing about me leaves this device unless I choose to back it up.";
 
 export const DELETE_WARNING =
   "This permanently deletes every entry, your cycle details and your photo from this device, plus your account and online backup if you have one. It cannot be undone.";
