@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, Image, PanResponder, StyleSheet } from "react-native";
-import { BLOOM_FRAMES, bloomFrame, intensityWord } from "../content/bloom";
+import { BLOOM_SHEET, BLOOM_COUNT, BLOOM_COLUMNS, BLOOM_FRAME, bloomFrame, intensityWord } from "../content/bloom";
 import { T, F } from "./theme";
 
 /* ---------------------------------------------------------------
@@ -63,21 +63,21 @@ const useSpring = (target, immediate = false) => {
 /** Where along the track a finger is, as a level from 1 to 5. */
 export const levelFromX = (pageX, { x, width }) => 1 + Math.min(1, Math.max(0, (pageX - x) / width)) * 4;
 
-/** The peony. Every frame is mounted once and only the current one is
- *  visible, so scrubbing never waits for an image to load. */
+/** The peony. One sheet holds every frame; the window shows one cell and
+ *  scrubbing only shifts the sheet, so no frame ever has to load. */
 export const PeonyBloom = ({ level, direction = "open", width = 190 }) => {
   const current = bloomFrame(level, direction);
-  const height = (width * 208) / 330;
+  const height = (width * BLOOM_FRAME.height) / BLOOM_FRAME.width;
+  const rows = Math.ceil(BLOOM_COUNT / BLOOM_COLUMNS);
+  const col = current % BLOOM_COLUMNS;
+  const row = Math.floor(current / BLOOM_COLUMNS);
   return (
-    <View style={{ width, height }}>
-      {BLOOM_FRAMES.map((src, i) => (
-        <Image
-          key={i}
-          source={src}
-          resizeMode="contain"
-          style={[StyleSheet.absoluteFill, { width, height, opacity: i === current ? 1 : 0 }]}
-        />
-      ))}
+    <View style={{ width, height, overflow: "hidden" }}>
+      <Image
+        source={BLOOM_SHEET}
+        fadeDuration={0}
+        style={{ width: width * BLOOM_COLUMNS, height: height * rows, transform: [{ translateX: -col * width }, { translateY: -row * height }] }}
+      />
     </View>
   );
 };

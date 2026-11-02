@@ -1,5 +1,5 @@
-import React, { useRef, useState } from "react";
-import { View, Text, Pressable, Modal, StyleSheet } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { View, Text, Pressable, Modal, Image, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { BlurView } from "expo-blur";
 import Svg, { Path, Circle } from "react-native-svg";
@@ -8,6 +8,7 @@ import { CategorySheet } from "./TrackCategory";
 import { triadTip, isHighSymptom } from "../shared";
 import { useApp } from "../state/AppState";
 import { useTracker } from "../state/TrackerSession";
+import { BLOOM_SHEET } from "../content/bloom";
 import { COLLECTIONS, inCollection, countIn, journalSignals } from "../content/journal";
 import { T, F, tone, IMG } from "../ui/theme";
 import { Screen, IconBtn, Serif, Body, SectionLabel, s } from "../ui/kit";
@@ -193,6 +194,13 @@ export function Triad() {
   const [sheet, setSheet] = useState(null);
   const blurTarget = useRef(null);
   const [tip, setTip] = useState(null);
+
+  // fetch the peony sheet while the bubbles are on screen, so it is ready
+  // before the first intensity window opens
+  useEffect(() => {
+    const uri = Image.resolveAssetSource?.(BLOOM_SHEET)?.uri;
+    if (uri && Image.prefetch) Image.prefetch(uri).catch(() => {});
+  }, []);
   const [leaving, setLeaving] = useState(false);
   const c = tone(true);
 

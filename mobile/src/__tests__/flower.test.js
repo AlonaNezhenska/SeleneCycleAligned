@@ -1,9 +1,9 @@
-import { bloomFrame, BLOOM_FRAMES, intensityWord } from "../content/bloom";
+import { bloomFrame, BLOOM_COUNT, intensityWord } from "../content/bloom";
 import { levelFromX } from "../ui/FlowerIntensity";
 
 describe("the peony behind every intensity slider", () => {
   it("has the frames from the GIF", () => {
-    expect(BLOOM_FRAMES).toHaveLength(25);
+    expect(BLOOM_COUNT).toBe(25);
   });
 
   it("opens for a positive state: closed bud at 1, full bloom at 5", () => {
