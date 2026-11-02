@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { deriveToday, sunset, resumeOnOpen, AGREEMENT_VERSION } from "../shared";
 import { DEFAULT_BACKUP } from "../lib/backup";
+import { emptyLibrary, remember } from "../lib/food";
 import { useBackup } from "./useBackup";
 
 /* ---------------------------------------------------------------
@@ -88,6 +89,8 @@ export const AppProvider = ({ children, now: fixedNow, initial }) => {
     profile: defaultProfile(now),
     days: {},
     saved: {},
+    // the user's own foods, saved meals, recipes and recently eaten
+    foodLibrary: emptyLibrary(),
   });
   const [data, setData] = useState(fresh);
   const [hideNumbers, setHideNumbersState] = useState(true);
@@ -146,6 +149,38 @@ export const AppProvider = ({ children, now: fixedNow, initial }) => {
       })),
     [todayKey]
   );
+  /** Change one day from what it is now, so quick taps never overwrite each other. */
+  const updateDay = useCallback(
+    (key, fn) => setData((d) => ({ ...d, days: { ...d.days, [key]: fn({ ...emptyDay(), ...d.days[key] }) } })),
+    []
+  );
+  const updateLibrary = useCallback((fn) => setData((d) => ({ ...d, foodLibrary: fn({ ...emptyLibrary(), ...d.foodLibrary }) })), []);
+  const editEntries = useCallback(
+    (key, fn) => updateDay(key, (day) => ({ ...day, food: { ...day.food, entries: fn(day.food?.entries ?? []) } })),
+    [updateDay]
+  );
+
+  /** Add diary entries to a day (today unless given) and remember the foods for next time. */
+  const addFoodEntries = useCallback(
+    (entries, key = todayKey) => {
+      editEntries(key, (list) => [...list, ...entries]);
+      updateLibrary((lib) => entries.reduce((l, e) => (e.food ? { ...l, recent: remember(l.recent, e.food, e.grams) } : l), lib));
+    },
+    [editEntries, updateLibrary, todayKey]
+  );
+  const updateFoodEntry = useCallback(
+    (id, patch, key = todayKey) => editEntries(key, (list) => list.map((e) => (e.id === id ? { ...e, ...patch } : e))),
+    [editEntries, todayKey]
+  );
+  const removeFoodEntry = useCallback((id, key = todayKey) => editEntries(key, (list) => list.filter((e) => e.id !== id)), [editEntries, todayKey]);
+
+  /** Save or replace one of the user's own foods, meals or recipes. */
+  const saveToLibrary = useCallback(
+    (kind, item) => updateLibrary((lib) => ({ ...lib, [kind]: [item, ...lib[kind].filter((x) => x.id !== item.id)] })),
+    [updateLibrary]
+  );
+  const removeFromLibrary = useCallback((kind, id) => updateLibrary((lib) => ({ ...lib, [kind]: lib[kind].filter((x) => x.id !== id) })), [updateLibrary]);
+
   const setSession = useCallback((patch) => setSessionState((p) => ({ ...p, ...patch })), []);
 
   const ctx = useMemo(() => deriveToday({ profile: data.profile, today, now }), [data.profile, data.days, todayKey, now]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -201,6 +236,16 @@ export const AppProvider = ({ children, now: fixedNow, initial }) => {
     hideNumbers,
     setHideNumbers,
     saved: data.saved,
+    foodLibrary: { ...emptyLibrary(), ...data.foodLibrary },
+    todayKey,
+    /** Any day, filled in with the usual empty fields. */
+    dayAt: (key) => (key === todayKey ? today : { ...emptyDay(), ...data.days[key] }),
+    updateDay,
+    addFoodEntries,
+    updateFoodEntry,
+    removeFoodEntry,
+    saveToLibrary,
+    removeFromLibrary,
     toggleSaved: (k) => setData((d) => ({ ...d, saved: { ...d.saved, [k]: !d.saved[k] } })),
     session,
     setSession,

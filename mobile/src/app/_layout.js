@@ -36,6 +36,12 @@ const Gate = ({ fontsReady }) => {
         <Stack.Screen name="edit-cycle" options={{ presentation: "modal" }} />
         <Stack.Screen name="edit-about" options={{ presentation: "modal" }} />
         <Stack.Screen name="track/[category]" />
+        <Stack.Screen name="food/add" options={{ presentation: "modal" }} />
+        <Stack.Screen name="food/scan" />
+        <Stack.Screen name="food/new" />
+        <Stack.Screen name="food/meal" />
+        <Stack.Screen name="food/goal" />
+        <Stack.Screen name="recipe/[id]" />
       </Stack>
     </>
   );

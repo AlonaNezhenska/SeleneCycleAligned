@@ -43,17 +43,12 @@ export const IMG = {
   backgrounds: {
     home: require("../../assets/images/backgrounds/home-pink.png"),
     tracker: require("../../assets/images/backgrounds/tracker-moss.jpg"),
+    cycle: require("../../assets/images/backgrounds/cycle-water.jpg"),
   },
   vibes: {
     Inward: require("../../assets/images/vibes/inward-marble.jpg"),
     Steady: require("../../assets/images/vibes/steady-pink.jpg"),
     Outward: require("../../assets/images/vibes/outward-spiral.jpg"),
-  },
-  glow: {
-    menstruation: require("../../assets/images/cycle/menstruation-glow.png"),
-    follicular: require("../../assets/images/cycle/follicular-glow.png"),
-    ovulation: require("../../assets/images/cycle/ovulation-glow.png"),
-    luteal: require("../../assets/images/cycle/luteal-glow.png"),
   },
   onboarding: [
     require("../../assets/images/hero-moon-woman.png"),

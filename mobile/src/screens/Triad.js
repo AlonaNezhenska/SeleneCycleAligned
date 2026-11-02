@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { View, Text, Pressable, Modal, Image, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { BlurView } from "expo-blur";
-import Svg, { Path, Circle } from "react-native-svg";
+import Svg, { Path } from "react-native-svg";
 import { ArrowLeft, Check, ChevronDown, LifeBuoy, EyeOff, Salad, Users, Lock } from "lucide-react-native";
 import { CategorySheet } from "./TrackCategory";
 import { triadTip, isHighSymptom } from "../shared";
@@ -39,7 +39,6 @@ const LAYOUTS = {
       digestion: { x: 0.83, y: 0.8, r: 0.14 },
     },
     links: [["emotional", "energy"], ["emotional", "flow"], ["energy", "physical"], ["flow", "physical"], ["energy", "skin"], ["flow", "digestion"], ["skin", "digestion"]],
-    sparks: [[0.32, 0.25], [0.68, 0.27], [0.06, 0.6], [0.94, 0.62], [0.5, 0.93], [0.35, 0.68], [0.66, 0.71], [0.86, 0.15]],
   },
   lifestyle: {
     ratio: 0.9,
@@ -50,19 +49,16 @@ const LAYOUTS = {
       intimacy: { x: 0.5, y: 0.8, r: 0.155 },
     },
     links: [["sleep", "cravings"], ["sleep", "activities"], ["cravings", "intimacy"], ["activities", "intimacy"]],
-    sparks: [[0.24, 0.18], [0.78, 0.2], [0.5, 0.5], [0.12, 0.86], [0.88, 0.84]],
   },
   health: {
-    ratio: 0.96,
+    ratio: 0.9,
     nodes: {
-      disruptions: { x: 0.5, y: 0.17, r: 0.15 },
-      contraception: { x: 0.18, y: 0.46, r: 0.15 },
-      medication: { x: 0.82, y: 0.46, r: 0.15 },
-      supplements: { x: 0.3, y: 0.8, r: 0.15 },
-      conditions: { x: 0.7, y: 0.8, r: 0.15 },
+      contraception: { x: 0.5, y: 0.2, r: 0.155 },
+      medication: { x: 0.19, y: 0.52, r: 0.15 },
+      supplements: { x: 0.81, y: 0.52, r: 0.15 },
+      conditions: { x: 0.5, y: 0.8, r: 0.155 },
     },
-    links: [["disruptions", "contraception"], ["disruptions", "medication"], ["contraception", "supplements"], ["medication", "conditions"], ["supplements", "conditions"]],
-    sparks: [[0.27, 0.18], [0.74, 0.2], [0.5, 0.52], [0.06, 0.72], [0.94, 0.72], [0.5, 0.96]],
+    links: [["contraception", "medication"], ["contraception", "supplements"], ["medication", "conditions"], ["supplements", "conditions"]],
   },
 };
 
@@ -117,12 +113,6 @@ const Constellation = ({ collection, draft, onOpen }) => {
               const my = (y1 + y2) / 2 - (x2 - x1) * 0.18;
               return <Path key={a + b} d={`M ${x1} ${y1} Q ${mx} ${my} ${x2} ${y2}`} stroke={GLOW} strokeOpacity={0.5} strokeWidth={1} fill="none" />;
             })}
-            {layout.sparks.map(([x, y], i) => (
-              <React.Fragment key={i}>
-                <Circle cx={x * w} cy={y * h} r={7} fill={GLOW} opacity={0.18} />
-                <Circle cx={x * w} cy={y * h} r={2.4} fill={GLOW} opacity={0.95} />
-              </React.Fragment>
-            ))}
           </Svg>
 
           {inCollection(collection).map((cat) => {

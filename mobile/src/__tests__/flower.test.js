@@ -55,3 +55,27 @@ describe("slider position", () => {
     expect(levelFromX(999, track)).toBe(5);
   });
 });
+
+describe("tile lines", () => {
+  const { tileRows, CATEGORY } = require("../content/journal");
+  const keys = (rows) => rows.map((r) => r.map((o) => o.key));
+
+  it("keeps opposites together and every option exactly once", () => {
+    const cat = CATEGORY.energy;
+    const rows = keys(tileRows(cat.options, cat.rows));
+    expect(rows).toContainEqual(["low", "high"]);
+    expect(rows).toContainEqual(["fog", "focus", "clarity"]);
+    expect(rows.flat().sort()).toEqual(cat.options.map((o) => o.key).sort());
+  });
+
+  it("lists every symptom of every category in its lines", () => {
+    for (const cat of Object.values(CATEGORY)) {
+      for (const g of [cat, ...(cat.groups ?? [])]) {
+        if (!g.rows) continue;
+        const listed = g.rows.flat();
+        expect(new Set(listed).size).toBe(listed.length);
+        expect(listed.sort()).toEqual(g.options.map((o) => o.key).sort());
+      }
+    }
+  });
+});

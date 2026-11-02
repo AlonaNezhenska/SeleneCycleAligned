@@ -12,11 +12,13 @@ import {
    calm collections, and the kind of input each one needs:
 
    symptoms      pick many; each gets its own intensity 1–5 and note.
+                 `rows` lays the tiles out line by line, so opposites
+                 (low / high energy) and close relatives sit side by side.
                  Intensity is drawn as one peony: difficult symptoms close
                  it as they grow; positive states (`positive`) open it.
    choices       single-choice scales plus optional observations
    activities    pick many; each gets a duration and its own extra field
-   events        pick many; each gets a date and a note
+   dated group   pick many; each gets a date and a note (flow's cycle changes)
    entries       a list of named items (medication, supplements)
    contraception a profile with daily notes
    health        a profile with optional daily observations
@@ -39,6 +41,7 @@ export const CATEGORIES = [
   /* ---- Body & wellbeing ---- */
   {
     key: "physical",
+    rows: [["cramps", "pelvic", "back"], ["bloating", "nausea"], ["headache", "dizziness"], ["fatigue", "muscles"], ["breast", "cravings"]],
     label: "Physical",
     collection: "body",
     icon: Leaf,
@@ -59,6 +62,7 @@ export const CATEGORIES = [
   },
   {
     key: "emotional",
+    rows: [["anxiety", "calm"], ["sadness", "low", "happy"], ["irritability", "swings"], ["sensitivity", "alone"]],
     label: "Emotional",
     title: "Emotional & mood",
     collection: "body",
@@ -78,6 +82,7 @@ export const CATEGORIES = [
   },
   {
     key: "energy",
+    rows: [["low", "high"], ["fatigue", "motivation"], ["fog", "focus", "clarity"]],
     label: "Energy",
     title: "Energy & focus",
     collection: "body",
@@ -95,6 +100,7 @@ export const CATEGORIES = [
   },
   {
     key: "sleep",
+    rows: [["insomnia", "oversleeping"], ["restless", "restful"], ["waking", "dreams"]],
     label: "Sleep",
     collection: "lifestyle",
     icon: Moon,
@@ -110,6 +116,7 @@ export const CATEGORIES = [
   },
   {
     key: "skin",
+    rows: [["acne", "glow"], ["dry", "oily", "sensitive"], ["shedding", "greasy"]],
     label: "Skin",
     title: "Skin & hair",
     collection: "body",
@@ -127,6 +134,7 @@ export const CATEGORIES = [
   },
   {
     key: "digestion",
+    rows: [["low", "increased"], ["constipation", "diarrhoea"], ["bloating", "nausea", "aversions"]],
     label: "Digestion",
     title: "Digestion & appetite",
     collection: "body",
@@ -150,6 +158,7 @@ export const CATEGORIES = [
     icon: Droplet,
     type: "choices",
     noteLabel: "Note (optional)",
+    title: "Flow & cycle changes",
     hint: "Period started today sets day 1 of your cycle when you save.",
     groups: [
       {
@@ -168,11 +177,32 @@ export const CATEGORIES = [
       {
         key: "events",
         label: "Also today",
+        rows: [["started", "ended"], ["clots", "flooding"]],
         options: [
           s("started", "Period started today", CalendarClock),
           s("ended", "Period ended today", CalendarX),
           s("clots", "Clots", CircleDot, "clots"),
           s("flooding", "Flooding or leaking", Droplets),
+        ],
+      },
+      {
+        // each change keeps its own date and note
+        key: "changes",
+        label: "Cycle changes",
+        dated: true,
+        rows: [["early", "late", "absent"], ["heavy-cycle", "light-cycle"], ["longer", "shorter"], ["between", "unexpected"], ["irregular", "length"]],
+        options: [
+          s("early", "Period came earlier than expected", CalendarClock),
+          s("late", "Period came later than expected", CalendarClock),
+          s("absent", "Period hasn't come this cycle", CalendarX),
+          s("between", "Spotting between periods", Droplet),
+          s("unexpected", "Unexpected bleeding", Droplets),
+          s("heavy-cycle", "Unusually heavy flow", CloudRain, "flow-heavy"),
+          s("light-cycle", "Unusually light flow", CloudDrizzle),
+          s("longer", "Longer period than usual", Plus),
+          s("shorter", "Shorter period than usual", Minus),
+          s("irregular", "Irregular cycle", Shuffle),
+          s("length", "Change in cycle length", Repeat),
         ],
       },
     ],
@@ -181,6 +211,7 @@ export const CATEGORIES = [
   /* ---- Lifestyle & intimacy ---- */
   {
     key: "cravings",
+    rows: [["chocolate", "sweet"], ["salty", "fastfood"], ["carbs", "dairy"], ["fruit", "specific"], ["none"]],
     label: "Cravings",
     collection: "lifestyle",
     icon: Candy,
@@ -232,6 +263,7 @@ export const CATEGORIES = [
       {
         key: "observations",
         label: "Observations",
+        rows: [["more-desire", "less-desire"], ["dryness", "lubrication"], ["pain", "comfort"]],
         options: [
           s("more-desire", "Increased desire", TrendingUp),
           s("less-desire", "Decreased desire", CloudDrizzle),
@@ -263,27 +295,6 @@ export const CATEGORIES = [
   },
 
   /* ---- Cycle & health ---- */
-  {
-    key: "disruptions",
-    label: "Cycle changes",
-    title: "Cycle disruptions",
-    collection: "health",
-    icon: CalendarClock,
-    type: "events",
-    options: [
-      s("early", "Period came earlier than expected", CalendarClock),
-      s("late", "Period came later than expected", CalendarClock),
-      s("absent", "Period hasn't come this cycle", CalendarX),
-      s("spotting", "Spotting", Droplet),
-      s("unexpected", "Unexpected bleeding", Droplets),
-      s("heavy", "Unusually heavy flow", CloudRain, "flow-heavy"),
-      s("light", "Unusually light flow", CloudDrizzle),
-      s("longer", "Longer period than usual", Plus),
-      s("shorter", "Shorter period than usual", Minus),
-      s("irregular", "Irregular cycle", Shuffle),
-      s("length", "Change in cycle length", Repeat),
-    ],
-  },
   {
     key: "contraception",
     label: "Birth control",
@@ -396,4 +407,14 @@ export const journalSignals = (journal = {}) => {
     }
   }
   return [...out];
+};
+
+/** Tiles arranged line by line: the listed rows first, anything left over three to a line. */
+export const tileRows = (options, rows = []) => {
+  const byKey = Object.fromEntries(options.map((o) => [o.key, o]));
+  const placed = new Set(rows.flat());
+  const out = rows.map((r) => r.map((k) => byKey[k]).filter(Boolean)).filter((r) => r.length);
+  const rest = options.filter((o) => !placed.has(o.key));
+  for (let i = 0; i < rest.length; i += 3) out.push(rest.slice(i, i + 3));
+  return out;
 };
