@@ -62,6 +62,7 @@ export const emptyDay = () => ({
   entry: null,
   bufferAccepted: false,
   bufferDismissed: false,
+  journal: {},
 });
 
 const AppState = createContext(null);

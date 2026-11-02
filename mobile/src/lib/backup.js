@@ -4,6 +4,11 @@
    The baseline photo is never part of any category.
    --------------------------------------------------------------- */
 
+import { CATEGORIES } from "../content/journal";
+
+/** Journal categories that are private: they never leave the phone. */
+export const PRIVATE_JOURNAL = CATEGORIES.filter((c) => c.private).map((c) => c.key);
+
 export const BACKUP_CATEGORIES = [
   {
     key: "cycle",
@@ -13,7 +18,7 @@ export const BACKUP_CATEGORIES = [
   {
     key: "logs",
     label: "Daily check-ins",
-    sub: "Vibe Check, Tracker symptoms, moods and your streak.",
+    sub: "Vibe Check, Tracker symptoms, moods and your streak. Sex, birth control, medication and health profile are never backed up.",
   },
   {
     key: "training",
@@ -32,7 +37,7 @@ export const DEFAULT_BACKUP = { cycle: false, logs: false, training: false, nutr
 
 /** Day fields owned by each category. */
 const DAY_FIELDS = {
-  logs: ["vibe", "checkIn", "triad", "entry"],
+  logs: ["vibe", "checkIn", "triad", "entry", "journal"],
   training: ["movement", "cardio"],
   nutrition: ["food", "bufferAccepted", "bufferDismissed"],
 };
@@ -49,6 +54,10 @@ export const toBackup = (data, category) => {
   const days = {};
   for (const [date, day] of Object.entries(data.days ?? {})) {
     const part = pick(day, fields);
+    if (part.journal) {
+      // private categories stay on this phone, always
+      part.journal = Object.fromEntries(Object.entries(part.journal).filter(([k]) => !PRIVATE_JOURNAL.includes(k)));
+    }
     if (Object.keys(part).length) days[date] = part;
   }
   return { days };

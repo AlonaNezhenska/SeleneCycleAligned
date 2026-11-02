@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, Pressable, ScrollView, Image, Modal, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { BlurTargetView } from "expo-blur";
 import { Info, X } from "lucide-react-native";
 import { RATIONALE } from "../shared";
 import { T, F, tone, IMG, MIN_TOUCH } from "./theme";
@@ -15,37 +16,43 @@ const BACKGROUNDS = { canvas: T.canvas, aegean: T.aegean, forest: T.forest };
 /** A full screen: background (a colour, or a photo that stays still while
  *  the content scrolls), paper grain, safe area and scrolling. A scrim over
  *  the photo keeps text on it readable. */
-export const Screen = ({ bg = "canvas", image, blur = 0, scrim, children, scroll = true, testID }) => {
+export const Screen = ({ bg = "canvas", image, blur = 0, scrim, children, scroll = true, footer, overlay, blurTarget, testID }) => {
   const Body = scroll ? ScrollView : View;
+  // when a pop-up can blur this screen, everything below it must sit in the blur target
+  const Content = blurTarget ? BlurTargetView : View;
   return (
     <View style={[s.fill, { backgroundColor: BACKGROUNDS[bg] }]} testID={testID}>
-      {image && (
+      <Content ref={blurTarget} style={s.fill}>
+        {image && (
+          <Image
+            source={image}
+            blurRadius={blur}
+            resizeMode="cover"
+            style={[StyleSheet.absoluteFill, { width: "100%", height: "100%" }]}
+            accessibilityElementsHidden
+            importantForAccessibility="no"
+          />
+        )}
+        {scrim && <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: scrim }]} />}
         <Image
-          source={image}
-          blurRadius={blur}
-          resizeMode="cover"
-          style={[StyleSheet.absoluteFill, { width: "100%", height: "100%" }]}
+          source={IMG.grain}
+          resizeMode="repeat"
+          style={[StyleSheet.absoluteFill, { width: "100%", height: "100%", opacity: image ? 0.3 : bg === "canvas" ? 0.9 : 0.35, mixBlendMode: "multiply" }]}
           accessibilityElementsHidden
           importantForAccessibility="no"
         />
-      )}
-      {scrim && <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: scrim }]} />}
-      <Image
-        source={IMG.grain}
-        resizeMode="repeat"
-        style={[StyleSheet.absoluteFill, { width: "100%", height: "100%", opacity: image ? 0.3 : bg === "canvas" ? 0.9 : 0.35, mixBlendMode: "multiply" }]}
-        accessibilityElementsHidden
-        importantForAccessibility="no"
-      />
-      <SafeAreaView style={s.fill} edges={["top"]}>
-        <Body
-          style={s.fill}
-          contentContainerStyle={scroll ? s.scrollBody : undefined}
-          showsVerticalScrollIndicator={false}
-        >
-          {children}
-        </Body>
-      </SafeAreaView>
+        <SafeAreaView style={s.fill} edges={["top"]}>
+          <Body
+            style={s.fill}
+            contentContainerStyle={scroll ? s.scrollBody : undefined}
+            showsVerticalScrollIndicator={false}
+          >
+            {children}
+          </Body>
+          {footer}
+        </SafeAreaView>
+      </Content>
+      {overlay}
     </View>
   );
 };

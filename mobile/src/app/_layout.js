@@ -10,6 +10,7 @@ import {
 } from "@expo-google-fonts/playfair-display";
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from "@expo-google-fonts/inter";
 import { AppProvider, useApp } from "../state/AppState";
+import { TrackerSessionProvider } from "../state/TrackerSession";
 import { T } from "../ui/theme";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -34,6 +35,7 @@ const Gate = ({ fontsReady }) => {
         <Stack.Screen name="auth-callback" />
         <Stack.Screen name="edit-cycle" options={{ presentation: "modal" }} />
         <Stack.Screen name="edit-about" options={{ presentation: "modal" }} />
+        <Stack.Screen name="track/[category]" />
       </Stack>
     </>
   );
@@ -52,7 +54,9 @@ export default function RootLayout() {
 
   return (
     <AppProvider>
-      <Gate fontsReady={fontsReady} />
+      <TrackerSessionProvider>
+        <Gate fontsReady={fontsReady} />
+      </TrackerSessionProvider>
     </AppProvider>
   );
 }

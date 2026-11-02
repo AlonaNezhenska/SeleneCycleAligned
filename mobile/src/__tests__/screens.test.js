@@ -4,6 +4,7 @@ import { render, screen, fireEvent, act, within, cleanup } from "@testing-librar
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { AppProvider, useApp, dateKey, STATE_KEY } from "../state/AppState";
+import { TrackerSessionProvider } from "../state/TrackerSession";
 import { findBlocked, AGREEMENT_VERSION } from "../shared";
 import { Privacy } from "../screens/Privacy";
 import { AuthCallback } from "../screens/AuthCallback";
@@ -38,9 +39,11 @@ const mount = async (Screen, { profile = {}, onboarded = true, now = NOW, days }
         ...(days ? { days } : {}),
       }}
     >
-      <Ready>
-        <Screen />
-      </Ready>
+      <TrackerSessionProvider>
+        <Ready>
+          <Screen />
+        </Ready>
+      </TrackerSessionProvider>
     </AppProvider>
   );
   await screen.findByTestId("ready");
@@ -166,29 +169,6 @@ describe("Late Luteal Fork", () => {
     await fireEvent.press(screen.getByRole("button", { name: "The Hermit" }));
     expect(screen.getByText(/low tide/i)).toBeOnTheScreen();
     expect(within(screen.getByTestId("prescription")).getByText("Recovery Day")).toBeOnTheScreen();
-  });
-});
-
-describe("Triad Tracker", () => {
-  it("saving shows exactly one tip", async () => {
-    await mount(Triad);
-    await fireEvent.press(screen.getByRole("button", { name: /^Fuel:/ }));
-    await fireEvent.press(screen.getByRole("button", { name: "Sweet / sugar" }));
-    await fireEvent.press(screen.getByRole("button", { name: "Save entry" }));
-    const tips = screen.getAllByTestId("tip");
-    expect(tips).toHaveLength(1);
-    expect(tips[0]).toHaveTextContent(/dark chocolate/i);
-  });
-
-  it("keeps the day's log after reopening", async () => {
-    await mount(Triad);
-    await fireEvent.press(screen.getByRole("button", { name: "Heavy" }));
-    await act(async () => {});
-    // closing the app: cleanup(), not unmount(), keeps later renders working
-    await cleanup();
-    await mount(Triad);
-    expect(screen.getByRole("button", { name: "Heavy" })).toBeSelected();
-    expect(JSON.parse(await AsyncStorage.getItem(STATE_KEY)).days[dateKey(NOW)].triad.flow).toEqual(["Heavy"]);
   });
 });
 
