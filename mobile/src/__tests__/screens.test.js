@@ -246,6 +246,40 @@ describe("Luteal Buffer", () => {
 });
 
 describe("Cycle Calendar", () => {
+  it("shows a month calendar with phases, the ovulation sun and a logged day", async () => {
+    await mount(Cycle, {
+      days: {
+        "2026-10-27": {
+          journal: { physical: { items: { cramps: { intensity: 4, note: "worse at night" } } }, flow: { choices: { level: "light" } } },
+        },
+      },
+    });
+    await fireEvent.press(screen.getByRole("tab", { name: "Calendar" }));
+    expect(screen.getByTestId("cycle-month")).toBeOnTheScreen();
+    expect(screen.getByTestId("day-detail")).toHaveTextContent(/Thursday 29 October/);
+    expect(screen.getByTestId("day-detail")).toHaveTextContent(/Nothing logged on this day/);
+    expect(screen.getByTestId("day-2026-10-22").props.accessibilityLabel).toMatch(/approximate ovulation/);
+    // the sun replaces the date number on ovulation day
+    expect(within(screen.getByTestId("day-2026-10-22")).queryByText("22")).toBeNull();
+    expect(within(screen.getByTestId("day-2026-10-21")).getByText("21")).toBeOnTheScreen();
+    expect(screen.getByTestId("day-2026-10-27").props.accessibilityLabel).toMatch(/period, symptoms logged/);
+    // no phase names under the calendar; tapping a date lights its whole phase and names it
+    expect(screen.queryByText("Follicular")).toBeNull();
+    expect(screen.getByTestId("phase-banner")).toHaveTextContent(/Luteal phase/);
+    await fireEvent.press(screen.getByTestId("day-2026-10-16"));
+    expect(screen.getByTestId("phase-banner")).toHaveTextContent("Follicular phase14 Oct – 21 Oct");
+    expect(screen.getByTestId("lit-2026-10-14")).toBeTruthy();
+    expect(screen.getByTestId("lit-2026-10-21")).toBeTruthy();
+    expect(screen.queryByTestId("lit-2026-10-22")).toBeNull();
+    expect(screen.queryByTestId("lit-2026-10-13")).toBeNull();
+    await fireEvent.press(screen.getByTestId("day-2026-10-27"));
+    const detail = screen.getByTestId("day-detail");
+    expect(detail).toHaveTextContent(/Period · Light flow/);
+    expect(detail).toHaveTextContent(/Cramps · intense — worse at night/);
+    await fireEvent.press(screen.getByRole("button", { name: "Next month" }));
+    expect(screen.getByTestId("day-2026-11-06").props.accessibilityLabel).toMatch(/period likely/);
+  });
+
   const layout = () =>
     fireEvent(screen.getByTestId("phase-column"), "layout", {
       nativeEvent: { layout: { width: 340, height: 500 } },

@@ -6,7 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, Check, Lock, Minus, Plus, Trash2, CalendarDays } from "lucide-react-native";
 import { useApp, dateKey } from "../state/AppState";
 import { useTracker } from "../state/TrackerSession";
-import { CATEGORY, CONTRACEPTION_METHODS, CONTRACEPTION_SIDE_EFFECTS, CONDITIONS, FREQUENCIES, titleOf } from "../content/journal";
+import { CATEGORY, tileRows, CONTRACEPTION_METHODS, CONTRACEPTION_SIDE_EFFECTS, CONDITIONS, FREQUENCIES, titleOf } from "../content/journal";
 import { T, F, IMG, DARK_TEXT } from "../ui/theme";
 import { IconBtn, Serif, Body, Chip, s } from "../ui/kit";
 import { Calendar, shortDate } from "../ui/Calendar";
@@ -40,7 +40,6 @@ const ANIMALS = {
   cravings: require("../../assets/images/animals/cravings.png"),
   intimacy: require("../../assets/images/animals/intimacy.png"),
   activities: require("../../assets/images/animals/activities.png"),
-  disruptions: require("../../assets/images/animals/disruptions.png"),
   contraception: require("../../assets/images/animals/contraception.png"),
   medication: require("../../assets/images/animals/medication.png"),
   supplements: require("../../assets/images/animals/supplements.png"),
@@ -91,8 +90,8 @@ const Field = ({ label, ...rest }) => (
   </View>
 );
 
-/** A rounded glass tile, three to a row; chosen tiles turn olive with a check. */
-const Tile = ({ option, on, onPress, focused }) => {
+/** A rounded glass tile; chosen tiles turn olive with a check. */
+const Tile = ({ option, on, onPress, focused, width }) => {
   const Icon = option.icon;
   return (
     <Pressable
@@ -100,7 +99,7 @@ const Tile = ({ option, on, onPress, focused }) => {
       accessibilityRole="checkbox"
       accessibilityState={{ checked: on }}
       accessibilityLabel={option.label}
-      style={styles.tileCell}
+      style={[styles.tileCell, { width }]}
     >
       <View style={[styles.tile, on && styles.tileOn, focused && styles.tileFocused]}>
         <Icon size={26} color={on ? T.canvas : OLIVE} strokeWidth={1.2} />
@@ -117,10 +116,15 @@ const Tile = ({ option, on, onPress, focused }) => {
   );
 };
 
-const TileGrid = ({ options, isOn, onPress, focusedKey }) => (
-  <View style={styles.grid}>
-    {options.map((o) => (
-      <Tile key={o.key} option={o} on={isOn(o.key)} focused={focusedKey === o.key} onPress={() => onPress(o.key)} />
+/** Tiles line by line: pairs share a line half and half, threes a third each. */
+const TileGrid = ({ options, rows, isOn, onPress, focusedKey }) => (
+  <View style={{ marginHorizontal: -5 }}>
+    {tileRows(options, rows).map((row) => (
+      <View key={row[0].key} style={styles.tileRow}>
+        {row.map((o) => (
+          <Tile key={o.key} option={o} width={`${100 / Math.max(2, row.length)}%`} on={isOn(o.key)} focused={focusedKey === o.key} onPress={() => onPress(o.key)} />
+        ))}
+      </View>
     ))}
   </View>
 );
@@ -223,7 +227,7 @@ const Symptoms = ({ cat, entry, t, options = cat.options }) => {
 
   return (
     <>
-      <TileGrid options={options} isOn={(k) => Boolean(items[k])} onPress={press} focusedKey={current?.key} />
+      <TileGrid options={options} rows={cat.rows} isOn={(k) => Boolean(items[k])} onPress={press} focusedKey={current?.key} />
       {cat.noteLabel && cat.type === "symptoms" && <NotePanel label={cat.noteLabel} value={entry.note} onChange={(v) => t.setNote(cat.key, v)} />}
 
       <Modal visible={Boolean(current)} transparent animationType="slide" onRequestClose={close}>
@@ -282,7 +286,7 @@ const Symptoms = ({ cat, entry, t, options = cat.options }) => {
 
 /* ---- the other input types ---- */
 
-const Choices = ({ cat, entry, t }) => {
+const Choices = ({ cat, entry, t, today }) => {
   const items = entry.items ?? {};
   return (
     <>
@@ -297,8 +301,10 @@ const Choices = ({ cat, entry, t }) => {
                 ))}
               </View>
             </Glass>
+          ) : g.dated ? (
+            <Events cat={cat} entry={entry} t={t} today={today} options={g.options} rows={g.rows} />
           ) : (
-            <TileGrid options={g.options} isOn={(k) => Boolean(items[k])} onPress={(k) => t.toggleItem(cat.key, k)} />
+            <TileGrid options={g.options} rows={g.rows} isOn={(k) => Boolean(items[k])} onPress={(k) => t.toggleItem(cat.key, k)} />
           )}
         </View>
       ))}
@@ -349,12 +355,12 @@ const Activities = ({ cat, entry, t }) => {
   );
 };
 
-const Events = ({ cat, entry, t, today }) => {
+const Events = ({ cat, entry, t, today, options = cat.options, rows }) => {
   const items = entry.items ?? {};
-  const chosen = cat.options.filter((o) => items[o.key]);
+  const chosen = options.filter((o) => items[o.key]);
   return (
     <>
-      <TileGrid options={cat.options} isOn={(k) => Boolean(items[k])} onPress={(k) => t.toggleItem(cat.key, k, { date: today })} />
+      <TileGrid options={options} rows={rows} isOn={(k) => Boolean(items[k])} onPress={(k) => t.toggleItem(cat.key, k, { date: today })} />
       {chosen.map((o) => (
         <ItemCard key={o.key} title={o.label}>
           <DateLine label="Date" value={items[o.key].date} today={today} onChange={(d) => t.setItem(cat.key, o.key, { date: d })} />
@@ -631,8 +637,8 @@ const styles = StyleSheet.create({
   heading: { fontFamily: F.serifItalic, fontSize: 28, lineHeight: 34, color: CREAM },
   glass: { borderRadius: 28, padding: 16, backgroundColor: GLASS, borderWidth: 1, borderColor: "rgba(255,253,248,0.7)" },
   groupLabel: { fontFamily: F.serif, fontSize: 16, color: CREAM, marginBottom: 8 },
-  grid: { flexDirection: "row", flexWrap: "wrap", marginHorizontal: -5 },
-  tileCell: { width: "33.333%", padding: 5 },
+  tileRow: { flexDirection: "row", justifyContent: "center" },
+  tileCell: { padding: 5 },
   tile: {
     minHeight: 104,
     borderRadius: 34,

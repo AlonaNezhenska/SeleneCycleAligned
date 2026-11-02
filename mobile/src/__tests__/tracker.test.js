@@ -84,11 +84,14 @@ describe("main tracker", () => {
     for (const name of [
       "Physical", "Emotional", "Energy", "Skin", "Digestion", "Flow",
       "Sleep", "Cravings", "Sex & intimacy", "Activities",
-      "Cycle changes", "Birth control", "Medication", "Supplements", "Health profile",
+      "Birth control", "Medication", "Supplements", "Health profile",
     ]) {
       expect(screen.getByRole("button", { name })).toBeOnTheScreen();
     }
     expect(screen.getByRole("button", { name: "Save symptoms" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Cycle changes" })).toBeNull();
+    // nothing scattered between the bubbles
+    expect(screen.queryAllByTestId("spark-star", { includeHiddenElements: true })).toHaveLength(0);
   });
 });
 
@@ -238,10 +241,24 @@ describe("special categories", () => {
     expect(screen.getByLabelText("Magnesium details")).toBeOnTheScreen();
   });
 
-  it("dates each cycle disruption", async () => {
-    await mount(<TrackCategory categoryKey="disruptions" />);
-    await press("checkbox", "Spotting");
-    expect(screen.getByLabelText("Spotting details")).toHaveTextContent(/Date: Thu 29 Oct/);
+  it("dates each cycle change inside the flow window", async () => {
+    await mount(<TrackCategory categoryKey="flow" />);
+    expect(screen.getByText("Cycle changes")).toBeOnTheScreen();
+    await press("checkbox", "Spotting between periods");
+    expect(screen.getByLabelText("Spotting between periods details")).toHaveTextContent(/Date: Thu 29 Oct/);
+  });
+
+  it("puts opposites on the same line", async () => {
+    await mount(<TrackCategory categoryKey="energy" />);
+    const line = (name) => {
+      let n = screen.getByRole("checkbox", { name });
+      while (n && !(n.props.style && [].concat(n.props.style).some((x) => x && x.flexDirection === "row" && x.justifyContent === "center"))) n = n.parent;
+      return n;
+    };
+    expect(line("Low energy")).toBe(line("High energy"));
+    expect(line("Brain fog")).toBe(line("Good concentration"));
+    expect(line("Brain fog")).toBe(line("Mental clarity"));
+    expect(line("Low energy")).not.toBe(line("Brain fog"));
   });
 
   it("applies a birth control change to the profile only on save", async () => {
