@@ -7,7 +7,8 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "runtimeVersion": "exposdk:58.0.0"
     },
     "android": {
       "adaptiveIcon": {
@@ -42,6 +43,20 @@
       "expo-sqlite"
     ],
     "scheme": "selena",
-    "backgroundColor": "#F2EFE6"
+    "backgroundColor": "#F2EFE6",
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "a2cbfab0-a8d0-45b3-8afd-adda2ce37d17"
+      }
+    },
+    "owner": "alonan",
+    "updates": {
+      "url": "https://u.expo.dev/a2cbfab0-a8d0-45b3-8afd-adda2ce37d17"
+    }
   }
 }
