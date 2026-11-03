@@ -7,8 +7,9 @@
    follows lean mass. Daily energy is resting energy times activity.
 
    A gentle loss goal takes 15% off and never goes below 1,200 kcal or
-   below resting energy; a gain goal adds 10%. Protein is 1.6 g per kg
-   (1.8 g when losing), fat is 30% of energy, carbs make up the rest.
+   below resting energy; a gain goal adds 10%. The eating style shares
+   that energy out: balanced is 1.6 g protein per kg (1.8 g when
+   losing) and 30% fat, with carbs making up the rest.
    Everything here is an estimate, and the user can always type her own.
    --------------------------------------------------------------- */
 
@@ -29,6 +30,31 @@ export const AIMS = [
   { key: "maintain", label: "Stay as I am", factor: 1 },
   { key: "gain", label: "Build or gain", factor: 1.1 },
 ];
+
+/**
+ * Eating styles: how the day's energy is shared between protein, fat
+ * and carbs. Protein is per kg of body weight when the weight is known,
+ * otherwise a share of energy. Carbs make up whatever is left.
+ */
+export const DIETS = [
+  { key: "balanced", label: "Balanced", sub: "An even, everyday mix", proteinPerKg: 1.6, proteinShare: 0.2, fatShare: 0.3 },
+  { key: "high-protein", label: "High protein", sub: "More protein for strength and fullness", proteinPerKg: 2, proteinShare: 0.3, fatShare: 0.3 },
+  { key: "low-carb", label: "Low carb", sub: "Fewer carbs, more fat and protein", proteinPerKg: 1.8, proteinShare: 0.3, fatShare: 0.45 },
+  { key: "low-fat", label: "Low fat", sub: "Lighter on fat, more carbs", proteinPerKg: 1.6, proteinShare: 0.2, fatShare: 0.2 },
+  { key: "mediterranean", label: "Mediterranean", sub: "Olive oil, fish, beans and grains", proteinPerKg: 1.4, proteinShare: 0.18, fatShare: 0.35 },
+];
+export const DIET = Object.fromEntries(DIETS.map((d) => [d.key, d]));
+
+/** Grams of protein, fat and carbs for an energy goal and eating style. */
+export const macrosFor = (kcal, { diet = "balanced", kg = 0, aim = "maintain" } = {}) => {
+  const d = DIET[diet] ?? DIET.balanced;
+  // a little more protein while losing keeps strength
+  const perKg = d.proteinPerKg + (aim === "lose" ? 0.2 : 0);
+  const protein = Math.round(kg > 0 ? kg * perKg : (kcal * d.proteinShare) / 4);
+  const fat = Math.round((kcal * d.fatShare) / 9);
+  const carbs = Math.max(0, Math.round((kcal - protein * 4 - fat * 9) / 4));
+  return { protein, carbs, fat };
+};
 
 /* ---- units ---- */
 
@@ -57,7 +83,7 @@ const round10 = (n) => Math.round(n / 10) * 10;
  * A full daily goal from the body, or null if weight, height or age is
  * missing. Returns the working too, so the screen can explain it.
  */
-export const goalFromBody = ({ kg, cm, age, activity = "light", aim = "maintain", waist, hip, neck }) => {
+export const goalFromBody = ({ kg, cm, age, activity = "light", aim = "maintain", diet = "balanced", waist, hip, neck }) => {
   if (!(kg > 0 && cm > 0 && age > 0)) return null;
   const bodyFat = navyBodyFat({ cm, waist, hip, neck });
   const resting = Math.round(bodyFat != null ? katch({ kg, bodyFat }) : mifflin({ kg, cm, age }));
@@ -66,9 +92,7 @@ export const goalFromBody = ({ kg, cm, age, activity = "light", aim = "maintain"
   const aimFactor = AIMS.find((a) => a.key === aim)?.factor ?? 1;
   let kcal = round10(daily * aimFactor);
   if (aim === "lose") kcal = Math.max(kcal, round10(Math.max(MIN_KCAL, resting)));
-  const protein = Math.round(kg * (aim === "lose" ? 1.8 : 1.6));
-  const fat = Math.round((kcal * 0.3) / 9);
-  const carbs = Math.max(0, Math.round((kcal - protein * 4 - fat * 9) / 4));
+  const { protein, carbs, fat } = macrosFor(kcal, { diet, kg, aim });
   return { kcal, protein, carbs, fat, resting, daily, bodyFat };
 };
 

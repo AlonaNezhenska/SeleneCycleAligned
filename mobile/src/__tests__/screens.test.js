@@ -163,7 +163,7 @@ describe("Training Protocol", () => {
   it("offers the Bailout at ten minutes, once", async () => {
     jest.useFakeTimers({ now: NOW });
     await mount(Training);
-    await fireEvent.press(screen.getByRole("button", { name: "Start session" }));
+    await fireEvent.press(screen.getByRole("button", { name: "Start empty workout" }));
 
     await act(async () => jest.advanceTimersByTime(9 * 60 * 1000 + 59 * 1000));
     expect(screen.queryByTestId("bailout")).toBeNull();
@@ -178,9 +178,9 @@ describe("Training Protocol", () => {
   it("ending a session opens the 45-minute 35g window and earns the check", async () => {
     jest.useFakeTimers({ now: NOW });
     await mount(Training);
-    await fireEvent.press(screen.getByRole("button", { name: "Start session" }));
+    await fireEvent.press(screen.getByRole("button", { name: "Start empty workout" }));
     await act(async () => jest.advanceTimersByTime(20 * 60 * 1000));
-    await fireEvent.press(screen.getByRole("button", { name: "End session" }));
+    await fireEvent.press(screen.getByRole("button", { name: "Finish workout" }));
     const win = screen.getByTestId("protein-window");
     expect(win).toHaveTextContent(/35g\+/);
     expect(win).toHaveTextContent(/45:00/);

@@ -12,6 +12,7 @@ import { useApp, dateKey } from "../state/AppState";
 import { T, F, tone, IMG } from "../ui/theme";
 import { Eyebrow, IconBtn, Button, Card, ToggleRow, Dots, Serif, Body, s } from "../ui/kit";
 import { LastPeriodSection, PeriodLengthSection, CycleLengthSection, HurdlesSection } from "./cycleForm";
+import { keepPhoto } from "../lib/photos";
 
 /* ---------------------------------------------------------------
    1. ONBOARDING — the Sanctuary Gateway
@@ -351,7 +352,8 @@ const Photo = ({ data, set, done, back }) => {
       }
       const opts = { mediaTypes: ["images"], quality: 0.7, allowsEditing: true, aspect: [4, 5] };
       const result = fromCamera ? await ImagePicker.launchCameraAsync(opts) : await ImagePicker.launchImageLibraryAsync(opts);
-      if (!result.canceled && result.assets?.[0]) set({ baselinePhoto: result.assets[0].uri });
+      // copied somewhere permanent, so the phone never clears it
+      if (!result.canceled && result.assets?.[0]) set({ baselinePhoto: await keepPhoto(result.assets[0].uri) });
     } catch {
       setNote("The camera isn't available here. You can choose a photo from your library instead.");
     }
@@ -372,6 +374,17 @@ const Photo = ({ data, set, done, back }) => {
       <Body size={12} color={c.textSoft} style={{ textAlign: "center", marginTop: 18, marginBottom: 18 }}>
         Stays on this device. Your face is blurred automatically.
       </Body>
+      {data.baselinePhoto && (
+        <ToggleRow
+          dark
+          label="Remind me to take a progress photo after training?"
+          sublabel="A gentle offer after you log a workout, with space for a note. You can change this in Profile."
+          leftLabel="No thanks"
+          rightLabel="Yes please"
+          value={!!data.photoReminder}
+          onChange={(v) => set({ photoReminder: v })}
+        />
+      )}
       {note && (
         <Body size={12.5} color={c.text} style={{ textAlign: "center", marginBottom: 12 }}>
           {note}

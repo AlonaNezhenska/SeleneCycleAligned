@@ -2,7 +2,11 @@ import React, { useState } from "react";
 import { View, Text, Pressable, Image, Modal, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { ArrowRight, Users, User, UserMinus, TrendingUp, Pause, Leaf, ShieldCheck, X } from "lucide-react-native";
-import { MODES, UI_COPY } from "../shared";
+import { MODES, UI_COPY, getPhase, groupForPhase } from "../shared";
+import { journalSignals } from "../content/journal";
+import { dayMovement, weightOf } from "../lib/activity";
+import { encouragement } from "../lib/encourage";
+import { Encouragement } from "../ui/activity";
 import { motivationFor } from "../content/motivation";
 import { useApp } from "../state/AppState";
 import { VIBE_COLORS, VIBE_NAMES, weekVibes, summarizeWeek, recentWeeks } from "../lib/vibes";
@@ -188,6 +192,13 @@ const PrescriptionCard = ({ ctx }) => {
 export function Home() {
   const { ctx, today, setToday, profile, days, now } = useApp();
   const training = profile.tracking?.training ?? true;
+  const move = dayMovement(today, weightOf(profile));
+  const message = encouragement({
+    phase: ctx.calendarKnown ? groupForPhase(getPhase(ctx.day, ctx.length)).key : null,
+    moved: move.moved,
+    meditated: move.minutes.meditation > 0,
+    signals: journalSignals(today.journal),
+  });
   return (
     <Screen image={IMG.backgrounds.home} scrim="rgba(242,239,230,0.3)">
       <View style={[s.row, { justifyContent: "space-between", marginBottom: 16 }]}>
@@ -202,6 +213,8 @@ export function Home() {
       </View>
 
       <MotivationCard now={now} />
+
+      <Encouragement message={message} />
 
       <View style={[s.row, { justifyContent: "space-between" }]}>
         <Body size={13.5} weight="medium" color={T.ink} accessibilityRole="header">
