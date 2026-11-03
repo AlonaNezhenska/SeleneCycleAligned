@@ -4,13 +4,15 @@ import { router } from "expo-router";
 import { ArrowLeft, ChevronDown, ChevronUp, Info } from "lucide-react-native";
 import { useApp } from "../state/AppState";
 import { DEFAULT_GOAL } from "../lib/food";
-import { ACTIVITY, AIMS, NHS_WOMAN_KCAL, goalFromBody, kgFromStones, cmFromFeet, ageFromGroup } from "../lib/energy";
+import { ACTIVITY, AIMS, DIETS, NHS_WOMAN_KCAL, goalFromBody, macrosFor, kgFromStones, cmFromFeet, ageFromGroup } from "../lib/energy";
+import { DEFAULT_STEP_GOAL } from "../lib/activity";
 import { OLIVE } from "../ui/food";
 import { T, F } from "../ui/theme";
 import { Screen, Body, Serif, Card, Chip, IconBtn, s } from "../ui/kit";
 
 /* ---------------------------------------------------------------
-   YOUR DAILY GOAL — worked out from the body, or typed in by hand.
+   YOUR GOALS — energy and macros worked out from the body, or typed in
+   by hand, shared out by an eating style; and a daily steps goal.
 
    Weight, height and age give an estimate; tape measurements are
    optional and make it follow the user's build. Anyone who would
@@ -67,6 +69,9 @@ export function FoodGoal() {
     neck: str(b.neck),
   });
   const [tape, setTape] = useState(!!(b.waist || b.hip || b.neck));
+  const [diet, setDiet] = useState(profile.diet ?? "balanced");
+  const [stepGoal, setStepGoal] = useState(String(profile.stepGoal ?? DEFAULT_STEP_GOAL));
+  const steps = Math.round(num(stepGoal)) || DEFAULT_STEP_GOAL;
   const [own, setOwn] = useState({ kcal: String(saved.kcal), protein: String(saved.protein), carbs: String(saved.carbs), fat: String(saved.fat) });
   const set = (k) => (v) => setF((x) => ({ ...x, [k]: v }));
   const back = () => (router.canGoBack?.() ? router.back() : router.replace("/nutrition"));
@@ -79,6 +84,7 @@ export function FoodGoal() {
     age: num(f.age),
     activity: f.activity,
     aim: f.aim,
+    diet,
     ...(tape ? { waist: num(f.waist), hip: num(f.hip), neck: num(f.neck) } : {}),
   });
 
@@ -86,6 +92,8 @@ export function FoodGoal() {
     if (!result) return;
     setProfile({
       goalMode: "body",
+      diet,
+      stepGoal: steps,
       nutritionGoal: { kcal: result.kcal, protein: result.protein, carbs: result.carbs, fat: result.fat },
       body: {
         weightUnit,
@@ -109,7 +117,7 @@ export function FoodGoal() {
   const useOwn = () => {
     const g = { kcal: num(own.kcal), protein: num(own.protein), carbs: num(own.carbs), fat: num(own.fat) };
     if (!g.kcal) return;
-    setProfile({ goalMode: "own", nutritionGoal: g });
+    setProfile({ goalMode: "own", nutritionGoal: g, diet, stepGoal: steps });
     back();
   };
 
@@ -120,7 +128,7 @@ export function FoodGoal() {
           <ArrowLeft size={20} color={T.ink} />
         </IconBtn>
         <Serif size={24} accessibilityRole="header">
-          Your daily goal
+          Your goals
         </Serif>
       </View>
 
@@ -133,6 +141,30 @@ export function FoodGoal() {
           <Body size={13} testID="current-goal">{`Your goal now: ${fmt(saved.kcal)} kcal · protein ${saved.protein} g · carbs ${saved.carbs} g · fat ${saved.fat} g`}</Body>
         </View>
       </Card>
+
+      <Text style={styles.section}>EATING STYLE</Text>
+      <View style={{ gap: 8 }} accessibilityRole="radiogroup">
+        {DIETS.map((d) => {
+          const on = diet === d.key;
+          return (
+            <Pressable
+              key={d.key}
+              onPress={() => setDiet(d.key)}
+              accessibilityRole="radio"
+              accessibilityLabel={d.label}
+              accessibilityState={{ checked: on }}
+              style={[styles.option, on && styles.optionOn]}
+            >
+              <Text style={[styles.optionTitle, on && { color: T.canvas }]}>{d.label}</Text>
+              <Text style={[styles.optionSub, on && { color: T.canvas }]}>{d.sub}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      <Row label="Steps a day">
+        <Input label="Steps goal" value={stepGoal} onChange={setStepGoal} unit="steps" width={90} />
+      </Row>
 
       <View style={styles.switch} accessibilityRole="tablist">
         {[
@@ -292,6 +324,17 @@ export function FoodGoal() {
               <Input label={`${label} goal`} value={own[k]} onChange={(v) => setOwn((o) => ({ ...o, [k]: v }))} unit={unit} />
             </Row>
           ))}
+          <Pressable
+            onPress={() => {
+              const m = macrosFor(num(own.kcal), { diet, kg: profile.body?.kg ?? 0 });
+              setOwn((o) => ({ ...o, protein: String(m.protein), carbs: String(m.carbs), fat: String(m.fat) }));
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Share my energy by eating style"
+            style={styles.ghost}
+          >
+            <Text style={styles.ghostText}>Share my energy by eating style</Text>
+          </Pressable>
           <Pressable onPress={useOwn} accessibilityRole="button" accessibilityLabel="Save goal" style={styles.primary}>
             <Text style={styles.primaryText}>Save goal</Text>
           </Pressable>
@@ -316,4 +359,6 @@ const styles = StyleSheet.create({
   resultBig: { fontFamily: F.serif, fontSize: 22, color: T.ink },
   primary: { minHeight: 52, borderRadius: 999, backgroundColor: OLIVE, alignItems: "center", justifyContent: "center", marginTop: 16 },
   primaryText: { fontFamily: F.sansMed, fontSize: 15.5, color: T.canvas },
+  ghost: { minHeight: 48, borderRadius: 999, borderWidth: 1, borderColor: T.hair, alignItems: "center", justifyContent: "center", marginTop: 16 },
+  ghostText: { fontFamily: F.sansMed, fontSize: 14, color: T.ink },
 });

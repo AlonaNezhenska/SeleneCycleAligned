@@ -23,7 +23,7 @@ export const BACKUP_CATEGORIES = [
   {
     key: "training",
     label: "Training",
-    sub: "Movement minutes and cardio choices.",
+    sub: "Workouts, routines, activities, steps and cardio choices.",
   },
   {
     key: "nutrition",
@@ -38,7 +38,7 @@ export const DEFAULT_BACKUP = { cycle: false, logs: false, training: false, nutr
 /** Day fields owned by each category. */
 const DAY_FIELDS = {
   logs: ["vibe", "checkIn", "triad", "entry", "journal"],
-  training: ["movement", "cardio"],
+  training: ["movement", "cardio", "activities", "steps"],
   nutrition: ["food", "bufferAccepted", "bufferDismissed"],
 };
 
@@ -62,7 +62,10 @@ export const toBackup = (data, category) => {
     if (Object.keys(part).length) days[date] = part;
   }
   // your own foods, meals and recipes travel with the food diary
-  return category === "nutrition" && data.foodLibrary ? { days, foodLibrary: data.foodLibrary } : { days };
+  if (category === "nutrition" && data.foodLibrary) return { days, foodLibrary: data.foodLibrary };
+  // finished workouts, routines and your own exercises travel with training
+  if (category === "training") return { days, workouts: data.workouts ?? [], routines: data.routines ?? [], customExercises: data.customExercises ?? [] };
+  return { days };
 };
 
 /** Fold one downloaded category into local data. On the same day, what is on
@@ -80,6 +83,14 @@ export const mergeBackup = (data, category, payload) => {
   const days = { ...data.days };
   for (const [date, remote] of Object.entries(payload.days ?? {})) {
     days[date] = { ...remote, ...days[date] };
+  }
+  if (category === "training" && (payload.workouts || payload.routines)) {
+    const join = (kind) => {
+      const local = data[kind] ?? [];
+      const ids = new Set(local.map((x) => x.id));
+      return [...local, ...(payload[kind] ?? []).filter((x) => !ids.has(x.id))];
+    };
+    return { ...data, days, workouts: join("workouts"), routines: join("routines"), customExercises: join("customExercises") };
   }
   if (category === "nutrition" && payload.foodLibrary) {
     // keep everything from both sides; the copy on this phone wins on the same item

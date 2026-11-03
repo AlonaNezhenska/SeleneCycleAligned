@@ -2,7 +2,8 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { deriveToday, sunset, resumeOnOpen, AGREEMENT_VERSION } from "../shared";
 import { DEFAULT_BACKUP } from "../lib/backup";
-import { emptyLibrary, remember } from "../lib/food";
+import { emptyLibrary, remember, newId } from "../lib/food";
+import { forgetPhoto } from "../lib/photos";
 import { useBackup } from "./useBackup";
 
 /* ---------------------------------------------------------------
@@ -91,6 +92,15 @@ export const AppProvider = ({ children, now: fixedNow, initial }) => {
     saved: {},
     // the user's own foods, saved meals, recipes and recently eaten
     foodLibrary: emptyLibrary(),
+    // progress photos: on this phone only, never backed up
+    photos: [],
+    // strength training: her routines, finished workouts, the one in progress
+    routines: [],
+    workouts: [],
+    activeWorkout: null,
+    customExercises: [],
+    // body measurements over time: on this phone only, never backed up
+    measures: [],
   });
   const [data, setData] = useState(fresh);
   const [hideNumbers, setHideNumbersState] = useState(true);
@@ -181,6 +191,74 @@ export const AppProvider = ({ children, now: fixedNow, initial }) => {
   );
   const removeFromLibrary = useCallback((kind, id) => updateLibrary((lib) => ({ ...lib, [kind]: lib[kind].filter((x) => x.id !== id) })), [updateLibrary]);
 
+  /** Movement logged in Workouts: walks, sessions, yoga videos, meditation. */
+  const addActivity = useCallback(
+    (activity, key = todayKey) => updateDay(key, (day) => ({ ...day, activities: [...(day.activities ?? []), { id: newId(), ...activity }] })),
+    [updateDay, todayKey]
+  );
+  const removeActivity = useCallback(
+    (id, key = todayKey) => updateDay(key, (day) => ({ ...day, activities: (day.activities ?? []).filter((a) => a.id !== id) })),
+    [updateDay, todayKey]
+  );
+  /* ---- workouts ---- */
+
+  /** Begin a workout, empty or from a routine; it survives closing the app. */
+  const startWorkout = useCallback(
+    ({ name = "Workout", routineId = null, exercises = [] } = {}) =>
+      setData((d) => ({ ...d, activeWorkout: { id: newId(), name, routineId, startedAt: Date.now(), exercises } })),
+    []
+  );
+  const updateWorkout = useCallback((fn) => setData((d) => (d.activeWorkout ? { ...d, activeWorkout: fn(d.activeWorkout) } : d)), []);
+  const discardWorkout = useCallback(() => setData((d) => ({ ...d, activeWorkout: null })), []);
+  /** Keep the finished workout, and add it to today's activity so it counts everywhere. */
+  const finishWorkout = useCallback(
+    (note = "") =>
+      setData((d) => {
+        const w = d.activeWorkout;
+        if (!w) return d;
+        const endedAt = Date.now();
+        const minutes = Math.max(1, Math.round((endedAt - w.startedAt) / 60000));
+        const done = { ...w, endedAt, date: todayKey, note, exercises: w.exercises.map((e) => ({ ...e, sets: e.sets.filter((s) => s.done) })).filter((e) => e.sets.length) };
+        const day = { ...emptyDay(), ...d.days[todayKey] };
+        return {
+          ...d,
+          activeWorkout: null,
+          workouts: [done, ...(d.workouts ?? [])],
+          days: {
+            ...d.days,
+            [todayKey]: {
+              ...day,
+              movement: (day.movement ?? 0) + minutes,
+              activities: [...(day.activities ?? []), { id: newId(), kind: "strength", minutes, title: w.name, workoutId: w.id }],
+            },
+          },
+        };
+      }),
+    [todayKey]
+  );
+  const removeWorkout = useCallback((id) => setData((d) => ({ ...d, workouts: (d.workouts ?? []).filter((w) => w.id !== id) })), []);
+  const saveRoutine = useCallback((r) => setData((d) => ({ ...d, routines: [r, ...(d.routines ?? []).filter((x) => x.id !== r.id)] })), []);
+  const removeRoutine = useCallback((id) => setData((d) => ({ ...d, routines: (d.routines ?? []).filter((x) => x.id !== id) })), []);
+  const addCustomExercise = useCallback((ex) => setData((d) => ({ ...d, customExercises: [ex, ...(d.customExercises ?? [])] })), []);
+  const addMeasure = useCallback((m) => setData((d) => ({ ...d, measures: [{ id: newId(), date: todayKey, ...m }, ...(d.measures ?? [])] })), [todayKey]);
+  const removeMeasure = useCallback((id) => setData((d) => ({ ...d, measures: (d.measures ?? []).filter((m) => m.id !== id) })), []);
+
+  const setSteps = useCallback((steps, key = todayKey) => updateDay(key, (day) => ({ ...day, steps: Math.max(0, Math.round(steps) || 0) })), [updateDay, todayKey]);
+
+  const addPhoto = useCallback(
+    (photo) => setData((d) => ({ ...d, photos: [{ id: newId(), date: todayKey, note: "", ...photo }, ...(d.photos ?? [])] })),
+    [todayKey]
+  );
+  const updatePhoto = useCallback((id, patch) => setData((d) => ({ ...d, photos: (d.photos ?? []).map((p) => (p.id === id ? { ...p, ...patch } : p)) })), []);
+  const removePhoto = useCallback(
+    (id) =>
+      setData((d) => {
+        forgetPhoto((d.photos ?? []).find((p) => p.id === id)?.uri);
+        return { ...d, photos: (d.photos ?? []).filter((p) => p.id !== id) };
+      }),
+    []
+  );
+
   const setSession = useCallback((patch) => setSessionState((p) => ({ ...p, ...patch })), []);
 
   const ctx = useMemo(() => deriveToday({ profile: data.profile, today, now }), [data.profile, data.days, todayKey, now]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -206,6 +284,7 @@ export const AppProvider = ({ children, now: fixedNow, initial }) => {
     } catch {
       /* storage unavailable — nothing to remove */
     }
+    for (const ph of data.photos ?? []) forgetPhoto(ph.uri);
     setData(fresh());
     setHideNumbersState(true);
     setSessionState({ startedAt: null, endedAt: null, bailoutOffered: false, bailoutVisible: false });
@@ -246,6 +325,28 @@ export const AppProvider = ({ children, now: fixedNow, initial }) => {
     removeFoodEntry,
     saveToLibrary,
     removeFromLibrary,
+    addActivity,
+    removeActivity,
+    setSteps,
+    photos: data.photos ?? [],
+    routines: data.routines ?? [],
+    workouts: data.workouts ?? [],
+    activeWorkout: data.activeWorkout ?? null,
+    customExercises: data.customExercises ?? [],
+    measures: data.measures ?? [],
+    startWorkout,
+    updateWorkout,
+    discardWorkout,
+    finishWorkout,
+    removeWorkout,
+    saveRoutine,
+    removeRoutine,
+    addCustomExercise,
+    addMeasure,
+    removeMeasure,
+    addPhoto,
+    updatePhoto,
+    removePhoto,
     toggleSaved: (k) => setData((d) => ({ ...d, saved: { ...d.saved, [k]: !d.saved[k] } })),
     session,
     setSession,

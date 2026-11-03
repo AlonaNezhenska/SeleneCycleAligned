@@ -30,5 +30,28 @@ jest.mock("expo-camera", () => {
     useCameraPermissions: () => [{ granted: true }, jest.fn()],
   };
 });
+jest.mock("expo-sensors", () => ({
+  Pedometer: {
+    isAvailableAsync: jest.fn(async () => true),
+    requestPermissionsAsync: jest.fn(async () => ({ granted: true })),
+    getStepCountAsync: jest.fn(async () => ({ steps: 6400 })),
+  },
+}));
+jest.mock("expo-file-system", () => {
+  class Directory {
+    constructor(...parts) {
+      this.uri = parts.map((p) => (typeof p === "string" ? p : p.uri)).join("/");
+    }
+    create() {}
+  }
+  class File {
+    constructor(...parts) {
+      this.uri = parts.map((p) => (typeof p === "string" ? p : p.uri)).join("/");
+    }
+    async copy() {}
+    delete() {}
+  }
+  return { Directory, File, Paths: { document: { uri: "file://documents" }, cache: { uri: "file://cache" } } };
+});
 // No real network in tests: each test that needs Open Food Facts mocks fetch itself.
 global.fetch = jest.fn(() => Promise.reject(new Error("offline in tests")));

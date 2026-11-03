@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, Pressable, Image, StyleSheet } from "react-native";
 import { router } from "expo-router";
-import { Eye, EyeOff, Salad, Check, Plus, RotateCcw, Coffee, UtensilsCrossed, Apple, ChevronRight, ChevronLeft } from "lucide-react-native";
+import { Eye, EyeOff, Salad, Check, Plus, RotateCcw, Coffee, UtensilsCrossed, Apple, ChevronRight, ChevronLeft, CakeSlice } from "lucide-react-native";
 import { applyBuffer, MASK } from "../shared";
 import { useApp } from "../state/AppState";
 import { MEALS, DEFAULT_GOAL, MACROS, dayTotals, mealTotals, mealEntries, fullnessWord } from "../lib/food";
@@ -264,6 +264,26 @@ export function Fuel() {
             </Pressable>
           )}
 
+          {/* a treat day: marked with one tap, held in the month's insight, never a number here */}
+          <Pressable
+            onPress={() => updateDay(date, (d) => ({ ...d, food: { ...d.food, treat: !d.food?.treat } }))}
+            accessibilityRole="switch"
+            accessibilityLabel="Treat day"
+            accessibilityState={{ checked: !!day.food?.treat }}
+            style={[s.row, styles.treat, day.food?.treat && styles.treatOn]}
+          >
+            <CakeSlice size={18} color={day.food?.treat ? T.canvas : T.ink} strokeWidth={1.6} />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.treatTitle, day.food?.treat && { color: T.canvas }]}>{day.food?.treat ? "Treat day" : "Mark as a treat day"}</Text>
+              {day.food?.treat && (
+                <Text style={styles.treatSub} testID="treat-note">
+                  Enjoy every bite. One day never undoes a steady rhythm.
+                </Text>
+              )}
+            </View>
+            {day.food?.treat && <Check size={18} color={T.canvas} />}
+          </Pressable>
+
           <Card style={{ paddingVertical: 4, marginBottom: 18 }}>
             {MEALS.map((m, i) => (
               <MealRow key={m.key} meal={m} day={day} date={date} target={target} hidden={hidden} last={i === MEALS.length - 1} />
@@ -287,6 +307,10 @@ export function Fuel() {
 const styles = StyleSheet.create({
   hideBtn: { flexDirection: "row", alignItems: "center", gap: 6, minHeight: 44, paddingHorizontal: 14, borderRadius: 999, backgroundColor: T.canvasDeep },
   dayBar: { gap: 6, marginBottom: 14 },
+  treat: { gap: 12, minHeight: 52, paddingHorizontal: 16, paddingVertical: 10, marginBottom: 14, borderRadius: 20, borderWidth: 1, borderColor: T.hair, backgroundColor: T.surface },
+  treatOn: { backgroundColor: "#B26B5A", borderColor: "#B26B5A" },
+  treatTitle: { fontFamily: F.sansMed, fontSize: 14.5, color: T.ink },
+  treatSub: { fontFamily: F.sans, fontSize: 12.5, color: T.canvas, marginTop: 2 },
   dayArrow: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: T.hair, alignItems: "center", justifyContent: "center" },
   dayLabel: { fontFamily: F.serif, fontSize: 20, color: T.ink },
   dayHint: { fontFamily: F.sans, fontSize: 11.5, color: T.inkSoft, marginTop: 1 },

@@ -1,17 +1,22 @@
 import React from "react";
 import { View, Pressable, StyleSheet } from "react-native";
 import { router } from "expo-router";
-import { Pencil, ChevronRight, ShieldCheck, Moon, User, Activity } from "lucide-react-native";
+import { Pencil, ChevronRight, ShieldCheck, Moon, User, Activity, Target, Camera } from "lucide-react-native";
 import { resolveCycleLength, resolvePeriodLength, nextPeriodStart, MIN_LENGTH, MAX_LENGTH } from "../shared";
 import { useApp } from "../state/AppState";
 import { T } from "../ui/theme";
 import { Screen, Card, Serif, Body, SectionLabel, s } from "../ui/kit";
 import { shortDate } from "../ui/Calendar";
 import { DEFAULT_TRACKING } from "../ui/TrackChoices";
+import { DEFAULT_GOAL } from "../lib/food";
+import { DIET, AIMS } from "../lib/energy";
+import { weightOf, DEFAULT_STEP_GOAL } from "../lib/activity";
+import { Journey } from "../ui/Journey";
+import { TrainingStats } from "../ui/TrainingStats";
 
 /* ---------------------------------------------------------------
-   PROFILE — everything the user has told Selena, in one place,
-   with a way to change each part.
+   PROFILE — her journey first, then everything she has told Selena,
+   with a way to change each part. Every goal is edited from here.
    --------------------------------------------------------------- */
 
 const NOT_SURE = "Not sure yet";
@@ -75,7 +80,11 @@ export const describeCycle = (p) => {
 };
 
 export function Profile() {
-  const { profile: p, ctx, backup, agreement } = useApp();
+  const { profile: p, ctx, backup, agreement, days, todayKey, hideNumbers, photos, workouts } = useApp();
+  const goal = { ...DEFAULT_GOAL, ...p.nutritionGoal };
+  const hidden = hideNumbers || p.trackingStyle === "Visual plates";
+  const num = (text) => (hidden ? "Hidden" : text);
+  const fmt = (n) => Math.round(n).toLocaleString("en-GB");
   const { lastPeriod, periodLength, cycleLength } = describeCycle(p);
   const next = nextPeriodStart(p);
   const tracking = p.tracking ?? DEFAULT_TRACKING;
@@ -85,7 +94,35 @@ export function Profile() {
       <Serif size={28} accessibilityRole="header" style={{ marginBottom: 4 }}>
         Your profile
       </Serif>
-      <Body style={{ marginBottom: 22 }}>Everything you have told Selena. Change anything, any time.</Body>
+      <Body style={{ marginBottom: 22 }}>Your journey, and everything you have told Selena. Change anything, any time.</Body>
+
+      <Journey
+        days={days}
+        todayKey={todayKey}
+        goalKcal={goal.kcal}
+        kg={weightOf(p)}
+        hidden={hidden}
+        photos={photos}
+        baselinePhoto={p.baselinePhoto}
+        profile={p}
+      />
+
+      <TrainingStats workouts={workouts} todayKey={todayKey} />
+
+      <Section title="Your goals" icon={Target} onEdit={() => router.push("/food/goal")} editLabel="Edit your goals">
+        <Row label="Eating style" value={DIET[p.diet ?? "balanced"]?.label ?? "Balanced"} testID="profile-diet" />
+        <Row label="Aim" value={AIMS.find((a) => a.key === (p.body?.aim ?? "maintain"))?.label ?? "Stay as I am"} />
+        <Row label="Energy" value={num(`${fmt(goal.kcal)} kcal a day`)} testID="profile-energy" />
+        <Row label="Protein · carbs · fat" value={num(`${goal.protein} · ${goal.carbs} · ${goal.fat} g`)} />
+        <Row label="Steps a day" value={num(fmt(p.stepGoal ?? DEFAULT_STEP_GOAL))} />
+        <Row label="Body details" value={p.body?.kg ? "Saved on this phone" : "Not added"} />
+        <Row label="Goal worked out" value={p.goalMode === "body" ? "From your body" : p.goalMode === "own" ? "Your own numbers" : "Everyday guide"} />
+      </Section>
+
+      <Section title="Progress photos" icon={Camera} onEdit={() => router.push("/photos")} editLabel="Edit progress photos">
+        <Row label="Photos" value={`${photos.length + (p.baselinePhoto ? 1 : 0)}`} />
+        <Row label="Reminder after training" value={p.photoReminder ? "On" : "Off"} testID="profile-photo-reminder" />
+      </Section>
 
       <Section title="Your cycle" icon={Moon} onEdit={() => router.push("/edit-cycle")} editLabel="Edit cycle details">
         <Row label="Last period" value={lastPeriod} testID="profile-last-period" />

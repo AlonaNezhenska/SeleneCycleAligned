@@ -41,6 +41,21 @@ const Gate = ({ fontsReady }) => {
         <Stack.Screen name="food/new" />
         <Stack.Screen name="food/meal" />
         <Stack.Screen name="food/goal" />
+        <Stack.Screen name="activity/add" />
+        <Stack.Screen name="meditate" />
+        <Stack.Screen name="photos" />
+        <Stack.Screen name="workout/log" />
+        <Stack.Screen name="workout/exercises" />
+        <Stack.Screen name="workout/exercise/[id]" />
+        <Stack.Screen name="workout/explore" />
+        <Stack.Screen name="workout/place/[key]" />
+        <Stack.Screen name="workout/program/[id]" />
+        <Stack.Screen name="workout/trainer" />
+        <Stack.Screen name="workout/routine" />
+        <Stack.Screen name="workout/stats" />
+        <Stack.Screen name="workout/calendar" />
+        <Stack.Screen name="workout/history/[id]" />
+        <Stack.Screen name="measures" />
         <Stack.Screen name="recipe/[id]" />
       </Stack>
     </>
