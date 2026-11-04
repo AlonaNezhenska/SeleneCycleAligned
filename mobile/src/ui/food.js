@@ -29,20 +29,20 @@ export const Bar = ({ value, goal, color = OLIVE, height = 7, testID }) => (
 );
 
 /** A ring that fills around an icon, for one meal. */
-export const Ring = ({ value, goal, size = 54, stroke = 4, children }) => {
+export const Ring = ({ value, goal, size = 54, stroke = 4, color = OLIVE, track = TRACK, children }) => {
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const f = share(value, goal);
   return (
     <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
       <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
-        <Circle cx={size / 2} cy={size / 2} r={r} stroke={TRACK} strokeWidth={stroke} fill="none" />
+        <Circle cx={size / 2} cy={size / 2} r={r} stroke={track} strokeWidth={stroke} fill="none" />
         {f > 0 && (
           <Circle
             cx={size / 2}
             cy={size / 2}
             r={r}
-            stroke={OLIVE}
+            stroke={color}
             strokeWidth={stroke}
             fill="none"
             strokeDasharray={`${c * f} ${c}`}
@@ -57,7 +57,7 @@ export const Ring = ({ value, goal, size = 54, stroke = 4, children }) => {
 };
 
 /** The day's energy as an open arc, like a horseshoe. */
-export const Arc = ({ value, goal, size = 176, stroke = 9 }) => {
+export const Arc = ({ value, goal, size = 176, stroke = 9, color = OLIVE, track = TRACK }) => {
   const r = (size - stroke) / 2;
   const cx = size / 2;
   const cy = size / 2;
@@ -69,17 +69,17 @@ export const Arc = ({ value, goal, size = 176, stroke = 9 }) => {
   const f = share(value, goal);
   return (
     <Svg width={size} height={size * 0.86}>
-      <Path d={path(0.9999)} stroke={TRACK} strokeWidth={stroke} fill="none" strokeLinecap="round" />
-      {f > 0 && <Path d={path(Math.max(0.01, f))} stroke={OLIVE} strokeWidth={stroke} fill="none" strokeLinecap="round" />}
+      <Path d={path(0.9999)} stroke={track} strokeWidth={stroke} fill="none" strokeLinecap="round" />
+      {f > 0 && <Path d={path(Math.max(0.01, f))} stroke={color} strokeWidth={stroke} fill="none" strokeLinecap="round" />}
     </Svg>
   );
 };
 
 /** One macro: a label, a bar and either "81 / 110 g" or a gentle word. */
-export const MacroBar = ({ label, value, goal, hidden }) => (
+export const MacroBar = ({ label, value, goal, hidden, color }) => (
   <View style={{ flex: 1, gap: 6 }} accessible accessibilityLabel={`${label}: ${hidden ? fullnessWord(value, goal) : `${Math.round(value)} of ${goal} grams`}`}>
     <Text style={styles.macroLabel}>{label}</Text>
-    <Bar value={value} goal={goal} testID={`bar-${label}`} />
+    <Bar value={value} goal={goal} color={color} testID={`bar-${label}`} />
     <Text style={styles.macroValue} testID={`macro-${label}`}>
       {hidden ? fullnessWord(value, goal) : `${Math.round(value)} / ${goal} g`}
     </Text>

@@ -16,6 +16,7 @@ import { WorkoutStats, Measures, WorkoutCalendar, WorkoutDetail } from "../scree
 import { Profile } from "../screens/Profile";
 import { Fuel } from "../screens/Fuel";
 import { LIBRARY, findExercises, logType, exerciseById } from "../lib/exercises";
+import { exercisePicture } from "../content/exerciseMedia";
 import { entryFrom, warmupSets, oneRepMax, workoutTotals, previousSets, exerciseHistory, weeklyTotals, setsPerMuscle } from "../lib/workout";
 import { PROGRAMS } from "../content/programs";
 import { sendPicked } from "../state/pickBus";
@@ -67,7 +68,7 @@ const PAST = {
   date: daysAgo(3),
   startedAt: NOW.getTime() - 3 * 86400000,
   endedAt: NOW.getTime() - 3 * 86400000 + 50 * 60000,
-  exercises: [{ id: "Barbell_Hip_Thrust", type: "weight", rest: 90, sets: [{ kg: "60", reps: "10", done: true }, { kg: "70", reps: "8", done: true }] }],
+  exercises: [{ id: "Barbell_Glute_Bridge", type: "weight", rest: 90, sets: [{ kg: "60", reps: "10", done: true }, { kg: "70", reps: "8", done: true }] }],
 };
 
 beforeEach(async () => {
@@ -89,10 +90,27 @@ describe("the exercise library", () => {
   });
 
   it("searches and filters by equipment and muscle", () => {
-    const glutes = findExercises({ query: "hip thrust" });
-    expect(glutes[0].id).toBe("Barbell_Hip_Thrust");
+    const glutes = findExercises({ query: "glute bridge" });
+    expect(glutes.some((e) => e.id === "Barbell_Glute_Bridge")).toBe(true);
+    // only pictured exercises are offered; her own always are
+    expect(findExercises({ limit: 9999 }).every((e) => e.gv)).toBe(true);
+    expect(findExercises({ query: "mine", custom: [{ id: "c1", name: "Mine", p: [] }] })[0].id).toBe("c1");
     expect(findExercises({ equipment: "bands", limit: 999 }).every((e) => e.eq === "bands")).toBe(true);
     expect(findExercises({ muscle: "glutes", limit: 999 }).every((e) => e.p.includes("glutes"))).toBe(true);
+  });
+
+  it("covers the gym's machines and cables, with a picture where the dataset has one", () => {
+    expect(LIBRARY.length).toBeGreaterThan(2000);
+    expect(findExercises({ equipment: "smith machine", limit: 999 }).length).toBeGreaterThan(30);
+    expect(findExercises({ query: "lat pulldown", equipment: "cable" }).length).toBeGreaterThan(3);
+    const row = findExercises({ query: "cable seated row" })[0];
+    expect(row.eq).toBe("cable");
+    expect(row.p).toContain("middle back");
+    expect(row.how.length).toBeGreaterThan(2);
+    // pictures are linked, never copied in, and only stills, never animations
+    expect(LIBRARY.filter((e) => e.gv).length).toBeGreaterThan(1300);
+    expect(exercisePicture(LIBRARY.find((e) => e.gv)).uri).toMatch(/^https:\/\/raw\.githubusercontent\.com\/.+\.jpg$/);
+    expect(exercisePicture({ id: "mine" })).toBeNull();
   });
 });
 
@@ -106,8 +124,8 @@ describe("workout arithmetic", () => {
   });
 
   it("reads history, weeks and muscles", () => {
-    expect(previousSets([PAST], "Barbell_Hip_Thrust")[1]).toMatchObject({ kg: "70" });
-    expect(exerciseHistory([PAST], "Barbell_Hip_Thrust")[0]).toMatchObject({ heaviest: 70, bestSet: "60 kg × 10" });
+    expect(previousSets([PAST], "Barbell_Glute_Bridge")[1]).toMatchObject({ kg: "70" });
+    expect(exerciseHistory([PAST], "Barbell_Glute_Bridge")[0]).toMatchObject({ heaviest: 70, bestSet: "60 kg × 10" });
     const weeks = weeklyTotals([PAST], TODAY, 12);
     expect(weeks.reduce((a, w) => a + w.count, 0)).toBe(1);
     expect(setsPerMuscle([PAST], daysAgo(30))).toEqual({ glutes: 2 });
@@ -125,11 +143,11 @@ describe("logging a workout", () => {
     await cleanup();
 
     await mount(ExercisePicker, { params: { for: "workout" } });
-    await fireEvent.changeText(screen.getByLabelText("Search exercise"), "hip thrust");
-    await fireEvent.press(screen.getByRole("checkbox", { name: "Barbell Hip Thrust" }));
+    await fireEvent.changeText(screen.getByLabelText("Search exercise"), "barbell glute bridge");
+    await fireEvent.press(screen.getByRole("checkbox", { name: "Barbell Glute Bridge" }));
     await fireEvent.press(screen.getByRole("button", { name: "Add 1 exercise" }));
     data = await stored();
-    expect(data.activeWorkout.exercises).toEqual([expect.objectContaining({ id: "Barbell_Hip_Thrust", type: "weight" })]);
+    expect(data.activeWorkout.exercises).toEqual([expect.objectContaining({ id: "Barbell_Glute_Bridge", type: "weight" })]);
     await cleanup();
 
     await mount(WorkoutLog, { initial: { workouts: [PAST] } });
@@ -187,14 +205,14 @@ describe("routines and explore", () => {
   it("builds a routine from picked exercises", async () => {
     await mount(RoutineEditor);
     await fireEvent.changeText(screen.getByLabelText("Routine name"), "Glute day");
-    await act(async () => sendPicked(["Barbell_Hip_Thrust", "Plank"]));
-    expect(screen.getByTestId("routine-items")).toHaveTextContent(/Barbell Hip Thrust/);
+    await act(async () => sendPicked(["Barbell_Glute_Bridge", "Plank"]));
+    expect(screen.getByTestId("routine-items")).toHaveTextContent(/Barbell Glute Bridge/);
     await fireEvent.press(screen.getAllByRole("button", { name: "More sets" })[0]);
     await fireEvent.press(screen.getByRole("button", { name: "Save routine" }));
     const { routines } = await stored();
     expect(routines[0]).toMatchObject({ name: "Glute day" });
     expect(routines[0].exercises).toEqual([
-      { id: "Barbell_Hip_Thrust", sets: 4, reps: 10, rest: 90 },
+      { id: "Barbell_Glute_Bridge", sets: 4, reps: 10, rest: 90 },
       { id: "Plank", sets: 3, seconds: 30, rest: 60 },
     ]);
   });
@@ -230,7 +248,7 @@ describe("routines and explore", () => {
 
 describe("exercise page", () => {
   it("shows the figure, progress, records and how-to", async () => {
-    await mount(ExerciseDetail, { params: { id: "Barbell_Hip_Thrust" }, initial: { workouts: [PAST] } });
+    await mount(ExerciseDetail, { params: { id: "Barbell_Glute_Bridge" }, initial: { workouts: [PAST] } });
     expect(screen.getByTestId("body-figure")).toBeOnTheScreen();
     expect(screen.getByText("Primary: Glutes")).toBeOnTheScreen();
     expect(screen.getByTestId("personal-records")).toHaveTextContent(/Heaviest weight: 70 kg/);

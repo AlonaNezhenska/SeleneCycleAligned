@@ -31,6 +31,17 @@ export const tone = (dark) =>
         surfaceDeep: T.canvasDeep,
       };
 
+/** Nutrition's French botanical look: midnight navy on antique cream. */
+export const TOILE = {
+  navy: "#1B2340",
+  ink: "#1E2235",
+  inkSoft: "#4A4F63",
+  cream: "rgba(247,241,229,0.93)",
+  creamDeep: "#EDE3CF",
+  line: "rgba(27,35,64,0.17)",
+  track: "rgba(27,35,64,0.12)",
+};
+
 export const IMG = {
   hero: require("../../assets/images/hero-moon-woman.png"),
   forest: require("../../assets/images/forest-sunbeam.jpg"),
@@ -44,6 +55,12 @@ export const IMG = {
     home: require("../../assets/images/backgrounds/home-pink.png"),
     tracker: require("../../assets/images/backgrounds/tracker-moss.jpg"),
     cycle: require("../../assets/images/backgrounds/cycle-water.jpg"),
+    nutrition: require("../../assets/images/nutrition/nutrition-toile.jpg"),
+  },
+  nutrition: {
+    bow: require("../../assets/images/nutrition/bow.png"),
+    lace: require("../../assets/images/nutrition/lace-trim.png"),
+    flower: require("../../assets/images/nutrition/toile-flower.jpg"),
   },
   vibes: {
     Inward: require("../../assets/images/vibes/inward-marble.jpg"),

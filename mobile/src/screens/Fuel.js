@@ -7,8 +7,8 @@ import { useApp } from "../state/AppState";
 import { MEALS, DEFAULT_GOAL, MACROS, dayTotals, mealTotals, mealEntries, fullnessWord } from "../lib/food";
 import { Arc, Ring, MacroBar, Bar, shiftDay, dayLabel } from "../ui/food";
 import { RecipesView } from "./Recipes";
-import { T, F, IMG } from "../ui/theme";
-import { Screen, Card, Eyebrow, Body, Serif, Instruction, s } from "../ui/kit";
+import { T, F, IMG, TOILE } from "../ui/theme";
+import { Screen, Card, Body, Serif, Instruction, s } from "../ui/kit";
 
 /* ---------------------------------------------------------------
    6. NUTRITION — a food diary with as little friction as possible.
@@ -17,6 +17,9 @@ import { Screen, Card, Eyebrow, Body, Serif, Instruction, s } from "../ui/kit";
    recipes. With Hide numbers on there are no figures anywhere: rings
    and bars still fill, and words say how the day is going. Nothing
    warns or turns red past a goal, and there are no streaks.
+
+   Dressed as an old French botanical journal: toile around the edges,
+   midnight navy for what you press, antique cream behind the words.
    --------------------------------------------------------------- */
 
 export const TARGETS = { kcal: DEFAULT_GOAL.kcal, protein: DEFAULT_GOAL.protein, plates: 4, movement: 45 };
@@ -29,7 +32,7 @@ const Summary = ({ totals, goal, target, hidden, onEditGoal }) => {
   const left = Math.max(0, target.max - totals.kcal);
   const range = target.max !== target.base;
   return (
-    <Card style={{ marginBottom: 18, paddingTop: 18 }} testID="summary">
+    <Card style={[styles.paper, { marginBottom: 18, paddingTop: 18 }]} testID="summary">
       {/* hidden, only the arc and its word remain: no figures, no goal to chase */}
       <View style={[s.row, { justifyContent: hidden ? "center" : "space-between", alignItems: "center" }]}>
         {!hidden && (
@@ -39,7 +42,7 @@ const Summary = ({ totals, goal, target, hidden, onEditGoal }) => {
           </View>
         )}
         <View style={{ alignItems: "center", justifyContent: "center" }}>
-          <Arc value={totals.kcal} goal={target.max} />
+          <Arc value={totals.kcal} goal={target.max} color={TOILE.navy} track={TOILE.track} />
           <View style={styles.arcCentre} testID="meter-Energy">
             {hidden ? (
               <Text style={styles.arcWord}>{fullnessWord(totals.kcal, target.max)}</Text>
@@ -62,7 +65,7 @@ const Summary = ({ totals, goal, target, hidden, onEditGoal }) => {
       </View>
       <View style={[s.row, { gap: 14, marginTop: 4 }]}>
         {MACROS.map((m) => (
-          <MacroBar key={m.key} label={m.label} value={totals[m.key]} goal={goal[m.key]} hidden={hidden} />
+          <MacroBar key={m.key} label={m.label} value={totals[m.key]} goal={goal[m.key]} hidden={hidden} color={TOILE.navy} />
         ))}
       </View>
     </Card>
@@ -71,13 +74,13 @@ const Summary = ({ totals, goal, target, hidden, onEditGoal }) => {
 
 /** For "Visual plates": plates counted by hand, no energy figures at all. */
 const Plates = ({ plates, onAdd }) => (
-  <Card style={{ marginBottom: 18, gap: 10 }} testID="plates">
+  <Card style={[styles.paper, { marginBottom: 18, gap: 10 }]} testID="plates">
     <Text style={styles.cardTitle}>Plates today</Text>
-    <Bar value={plates} goal={TARGETS.plates} height={9} />
+    <Bar value={plates} goal={TARGETS.plates} height={9} color={TOILE.navy} />
     <Body size={13}>{`${plates} of ${TARGETS.plates} plates`}</Body>
     <View style={[s.row, { gap: 8 }]}>
       <Pressable onPress={() => onAdd(1)} accessibilityRole="button" accessibilityLabel="Add a plate" style={styles.pill}>
-        <Plus size={14} color={T.ink} />
+        <Plus size={14} color={TOILE.navy} />
         <Text style={styles.pillText}>1 plate</Text>
       </Pressable>
       <Pressable onPress={() => onAdd(-1)} accessibilityRole="button" accessibilityLabel="Remove a plate" style={styles.pill}>
@@ -101,13 +104,13 @@ const MealRow = ({ meal, day, date, target, hidden, last }) => {
         accessibilityLabel={`${meal.label}${hidden ? "" : `, ${t.kcal} of ${mealGoal} kcal`}${items.length ? `, ${items.length} items` : ", nothing yet"}`}
         style={[s.row, { flex: 1, gap: 14 }]}
       >
-        <Ring value={t.kcal} goal={mealGoal}>
-          <Icon size={20} color={T.ink} strokeWidth={1.5} />
+        <Ring value={t.kcal} goal={mealGoal} color={TOILE.navy} track={TOILE.track}>
+          <Icon size={20} color={TOILE.navy} strokeWidth={1.5} />
         </Ring>
         <View style={{ flex: 1 }}>
           <View style={[s.row, { gap: 4 }]}>
             <Text style={styles.mealName}>{meal.label}</Text>
-            <ChevronRight size={16} color={T.inkSoft} />
+            <ChevronRight size={16} color={TOILE.inkSoft} />
           </View>
           {!hidden && <Text style={styles.mealKcal}>{`${fmt(t.kcal)} / ${fmt(mealGoal)} kcal`}</Text>}
           <Text style={styles.mealItems} numberOfLines={1}>
@@ -131,7 +134,7 @@ const MealRow = ({ meal, day, date, target, hidden, last }) => {
 const DayBar = ({ date, todayKey, onChange }) => (
   <View style={[s.row, styles.dayBar]}>
     <Pressable onPress={() => onChange(shiftDay(date, -1))} accessibilityRole="button" accessibilityLabel="Previous day" style={styles.dayArrow}>
-      <ChevronLeft size={20} color={T.ink} />
+      <ChevronLeft size={20} color={TOILE.navy} />
     </Pressable>
     <Pressable
       onPress={() => onChange(todayKey)}
@@ -145,7 +148,7 @@ const DayBar = ({ date, todayKey, onChange }) => (
       {date !== todayKey && <Text style={styles.dayHint}>Tap for today</Text>}
     </Pressable>
     <Pressable onPress={() => onChange(shiftDay(date, 1))} accessibilityRole="button" accessibilityLabel="Next day" style={styles.dayArrow}>
-      <ChevronRight size={20} color={T.ink} />
+      <ChevronRight size={20} color={TOILE.navy} />
     </Pressable>
   </View>
 );
@@ -164,7 +167,7 @@ const ViewSwitch = ({ value, onChange }) => (
         accessibilityState={{ selected: value === k }}
         style={[styles.switchItem, value === k && styles.switchOn]}
       >
-        <Text style={{ fontFamily: F.sansMed, fontSize: 13.5, color: value === k ? T.canvas : T.ink }}>{label}</Text>
+        <Text style={{ fontFamily: F.sansMed, fontSize: 13.5, color: value === k ? T.canvas : TOILE.navy }}>{label}</Text>
       </Pressable>
     ))}
   </View>
@@ -187,9 +190,9 @@ export function Fuel() {
   const platesCount = day.food?.plates ?? 0;
 
   return (
-    <Screen>
+    <Screen image={IMG.backgrounds.nutrition}>
       <View style={[s.row, { justifyContent: "space-between", marginBottom: 16 }]}>
-        <Eyebrow>Nutrition</Eyebrow>
+        <Text style={styles.eyebrow}>Nutrition</Text>
         <Pressable
           onPress={() => setHideNumbers(!hideNumbers)}
           accessibilityRole="switch"
@@ -197,8 +200,8 @@ export function Fuel() {
           accessibilityState={{ checked: hideNumbers }}
           style={styles.hideBtn}
         >
-          {hideNumbers ? <EyeOff size={14} color={T.inkSoft} /> : <Eye size={14} color={T.inkSoft} />}
-          <Text style={{ fontFamily: F.sans, fontSize: 12, color: T.ink }}>Hide numbers</Text>
+          {hideNumbers ? <EyeOff size={14} color={TOILE.navy} /> : <Eye size={14} color={TOILE.navy} />}
+          <Text style={{ fontFamily: F.sans, fontSize: 12, color: TOILE.ink }}>Hide numbers</Text>
         </Pressable>
       </View>
 
@@ -212,11 +215,15 @@ export function Fuel() {
 
           {/* Luteal Buffer — offered, never applied on its own */}
           {isToday && ctx.buffer && !today.bufferDismissed && (
-            <Card style={{ marginBottom: 18 }} accessibilityLabel="Luteal Buffer" testID="luteal-buffer">
+            <Card style={[styles.paper, { marginBottom: 18 }]} accessibilityLabel="Luteal Buffer" testID="luteal-buffer">
+              {/* a satin bow tied to the corner of the buffer */}
+              <Image source={IMG.nutrition.bow} style={styles.bow} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no" />
               <View style={[s.row, { alignItems: "flex-start", gap: 14 }]}>
-                <Image source={IMG.meditate} style={styles.thumb} />
+                <Image source={IMG.nutrition.flower} style={styles.thumb} />
                 <View style={{ flex: 1 }}>
-                  <Serif size={17}>Your body is burning slightly more energy today.</Serif>
+                  <Serif size={17} color={TOILE.ink} style={{ marginRight: 34 }}>
+                    Your body is burning slightly more energy today.
+                  </Serif>
                   <Body size={12.5} style={{ marginTop: 6, marginBottom: 6 }}>
                     {`Optional Luteal Buffer: ${hidden ? `+${MASK}` : `+${ctx.buffer.min}–${ctx.buffer.max}`} kcal`}
                   </Body>
@@ -226,7 +233,7 @@ export function Fuel() {
                       onPress={() => setToday({ bufferAccepted: !today.bufferAccepted })}
                       accessibilityRole="button"
                       accessibilityState={{ selected: today.bufferAccepted }}
-                      style={[styles.pill, { backgroundColor: T.sage, borderColor: T.sage }]}
+                      style={[styles.pill, styles.pillNavy]}
                     >
                       {today.bufferAccepted && <Check size={13} color={T.canvas} />}
                       <Text style={{ fontFamily: F.sansMed, fontSize: 12.5, color: T.canvas }}>{today.bufferAccepted ? "Buffer on today" : "Use the buffer"}</Text>
@@ -255,7 +262,7 @@ export function Fuel() {
                 <Text style={styles.setupTitle}>Set up your daily goal</Text>
                 <Body size={12.5}>From your height, weight and how active you are, or your own numbers.</Body>
               </View>
-              <ChevronRight size={18} color={T.inkSoft} />
+              <ChevronRight size={18} color={TOILE.inkSoft} />
             </Pressable>
           )}
           {!plates && profile.nutritionGoal && hidden && (
@@ -272,7 +279,7 @@ export function Fuel() {
             accessibilityState={{ checked: !!day.food?.treat }}
             style={[s.row, styles.treat, day.food?.treat && styles.treatOn]}
           >
-            <CakeSlice size={18} color={day.food?.treat ? T.canvas : T.ink} strokeWidth={1.6} />
+            <CakeSlice size={18} color={day.food?.treat ? T.canvas : TOILE.navy} strokeWidth={1.6} />
             <View style={{ flex: 1 }}>
               <Text style={[styles.treatTitle, day.food?.treat && { color: T.canvas }]}>{day.food?.treat ? "Treat day" : "Mark as a treat day"}</Text>
               {day.food?.treat && (
@@ -284,7 +291,7 @@ export function Fuel() {
             {day.food?.treat && <Check size={18} color={T.canvas} />}
           </Pressable>
 
-          <Card style={{ paddingVertical: 4, marginBottom: 18 }}>
+          <Card style={[styles.paper, { paddingVertical: 4, marginBottom: 18 }]}>
             {MEALS.map((m, i) => (
               <MealRow key={m.key} meal={m} day={day} date={date} target={target} hidden={hidden} last={i === MEALS.length - 1} />
             ))}
@@ -292,11 +299,14 @@ export function Fuel() {
 
           <View style={[s.row, styles.note]}>
             <View style={styles.noteIcon}>
-              <Salad size={15} color={T.sage} strokeWidth={1.6} />
+              <Salad size={15} color={TOILE.navy} strokeWidth={1.6} />
             </View>
             <Body size={12.5} style={{ flex: 1 }}>
               Eating more on a hungry day is your body doing its job. Your goal only moves if you choose the buffer.
             </Body>
+          </View>
+          <View style={styles.lace} accessibilityElementsHidden importantForAccessibility="no">
+            <Image source={IMG.nutrition.lace} style={{ width: "100%", height: "100%" }} resizeMode="cover" />
           </View>
         </>
       )}
@@ -305,38 +315,43 @@ export function Fuel() {
 }
 
 const styles = StyleSheet.create({
-  hideBtn: { flexDirection: "row", alignItems: "center", gap: 6, minHeight: 44, paddingHorizontal: 14, borderRadius: 999, backgroundColor: T.canvasDeep },
+  hideBtn: { flexDirection: "row", alignItems: "center", gap: 6, minHeight: 44, paddingHorizontal: 14, borderRadius: 999, borderWidth: 1, borderColor: TOILE.line, backgroundColor: TOILE.cream },
+  paper: { backgroundColor: TOILE.cream, borderColor: TOILE.line, borderRadius: 24 },
+  eyebrow: { fontFamily: F.serif, fontSize: 13, letterSpacing: 3.5, textTransform: "uppercase", color: TOILE.ink },
+  bow: { position: "absolute", top: -16, right: -12, width: 74, height: 72, zIndex: 1 },
+  lace: { marginHorizontal: -24, marginTop: 22, marginBottom: -32, height: 44, overflow: "hidden" },
   dayBar: { gap: 6, marginBottom: 14 },
-  treat: { gap: 12, minHeight: 52, paddingHorizontal: 16, paddingVertical: 10, marginBottom: 14, borderRadius: 20, borderWidth: 1, borderColor: T.hair, backgroundColor: T.surface },
-  treatOn: { backgroundColor: "#B26B5A", borderColor: "#B26B5A" },
-  treatTitle: { fontFamily: F.sansMed, fontSize: 14.5, color: T.ink },
+  treat: { gap: 12, minHeight: 52, paddingHorizontal: 16, paddingVertical: 10, marginBottom: 14, borderRadius: 20, borderWidth: 1, borderColor: TOILE.line, backgroundColor: TOILE.cream },
+  treatOn: { backgroundColor: TOILE.navy, borderColor: TOILE.navy },
+  treatTitle: { fontFamily: F.serif, fontSize: 16, color: TOILE.ink },
   treatSub: { fontFamily: F.sans, fontSize: 12.5, color: T.canvas, marginTop: 2 },
-  dayArrow: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: T.hair, alignItems: "center", justifyContent: "center" },
-  dayLabel: { fontFamily: F.serif, fontSize: 20, color: T.ink },
-  dayHint: { fontFamily: F.sans, fontSize: 11.5, color: T.inkSoft, marginTop: 1 },
-  switch: { flexDirection: "row", alignSelf: "center", padding: 4, borderRadius: 999, backgroundColor: T.canvasDeep, marginBottom: 18 },
+  dayArrow: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: TOILE.line, backgroundColor: TOILE.cream, alignItems: "center", justifyContent: "center" },
+  dayLabel: { fontFamily: F.serif, fontSize: 26, color: TOILE.ink },
+  dayHint: { fontFamily: F.sans, fontSize: 11.5, color: TOILE.inkSoft, marginTop: 1 },
+  switch: { flexDirection: "row", alignSelf: "center", padding: 4, borderRadius: 999, borderWidth: 1, borderColor: TOILE.line, backgroundColor: TOILE.cream, marginBottom: 18 },
   switchItem: { minHeight: 40, minWidth: 108, paddingHorizontal: 18, borderRadius: 999, alignItems: "center", justifyContent: "center" },
-  switchOn: { backgroundColor: T.ink },
+  switchOn: { backgroundColor: TOILE.navy },
   side: { width: 76, alignItems: "center", minHeight: 44, justifyContent: "center" },
-  sideNum: { fontFamily: F.sansSemi, fontSize: 17, color: T.ink },
-  sideLabel: { fontFamily: F.sans, fontSize: 12.5, color: T.inkSoft, marginTop: 2 },
+  sideNum: { fontFamily: F.serif, fontSize: 21, color: TOILE.ink },
+  sideLabel: { fontFamily: F.sans, fontSize: 12.5, color: TOILE.inkSoft, marginTop: 2 },
   arcCentre: { position: "absolute", alignItems: "center", justifyContent: "center", left: 0, right: 0, top: 46 },
-  arcNum: { fontFamily: F.serifSemi, fontSize: 32, color: T.ink },
-  arcWord: { fontFamily: F.serifItalic, fontSize: 19, color: T.ink, textAlign: "center", maxWidth: 120 },
-  cardTitle: { fontFamily: F.serif, fontSize: 18, color: T.ink },
+  arcNum: { fontFamily: F.serif, fontSize: 34, color: TOILE.ink },
+  arcWord: { fontFamily: F.serifItalic, fontSize: 19, color: TOILE.ink, textAlign: "center", maxWidth: 120 },
+  cardTitle: { fontFamily: F.serif, fontSize: 18, color: TOILE.ink },
   mealRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 14 },
-  mealRule: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: T.hair },
-  mealName: { fontFamily: F.serif, fontSize: 18, color: T.ink },
-  mealKcal: { fontFamily: F.sans, fontSize: 13, color: T.ink, marginTop: 2 },
-  mealItems: { fontFamily: F.sans, fontSize: 12.5, color: T.inkSoft, marginTop: 2 },
-  addBtn: { width: 46, height: 46, borderRadius: 23, backgroundColor: T.sage, alignItems: "center", justifyContent: "center" },
-  thumb: { width: 54, height: 54, borderRadius: 15 },
-  pill: { flexDirection: "row", alignItems: "center", gap: 6, minHeight: 44, paddingHorizontal: 16, borderRadius: 999, borderWidth: 1, borderColor: T.hair },
-  pillText: { fontFamily: F.sansMed, fontSize: 12.5, color: T.ink },
-  note: { alignItems: "flex-start", gap: 14, borderRadius: 18, padding: 18, backgroundColor: T.canvasDeep },
-  noteIcon: { width: 32, height: 32, borderRadius: 16, backgroundColor: T.canvas, alignItems: "center", justifyContent: "center" },
-  setup: { gap: 12, padding: 16, marginBottom: 18, borderRadius: 20, borderWidth: 1, borderColor: T.sage, backgroundColor: T.surface },
-  setupTitle: { fontFamily: F.serif, fontSize: 17, color: T.ink, marginBottom: 2 },
+  mealRule: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: TOILE.line },
+  mealName: { fontFamily: F.serif, fontSize: 19, color: TOILE.ink },
+  mealKcal: { fontFamily: F.sans, fontSize: 13, color: TOILE.ink, marginTop: 2 },
+  mealItems: { fontFamily: F.serifItalic, fontSize: 13, color: TOILE.inkSoft, marginTop: 2 },
+  addBtn: { width: 46, height: 46, borderRadius: 23, backgroundColor: TOILE.navy, alignItems: "center", justifyContent: "center" },
+  thumb: { width: 60, height: 60, borderRadius: 30, borderWidth: 1, borderColor: TOILE.line },
+  pill: { flexDirection: "row", alignItems: "center", gap: 6, minHeight: 44, paddingHorizontal: 16, borderRadius: 999, borderWidth: 1, borderColor: TOILE.navy },
+  pillNavy: { backgroundColor: TOILE.navy, borderColor: TOILE.navy },
+  pillText: { fontFamily: F.sansMed, fontSize: 12.5, color: TOILE.navy },
+  note: { alignItems: "flex-start", gap: 14, borderRadius: 20, padding: 18, borderWidth: 1, borderColor: TOILE.line, backgroundColor: TOILE.cream },
+  noteIcon: { width: 32, height: 32, borderRadius: 16, backgroundColor: TOILE.creamDeep, alignItems: "center", justifyContent: "center" },
+  setup: { gap: 12, padding: 16, marginBottom: 18, borderRadius: 20, borderWidth: 1, borderColor: TOILE.navy, backgroundColor: TOILE.cream },
+  setupTitle: { fontFamily: F.serif, fontSize: 17, color: TOILE.ink, marginBottom: 2 },
   goalLink: { alignSelf: "center", minHeight: 44, justifyContent: "center", marginTop: -8, marginBottom: 10 },
-  goalLinkText: { fontFamily: F.sans, fontSize: 13, color: T.inkSoft, textDecorationLine: "underline" },
+  goalLinkText: { fontFamily: F.sans, fontSize: 13, color: TOILE.inkSoft, textDecorationLine: "underline" },
 });
