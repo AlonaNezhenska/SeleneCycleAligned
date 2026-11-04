@@ -40,10 +40,10 @@ export const PROGRAMS = [
     phases: ["follicular", "ovulation", "luteal"],
     about: "Two simple full-body days to learn the main lifts. Alternate them, two or three times a week.",
     routines: [
-      { name: "Full body A", exercises: [x("Leg_Press", 3, 10), x("Lying_Leg_Curls", 3, 12), x("Seated_Cable_Rows", 3, 10), x("Dumbbell_Shoulder_Press", 3, 10), x("Plank", 3, "30", 60)] },
+      { name: "Full body A", exercises: [x("edb-0739", 3, 10), x("edb-0586", 3, 12), x("edb-0861", 3, 10), x("edb-0405", 3, 10), x("Plank", 3, "30", 60)] },
       {
         name: "Full body B",
-        exercises: [x("Goblet_Squat", 3, 10), x("Romanian_Deadlift", 3, 8), x("Full_Range-Of-Motion_Lat_Pulldown", 3, 10), x("Barbell_Bench_Press_-_Medium_Grip", 3, 8), x("Dead_Bug", 3, 10, 60)],
+        exercises: [x("edb-1760", 3, 10), x("edb-0085", 3, 8), x("edb-2330", 3, 10), x("edb-0025", 3, 8), x("Dead_Bug", 3, 10, 60)],
       },
     ],
   },
@@ -58,9 +58,9 @@ export const PROGRAMS = [
     routines: [
       {
         name: "Glutes & hamstrings",
-        exercises: [x("Barbell_Hip_Thrust", 4, 10, 120), x("Romanian_Deadlift", 3, 8, 120), x("Split_Squat_with_Dumbbells", 3, 10), x("Thigh_Abductor", 3, 15, 60), x("Seated_Leg_Curl", 3, 12, 60)],
+        exercises: [x("Barbell_Glute_Bridge", 4, 10, 120), x("edb-0085", 3, 8, 120), x("edb-0410", 3, 10), x("edb-0597", 3, 15, 60), x("edb-0599", 3, 12, 60)],
       },
-      { name: "Quads & calves", exercises: [x("Barbell_Squat", 4, 8, 150), x("Leg_Press", 3, 12), x("Leg_Extensions", 3, 12, 60), x("Dumbbell_Lunges", 3, 10), x("Seated_Calf_Raise", 3, 15, 60)] },
+      { name: "Quads & calves", exercises: [x("Barbell_Full_Squat", 4, 8, 150), x("edb-0739", 3, 12), x("edb-0585", 3, 12, 60), x("edb-0336", 3, 10), x("edb-0594", 3, 15, 60)] },
     ],
   },
   {
@@ -75,17 +75,17 @@ export const PROGRAMS = [
       {
         name: "Upper body",
         exercises: [
-          x("Barbell_Bench_Press_-_Medium_Grip", 4, 8, 120),
-          x("Bent_Over_Barbell_Row", 4, 8, 120),
-          x("Dumbbell_Shoulder_Press", 3, 10),
-          x("Full_Range-Of-Motion_Lat_Pulldown", 3, 10),
-          x("Hammer_Curls", 3, 12, 60),
-          x("Triceps_Pushdown_-_Rope_Attachment", 3, 12, 60),
+          x("edb-0025", 4, 8, 120),
+          x("edb-0027", 4, 8, 120),
+          x("edb-0405", 3, 10),
+          x("edb-2330", 3, 10),
+          x("edb-0313", 3, 12, 60),
+          x("edb-0200", 3, 12, 60),
         ],
       },
       {
         name: "Lower body",
-        exercises: [x("Barbell_Squat", 4, 6, 150), x("Romanian_Deadlift", 3, 8, 120), x("Leg_Press", 3, 10), x("Lying_Leg_Curls", 3, 12, 60), x("Seated_Calf_Raise", 3, 15, 60), x("Hanging_Leg_Raise", 3, 10, 60)],
+        exercises: [x("Barbell_Full_Squat", 4, 6, 150), x("edb-0085", 3, 8, 120), x("edb-0739", 3, 10), x("edb-0586", 3, 12, 60), x("edb-0594", 3, 15, 60), x("Hanging_Leg_Raise", 3, 10, 60)],
       },
     ],
   },
@@ -101,11 +101,11 @@ export const PROGRAMS = [
       {
         name: "Dumbbell full body",
         exercises: [
-          x("Split_Squat_with_Dumbbells", 3, 10),
-          x("Dumbbell_Lunges", 3, 10),
-          x("One-Arm_Dumbbell_Row", 3, 10),
-          x("Dumbbell_Shoulder_Press", 3, 10),
-          x("Dumbbell_Bicep_Curl", 3, 12, 60),
+          x("edb-0410", 3, 10),
+          x("edb-0336", 3, 10),
+          x("edb-0292", 3, 10),
+          x("edb-0405", 3, 10),
+          x("edb-0294", 3, 12, 60),
           x("Russian_Twist", 3, 16, 60),
         ],
       },
@@ -125,7 +125,7 @@ export const PROGRAMS = [
         exercises: [
           x("Bodyweight_Squat", 3, 15, 60),
           x("Incline_Push-Up", 3, 10, 60),
-          x("Single_Leg_Glute_Bridge", 3, 12, 60),
+          x("edb-3645", 3, 12, 60),
           x("Split_Squats", 3, 10, 60),
           x("Superman", 3, 12, 45),
           x("Plank", 3, "30", 45),
@@ -144,7 +144,7 @@ export const PROGRAMS = [
     routines: [
       {
         name: "Travel circuit",
-        exercises: [x("Bodyweight_Walking_Lunge", 3, 12, 30), x("Pushups", 3, 10, 30), x("Mountain_Climbers", 3, "40", 30), x("Flutter_Kicks", 3, "30", 30), x("Superman", 3, 12, 30)],
+        exercises: [x("edb-1460", 3, 12, 30), x("edb-0662", 3, 10, 30), x("edb-0630", 3, "40", 30), x("Flutter_Kicks", 3, "30", 30), x("Superman", 3, 12, 30)],
       },
     ],
   },
@@ -160,12 +160,12 @@ export const PROGRAMS = [
       {
         name: "Band full body",
         exercises: [
-          x("Band_Good_Morning", 3, 12, 60),
-          x("Band_Hip_Adductions", 3, 15, 45),
-          x("Band_Pull_Apart", 3, 15, 45),
-          x("Lateral_Raise_-_With_Bands", 3, 12, 45),
-          x("Back_Flyes_-_With_Bands", 3, 12, 45),
-          x("Calf_Raises_-_With_Bands", 3, 15, 45),
+          x("edb-0991", 3, 12, 60),
+          x("edb-3667", 3, 15, 45),
+          x("edb-1022", 3, 15, 45),
+          x("edb-0977", 3, 12, 45),
+          x("edb-0993", 3, 12, 45),
+          x("edb-1369", 3, 15, 45),
         ],
       },
     ],
@@ -178,7 +178,7 @@ export const PROGRAMS = [
     places: ["kettlebell", "home"],
     phases: ["follicular", "ovulation"],
     about: "Squats and swings with a single kettlebell.",
-    routines: [{ name: "Kettlebell full body", exercises: [x("Goblet_Squat", 3, 12), x("One-Arm_Kettlebell_Swings", 4, 12), x("Russian_Twist", 3, 16, 60), x("Plank", 3, "40", 45)] }],
+    routines: [{ name: "Kettlebell full body", exercises: [x("edb-1760", 3, 12), x("edb-0549", 4, 12), x("Russian_Twist", 3, 16, 60), x("Plank", 3, "40", 45)] }],
   },
   {
     id: "cardio-hiit",
@@ -189,8 +189,8 @@ export const PROGRAMS = [
     phases: ["follicular", "ovulation"],
     about: "Steady cardio on a machine, or short bursts when energy is high.",
     routines: [
-      { name: "Steady cardio", exercises: [x("Elliptical_Trainer", 1, "1200", 60), x("Rowing_Stationary", 1, "600", 60)] },
-      { name: "Short intervals", exercises: [x("Rope_Jumping", 6, "40", 40), x("Mountain_Climbers", 4, "30", 30), x("Bicycling_Stationary", 1, "600", 60)] },
+      { name: "Steady cardio", exercises: [x("edb-2141", 1, "1200", 60), x("Rowing_Stationary", 1, "600", 60)] },
+      { name: "Short intervals", exercises: [x("edb-2612", 6, "40", 40), x("edb-0630", 4, "30", 30), x("edb-2138", 1, "600", 60)] },
     ],
   },
   {
@@ -201,7 +201,7 @@ export const PROGRAMS = [
     places: ["home", "bodyweight"],
     phases: ["menstruation", "follicular", "ovulation", "luteal"],
     about: "A steady middle for everything else. Slow and controlled.",
-    routines: [{ name: "Core", exercises: [x("Dead_Bug", 3, 10, 45), x("Plank", 3, "30", 45), x("Side_Bridge", 3, "20", 45), x("Russian_Twist", 3, 16, 45), x("Superman", 3, 12, 45)] }],
+    routines: [{ name: "Core", exercises: [x("Dead_Bug", 3, 10, 45), x("Plank", 3, "30", 45), x("edb-3544", 3, "20", 45), x("Russian_Twist", 3, 16, 45), x("Superman", 3, 12, 45)] }],
   },
   {
     id: "stretch",
@@ -217,9 +217,9 @@ export const PROGRAMS = [
         exercises: [
           x("Childs_Pose", 2, "60", 15),
           x("Cat_Stretch", 2, "45", 15),
-          x("Kneeling_Hip_Flexor", 2, "45", 15),
-          x("Seated_Floor_Hamstring_Stretch", 2, "45", 15),
-          x("Standing_Hip_Flexors", 2, "30", 15),
+          x("Intermediate_Hip_Flexor_and_Quad_Stretch", 2, "45", 15),
+          x("Hamstring_Stretch", 2, "45", 15),
+          x("edb-1559", 2, "30", 15),
         ],
       },
     ],

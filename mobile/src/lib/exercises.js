@@ -4,10 +4,13 @@ import RAW from "../content/exercises.json";
    EXERCISES — the library behind workouts.
 
    876 exercises from free-exercise-db (github.com/yuhonas/free-exercise-db,
-   released into the public domain under the Unlicense): name, equipment,
-   level, primary and secondary muscles and step-by-step instructions.
-   Its photos are not used; each exercise is shown on Selena's own body
-   figure instead, with the working muscles lit.
+   released into the public domain under the Unlicense), joined by 1,183
+   more from exercises-dataset (github.com/hasaneyldrm/exercises-dataset,
+   MIT, © 2026 Hasan Emir Yıldırım; see content/LICENSE-exercises-dataset.txt),
+   which adds the gym's machines, cables and Smith machine. Names, muscles,
+   equipment and instructions are taken; each exercise is shown on Selena's
+   own body figure, with the working muscles lit. `gv` is the exercise's
+   picture in that dataset, shown for personal use only (content/exerciseMedia.js).
    The user's own exercises join the list from her library.
    --------------------------------------------------------------- */
 
@@ -17,6 +20,7 @@ export const EQUIPMENT = {
   barbell: "Barbell",
   kettlebells: "Kettlebell",
   machine: "Machine",
+  "smith machine": "Smith machine",
   cable: "Cable",
   bands: "Band",
   "medicine ball": "Medicine ball",
@@ -61,6 +65,9 @@ export const logType = (ex) => {
 
 export const LIBRARY = RAW.map((e) => ({ ...e, type: logType(e) }));
 const BY_ID = Object.fromEntries(LIBRARY.map((e) => [e.id, e]));
+// the list to choose from holds only exercises with a picture; the rest stay
+// reachable by id, for past workouts and a few classics in the programs
+const PICTURED = LIBRARY.filter((e) => e.gv);
 
 /** An exercise by id, from the library or the user's own. */
 export const exerciseById = (id, custom = []) => BY_ID[id] ?? custom.find((c) => c.id === id) ?? null;
@@ -74,7 +81,7 @@ const norm = (s) => (s ?? "").toLowerCase();
 export const findExercises = ({ query = "", equipment = null, muscle = null, custom = [], limit = 80 }) => {
   const words = norm(query).split(/\s+/).filter(Boolean);
   const LEVEL = { beginner: 0, intermediate: 1, expert: 2 };
-  return [...custom, ...LIBRARY]
+  return [...custom, ...PICTURED]
     .filter((e) => (!equipment || e.eq === equipment) && (!muscle || e.p.includes(muscle)))
     .filter((e) => words.every((w) => norm(`${e.name} ${equipmentLabel(e.eq)} ${(e.p ?? []).map(muscleLabel).join(" ")}`).includes(w)))
     .sort((a, b) => (LEVEL[a.lvl] ?? 0) - (LEVEL[b.lvl] ?? 0) || a.name.localeCompare(b.name))

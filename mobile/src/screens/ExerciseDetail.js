@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { View, Text, Pressable, Image, StyleSheet } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import Svg, { Polyline, Circle, Line } from "react-native-svg";
 import { ArrowLeft, Award } from "lucide-react-native";
@@ -7,6 +7,7 @@ import { useApp } from "../state/AppState";
 import { exerciseById, muscleLabel, equipmentLabel } from "../lib/exercises";
 import { exerciseHistory, personalRecords } from "../lib/workout";
 import { BodyFigure } from "../ui/BodyFigure";
+import { exercisePicture, PICTURE_CREDIT } from "../content/exerciseMedia";
 import { OLIVE, dayLabel } from "../ui/food";
 import { T, F } from "../ui/theme";
 import { Screen, Body, Card, Chip, IconBtn, s } from "../ui/kit";
@@ -104,7 +105,13 @@ export function ExerciseDetail() {
 
       {tab === "summary" && (
         <>
-          <Card style={{ alignItems: "center", marginTop: 14, paddingVertical: 18 }}>
+          <Card style={{ alignItems: "center", marginTop: 14, paddingVertical: 18, gap: 14 }}>
+            {exercisePicture(ex) && (
+              <View style={{ alignItems: "center", gap: 4 }}>
+                <Image source={exercisePicture(ex)} style={styles.picture} resizeMode="contain" accessibilityLabel={`${ex.name}, picture`} />
+                <Text style={styles.credit}>{PICTURE_CREDIT}</Text>
+              </View>
+            )}
             <BodyFigure primary={ex.p} secondary={ex.s} height={230} />
           </Card>
           <Text style={styles.name}>{ex.name}</Text>
@@ -186,6 +193,8 @@ export function ExerciseDetail() {
 }
 
 const styles = StyleSheet.create({
+  picture: { width: 220, height: 220, borderRadius: 16, backgroundColor: "#FFFFFF" },
+  credit: { fontFamily: F.sans, fontSize: 10.5, color: T.inkFaint },
   headTitle: { flex: 1, fontFamily: F.serif, fontSize: 19, color: T.ink },
   tabs: { marginTop: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: T.hair },
   tab: { flex: 1, minHeight: 44, alignItems: "center", justifyContent: "center", borderBottomWidth: 2, borderBottomColor: "transparent" },

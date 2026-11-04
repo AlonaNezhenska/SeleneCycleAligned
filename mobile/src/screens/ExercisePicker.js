@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { View, Text, Pressable, TextInput, FlatList, ScrollView, Modal, StyleSheet } from "react-native";
+import { View, Text, Pressable, TextInput, FlatList, ScrollView, Modal, Image, StyleSheet } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { Search, Check, Info, X } from "lucide-react-native";
 import { useApp } from "../state/AppState";
@@ -8,6 +8,7 @@ import { entryFrom } from "../lib/workout";
 import { newId } from "../lib/food";
 import { sendPicked } from "../state/pickBus";
 import { BodyThumb } from "../ui/BodyFigure";
+import { exercisePicture } from "../content/exerciseMedia";
 import { OLIVE } from "../ui/food";
 import { T, F } from "../ui/theme";
 import { Body, Chip, s } from "../ui/kit";
@@ -28,7 +29,7 @@ const TYPES = [
 const Row = ({ ex, picked, onPress, onInfo }) => (
   <View style={[s.row, styles.row]}>
     <Pressable onPress={onPress} accessibilityRole={picked == null ? "button" : "checkbox"} accessibilityLabel={ex.name} accessibilityState={picked == null ? undefined : { checked: picked }} style={[s.row, { flex: 1, gap: 12 }]}>
-      <BodyThumb primary={ex.p} secondary={ex.s} size={52} />
+      {exercisePicture(ex) ? <Image source={exercisePicture(ex)} style={styles.thumb} accessibilityElementsHidden importantForAccessibility="no" /> : <BodyThumb primary={ex.p} secondary={ex.s} size={52} />}
       <View style={{ flex: 1 }}>
         <Text style={styles.name} numberOfLines={2}>
           {ex.name}
@@ -203,6 +204,7 @@ export function ExercisePicker() {
 }
 
 const styles = StyleSheet.create({
+  thumb: { width: 52, height: 52, borderRadius: 14, backgroundColor: "#FFFFFF" },
   header: { justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 8 },
   headBtn: { minHeight: 44, minWidth: 64, paddingHorizontal: 12, borderRadius: 999, backgroundColor: T.surface, alignItems: "center", justifyContent: "center" },
   headBtnText: { fontFamily: F.sansMed, fontSize: 14, color: OLIVE },
