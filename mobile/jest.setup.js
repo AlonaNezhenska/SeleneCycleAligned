@@ -2,6 +2,18 @@ jest.mock("@react-native-async-storage/async-storage", () =>
   require("@react-native-async-storage/async-storage/jest/async-storage-mock")
 );
 jest.mock("react-native-safe-area-context", () => require("react-native-safe-area-context/jest/mock").default);
+jest.mock("expo-notifications", () => ({
+  setNotificationHandler: jest.fn(),
+  getPermissionsAsync: jest.fn(async () => ({ granted: true })),
+  requestPermissionsAsync: jest.fn(async () => ({ granted: true })),
+  scheduleNotificationAsync: jest.fn(async () => "id"),
+  cancelAllScheduledNotificationsAsync: jest.fn(async () => {}),
+  addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+  SchedulableTriggerInputTypes: { DATE: "date", TIME_INTERVAL: "timeInterval" },
+}));
+jest.mock("expo-asset", () => ({
+  Asset: { fromModule: jest.fn(() => ({ type: "jpg", localUri: "file://a.jpg", downloadAsync: jest.fn(async () => {}) })) },
+}));
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), replace: jest.fn(), back: jest.fn(), navigate: jest.fn(), canGoBack: jest.fn(() => false) },
   Redirect: () => null,

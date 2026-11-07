@@ -345,20 +345,20 @@ export function FoodGoal() {
 }
 
 const styles = StyleSheet.create({
-  switch: { flexDirection: "row", alignSelf: "center", padding: 4, borderRadius: 999, backgroundColor: T.canvasDeep, marginTop: 18, marginBottom: 16 },
-  switchItem: { minHeight: 40, paddingHorizontal: 16, borderRadius: 999, alignItems: "center", justifyContent: "center" },
+  switch: { flexDirection: "row", alignSelf: "center", padding: 4, backgroundColor: T.canvasDeep, marginTop: 18, marginBottom: 16 },
+  switchItem: { minHeight: 40, paddingHorizontal: 16, alignItems: "center", justifyContent: "center" },
   switchOn: { backgroundColor: T.ink },
   row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, minHeight: 56, paddingVertical: 6, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: T.hair },
   rowLabel: { fontFamily: F.sansMed, fontSize: 15, color: T.ink },
-  input: { minHeight: 44, paddingHorizontal: 10, borderRadius: 12, borderWidth: 1, borderColor: T.hair, backgroundColor: T.surface, fontFamily: F.sansMed, fontSize: 16, color: T.ink, textAlign: "right" },
+  input: { minHeight: 44, paddingHorizontal: 10, borderWidth: 1, borderColor: T.hair, backgroundColor: T.surface, fontFamily: F.sansMed, fontSize: 16, color: T.ink, textAlign: "right" },
   section: { fontFamily: F.serif, fontSize: 13, letterSpacing: 2.4, color: T.inkSoft, marginTop: 20, marginBottom: 8 },
-  option: { padding: 14, borderRadius: 18, borderWidth: 1, borderColor: T.hair, backgroundColor: T.surface },
+  option: { padding: 14, borderWidth: 1, borderColor: T.hair, backgroundColor: T.surface },
   optionOn: { backgroundColor: OLIVE, borderColor: OLIVE },
   optionTitle: { fontFamily: F.sansMed, fontSize: 14.5, color: T.ink },
   optionSub: { fontFamily: F.sans, fontSize: 12.5, color: T.inkSoft, marginTop: 2 },
   resultBig: { fontFamily: F.serif, fontSize: 22, color: T.ink },
-  primary: { minHeight: 52, borderRadius: 999, backgroundColor: OLIVE, alignItems: "center", justifyContent: "center", marginTop: 16 },
+  primary: { minHeight: 52, backgroundColor: OLIVE, alignItems: "center", justifyContent: "center", marginTop: 16 },
   primaryText: { fontFamily: F.sansMed, fontSize: 15.5, color: T.canvas },
-  ghost: { minHeight: 48, borderRadius: 999, borderWidth: 1, borderColor: T.hair, alignItems: "center", justifyContent: "center", marginTop: 16 },
+  ghost: { minHeight: 48, borderWidth: 1, borderColor: T.hair, alignItems: "center", justifyContent: "center", marginTop: 16 },
   ghostText: { fontFamily: F.sansMed, fontSize: 14, color: T.ink },
 });

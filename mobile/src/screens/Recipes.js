@@ -235,10 +235,10 @@ export function RecipeDetail() {
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: 20, padding: 16, backgroundColor: T.surface, borderWidth: 1, borderColor: T.hair },
+  card: { padding: 16, backgroundColor: T.surface, borderWidth: 1, borderColor: T.hair },
   cardName: { fontFamily: F.serif, fontSize: 17, color: T.ink },
-  newBtn: { gap: 4, minHeight: 40, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1, borderColor: T.hair },
+  newBtn: { gap: 4, minHeight: 40, paddingHorizontal: 12, borderWidth: 1, borderColor: T.hair },
   ingredient: { gap: 10, minHeight: 40, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: T.hair },
-  stepNum: { width: 24, height: 24, borderRadius: 12, backgroundColor: T.canvasDeep, textAlign: "center", lineHeight: 24, fontFamily: F.sansMed, fontSize: 12, color: T.ink },
-  addBtn: { minHeight: 52, borderRadius: 999, backgroundColor: OLIVE, alignItems: "center", justifyContent: "center" },
+  stepNum: { width: 24, height: 24, backgroundColor: T.canvasDeep, textAlign: "center", lineHeight: 24, fontFamily: F.sansMed, fontSize: 12, color: T.ink },
+  addBtn: { minHeight: 52, backgroundColor: OLIVE, alignItems: "center", justifyContent: "center" },
 });

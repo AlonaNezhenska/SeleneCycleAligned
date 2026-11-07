@@ -286,7 +286,7 @@ export const CycleMonth = ({ profile, days, todayIso, length }) => {
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 24,
+    
     padding: 12,
     backgroundColor: "rgba(255,252,248,0.45)",
     borderWidth: 1,
@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
   disc: {
     width: 38,
     height: 38,
-    borderRadius: 19,
+    
     alignItems: "center",
     justifyContent: "center",
   },
@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
   dot: {
     width: 5,
     height: 5,
-    borderRadius: 3,
+    
     backgroundColor: T.ink,
     marginTop: 3,
   },
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
   legendText: { fontFamily: F.sans, fontSize: 11.5, color: T.inkSoft },
   detail: {
     marginTop: 16,
-    borderRadius: 24,
+    
     padding: 16,
     backgroundColor: "rgba(255,252,248,0.55)",
     borderWidth: 1,
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 14,
     paddingVertical: 7,
-    borderRadius: 999,
+    
     marginBottom: 10,
   },
   bannerName: { fontFamily: F.serif, fontSize: 16, color: T.ink },

@@ -157,16 +157,16 @@ export function RoutineEditor() {
 
 const styles = StyleSheet.create({
   headTitle: { flex: 1, fontFamily: F.serif, fontSize: 22, color: T.ink },
-  input: { minHeight: 50, paddingHorizontal: 16, borderRadius: 16, borderWidth: 1, borderColor: T.hair, backgroundColor: T.surface, fontFamily: F.sans, fontSize: 16, color: T.ink },
-  item: { gap: 12, padding: 14, borderRadius: 20, backgroundColor: T.surface, borderWidth: 1, borderColor: T.hair },
+  input: { minHeight: 50, paddingHorizontal: 16, borderWidth: 1, borderColor: T.hair, backgroundColor: T.surface, fontFamily: F.sans, fontSize: 16, color: T.ink },
+  item: { gap: 12, padding: 14, backgroundColor: T.surface, borderWidth: 1, borderColor: T.hair },
   itemName: { fontFamily: F.sansMed, fontSize: 15, color: T.ink },
   icon: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
   stepLabel: { fontFamily: F.sans, fontSize: 11.5, color: T.inkSoft },
-  stepBtn: { width: 34, height: 34, borderRadius: 17, borderWidth: 1, borderColor: T.hair, alignItems: "center", justifyContent: "center" },
+  stepBtn: { width: 34, height: 34, borderWidth: 1, borderColor: T.hair, alignItems: "center", justifyContent: "center" },
   stepValue: { minWidth: 40, textAlign: "center", fontFamily: F.sansMed, fontSize: 15, color: T.ink },
-  add: { flexDirection: "row", gap: 8, minHeight: 48, borderRadius: 999, borderWidth: 1, borderColor: T.hair, alignItems: "center", justifyContent: "center" },
+  add: { flexDirection: "row", gap: 8, minHeight: 48, borderWidth: 1, borderColor: T.hair, alignItems: "center", justifyContent: "center" },
   addText: { fontFamily: F.sansMed, fontSize: 14.5, color: T.ink },
   footer: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 18, backgroundColor: T.canvas, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: T.hair },
-  primary: { minHeight: 52, borderRadius: 999, backgroundColor: OLIVE, alignItems: "center", justifyContent: "center" },
+  primary: { minHeight: 52, backgroundColor: OLIVE, alignItems: "center", justifyContent: "center" },
   primaryText: { fontFamily: F.sansMed, fontSize: 15.5, color: T.canvas },
 });

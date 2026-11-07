@@ -40,7 +40,8 @@
         }
       ],
       "expo-splash-screen",
-      "expo-sqlite"
+      "expo-sqlite",
+      "expo-asset"
     ],
     "scheme": "selena",
     "backgroundColor": "#F2EFE6",

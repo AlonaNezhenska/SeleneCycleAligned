@@ -124,12 +124,66 @@ export const savedMealEntries = (meal, saved) => saved.items.map((i) => foodEntr
 
 /* ---- the user's own library ---- */
 
-export const emptyLibrary = () => ({ foods: [], meals: [], recipes: [], recent: [] });
+export const emptyLibrary = () => ({ foods: [], meals: [], recipes: [], recent: [], searches: [], favorites: [] });
 
 /** Remember what was just eaten, newest first, at most 40 foods. */
-export const remember = (recent = [], food, grams) => [{ ...food, lastGrams: grams }, ...recent.filter((r) => r.id !== food.id)].slice(0, 40);
+export const remember = (recent = [], food, grams) => {
+  const uses = (recent.find((r) => r.id === food.id)?.uses ?? 0) + 1;
+  return [{ ...food, lastGrams: grams, uses }, ...recent.filter((r) => r.id !== food.id)].slice(0, 40);
+};
+
+/** The foods eaten most often first; ties stay newest first. */
+export const byFrequency = (recent = []) => [...recent].sort((a, b) => (b.uses ?? 1) - (a.uses ?? 1));
+
+/** Remember what was typed into search, newest first, at most 12. */
+export const rememberSearch = (searches = [], query) => {
+  const q = query.trim();
+  if (q.length < 2) return searches;
+  return [q, ...searches.filter((s) => s.toLowerCase() !== q.toLowerCase())].slice(0, 12);
+};
+
+/** A star on a food, or off it again. */
+export const toggleFavorite = (favorites = [], food) => (favorites.some((f) => f.id === food.id) ? favorites.filter((f) => f.id !== food.id) : [food, ...favorites]);
+
+/* ---- amounts and facts for one food ---- */
+
+/** The ways a food can be measured: its portion first, then grams. */
+export const unitsFor = (food) => {
+  if (food?.servingsOnly) return [{ key: "serving", label: "Serving", grams: 100 }];
+  const grams = { key: "g", label: "Gram", grams: 1 };
+  const s = food?.serving;
+  if (!(s?.grams > 0)) return [grams];
+  const label = /\d\s*(g|ml)\b/i.test(s.label) ? s.label : `${s.label} (${s.grams} g)`;
+  return [{ key: "portion", label, grams: s.grams }, grams];
+};
+
+const ONE_DP = (n) => Math.round(n * 10) / 10;
+
+/** What an amount of a food holds, as label and value rows; only what is known. */
+export const nutritionFacts = (food, grams) => {
+  const n = scale(food.per100, grams);
+  const more = food.more ?? {};
+  const of = (key) => (more[key] == null ? null : ONE_DP((more[key] * grams) / 100));
+  return [
+    { label: "Calories", value: n.kcal, unit: "kcal", main: true },
+    { label: "Protein", value: n.protein, unit: "g", main: true },
+    { label: "Carbs", value: n.carbs, unit: "g", main: true },
+    { label: "Fibre", value: of("fibre"), unit: "g" },
+    { label: "of which Sugars", value: of("sugars"), unit: "g" },
+    { label: "Fat", value: n.fat, unit: "g", main: true },
+    { label: "of which Saturates", value: of("saturates"), unit: "g" },
+    { label: "Salt", value: of("salt"), unit: "g" },
+  ].filter((r) => r.value != null);
+};
 
 /* ---- search across what is on the phone ---- */
+
+/** Names that start with what was typed come first; the rest keep their order. */
+export const rankByQuery = (foods, query) => {
+  const q = query.trim().toLowerCase();
+  const rank = (f) => (f.name.toLowerCase().startsWith(q) ? 0 : 1);
+  return [...foods].sort((x, y) => rank(x) - rank(y));
+};
 
 const norm = (s) =>
   (s ?? "")

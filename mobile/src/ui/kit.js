@@ -2,9 +2,10 @@ import React, { useState } from "react";
 import { View, Text, Pressable, ScrollView, Image, Modal, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BlurTargetView } from "expo-blur";
-import { Info, X } from "lucide-react-native";
+import { Button as PaperButton, Chip as PaperChip, IconButton, List, Surface } from "react-native-paper";
+import { ChevronRight, Info, X } from "lucide-react-native";
 import { RATIONALE } from "../shared";
-import { T, F, tone, IMG, MIN_TOUCH } from "./theme";
+import { T, F, tone, IMG, MIN_TOUCH, TOILE } from "./theme";
 
 /* ---------------------------------------------------------------
    SHARED PRIMITIVES — the native twin of the web mockup's kit.
@@ -46,6 +47,7 @@ export const Screen = ({ bg = "canvas", image, blur = 0, scrim, children, scroll
             style={s.fill}
             contentContainerStyle={scroll ? s.scrollBody : undefined}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps={scroll ? "handled" : undefined}
           >
             {children}
           </Body>
@@ -98,15 +100,14 @@ export const Body = ({ size = 13.5, color = T.inkSoft, weight = "regular", style
 );
 
 export const IconBtn = ({ label, onPress, dark = false, children, style }) => (
-  <Pressable
+  <IconButton
+    icon={() => children}
+    mode="outlined"
     onPress={onPress}
-    accessibilityRole="button"
     accessibilityLabel={label}
     hitSlop={4}
-    style={({ pressed }) => [s.iconBtn, { borderColor: tone(dark).hair, opacity: pressed ? 0.7 : 1 }, style]}
-  >
-    {children}
-  </Pressable>
+    style={[s.iconBtn, { borderColor: tone(dark).hair }, style]}
+  />
 );
 
 const VARIANTS = {
@@ -123,30 +124,29 @@ export const Button = ({ label, onPress, tone: variant = "primary", size = "lg",
       ? { bg: "transparent", fg: c.text, border: c.text }
       : { bg: "transparent", fg: c.textSoft, border: "transparent" });
   return (
-    <Pressable
+    <PaperButton
+      mode={v.bg === "transparent" ? (v.border === "transparent" ? "text" : "outlined") : "contained"}
       onPress={onPress}
       disabled={disabled}
+      accessibilityLabel={accessibilityLabel ?? label}
       accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
-      accessibilityState={{ disabled, ...(selected === undefined ? {} : { selected }) }}
-      style={({ pressed }) => [
-        s.button,
-        size === "sm" ? s.buttonSm : s.buttonLg,
-        { backgroundColor: v.bg, borderColor: v.border, alignSelf: full ? "stretch" : "flex-start", opacity: disabled ? 0.55 : pressed ? 0.85 : 1 },
-      ]}
+      buttonColor={disabled ? undefined : v.bg}
+      textColor={disabled ? undefined : v.fg}
+      icon={Icon ? () => <Icon size={size === "sm" ? 14 : 16} color={v.fg} /> : undefined}
+      labelStyle={{ fontFamily: F.sansMed, fontSize: size === "sm" ? 12.5 : 15, marginVertical: size === "sm" ? 8 : 13 }}
+      style={[s.button, { borderColor: v.border, alignSelf: full ? "stretch" : "flex-start" }]}
     >
-      {Icon && <Icon size={size === "sm" ? 14 : 16} color={v.fg} />}
-      <Text style={{ fontFamily: F.sansMed, fontSize: size === "sm" ? 12.5 : 15, color: v.fg }}>{label}</Text>
-    </Pressable>
+      {label}
+    </PaperButton>
   );
 };
 
 export const Card = ({ dark = false, style, children, ...rest }) => {
   const c = tone(dark);
   return (
-    <View style={[s.card, { backgroundColor: c.surface, borderColor: c.hair }, style]} {...rest}>
+    <Surface mode="flat" elevation={0} style={[s.card, { backgroundColor: c.surface, borderColor: c.hair }, style]} {...rest}>
       {children}
-    </View>
+    </Surface>
   );
 };
 
@@ -223,21 +223,41 @@ export const ToggleRow = ({ label, sublabel, dark = false, ...rest }) => {
 export const Chip = ({ label, selected, onPress, icon: Icon, dark = false }) => {
   const c = tone(dark);
   return (
-    <Pressable
+    <PaperChip
+      mode="outlined"
+      selected={!!selected}
+      showSelectedCheck={false}
       onPress={onPress}
-      accessibilityRole="button"
       accessibilityLabel={label}
-      accessibilityState={{ selected: !!selected }}
-      style={[
-        s.chip,
-        { backgroundColor: selected ? T.aegean : dark ? c.surface : T.canvas, borderColor: selected ? T.aegean : c.hair },
-      ]}
+      icon={Icon ? () => <Icon size={14} color={selected ? T.canvas : c.text} /> : undefined}
+      style={[s.chip, { backgroundColor: selected ? T.aegean : dark ? c.surface : T.canvas, borderColor: selected ? T.aegean : c.hair }]}
+      textStyle={{ fontFamily: F.sansMed, fontSize: 12.5, color: selected ? T.canvas : c.text }}
     >
-      {Icon && <Icon size={14} color={selected ? T.canvas : c.text} />}
-      <Text style={{ fontFamily: F.sansMed, fontSize: 12.5, color: selected ? T.canvas : c.text }}>{label}</Text>
-    </Pressable>
+      {label}
+    </PaperChip>
   );
 };
+
+/** A line in a menu: an icon, what it is, a word about it, and where it goes. */
+export const MenuRow = ({ icon: Icon, title, description, onPress, right, strong }) => (
+  <List.Item
+    title={title}
+    description={description}
+    onPress={onPress}
+    accessibilityRole="button"
+    accessibilityLabel={title}
+    titleNumberOfLines={2}
+    titleStyle={[s.menuTitle, strong && { color: T.canvas }]}
+    descriptionStyle={[s.menuText, strong && { color: T.canvas }]}
+    style={[s.menuRow, strong && s.menuStrong]}
+    left={() => (
+      <View style={s.menuIcon}>
+        <Icon size={22} color={strong ? T.canvas : TOILE.navy} strokeWidth={1.6} />
+      </View>
+    )}
+    right={right ?? (() => <ChevronRight size={18} color={strong ? T.canvas : T.inkSoft} style={{ alignSelf: "center" }} />)}
+  />
+);
 
 export const Dots = ({ total, active, dark = false }) => (
   <View style={[s.row, { justifyContent: "center", gap: 7 }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
@@ -246,7 +266,7 @@ export const Dots = ({ total, active, dark = false }) => (
         key={i}
         style={{
           height: 5,
-          borderRadius: 3,
+          
           width: i === active ? 18 : 5,
           backgroundColor: i === active ? tone(dark).text : dark ? "rgba(242,239,230,0.3)" : "rgba(42,38,34,0.2)",
         }}
@@ -259,12 +279,12 @@ export const SectionLabel = ({ children, dark = false }) => (
   <Text style={[s.eyebrow, { color: tone(dark).textSoft, marginBottom: 10 }]}>{children}</Text>
 );
 
-export const Plate = ({ source, height = 200, radius = 20, alt, style }) => (
+export const Plate = ({ source, height = 200, alt, style }) => (
   <Image
     source={source}
     accessibilityLabel={alt}
     accessible={!!alt}
-    style={[{ width: "100%", height, borderRadius: radius, backgroundColor: T.canvasDeep }, style]}
+    style={[{ width: "100%", height, backgroundColor: T.canvasDeep }, style]}
     resizeMode="cover"
   />
 );
@@ -335,20 +355,23 @@ export const Instruction = ({ topic, dark = false }) => {
 
 export const s = StyleSheet.create({
   fill: { flex: 1 },
+  menuRow: { paddingVertical: 12, paddingRight: 6, paddingLeft: 0 },
+  menuStrong: { backgroundColor: TOILE.navy, paddingRight: 12 },
+  menuIcon: { width: 48, alignItems: "center", justifyContent: "center" },
+  menuTitle: { fontFamily: F.sansMed, fontSize: 16, color: T.ink },
+  menuText: { fontFamily: F.sans, fontSize: 13, color: T.inkSoft, marginTop: 2 },
   scrollBody: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 32 },
   row: { flexDirection: "row", alignItems: "center" },
   eyebrow: { fontFamily: F.sansSemi, fontSize: 10.5, letterSpacing: 2, textTransform: "uppercase" },
-  stepDot: { width: 19, height: 19, borderRadius: 10, alignItems: "center", justifyContent: "center" },
-  iconBtn: { width: MIN_TOUCH, height: MIN_TOUCH, borderRadius: 22, borderWidth: 1, alignItems: "center", justifyContent: "center" },
+  stepDot: { width: 19, height: 19, alignItems: "center", justifyContent: "center" },
+  iconBtn: { width: MIN_TOUCH, height: MIN_TOUCH, margin: 0, borderWidth: 1, borderRadius: 0 },
   infoBtn: { width: MIN_TOUCH, height: MIN_TOUCH, alignItems: "center", justifyContent: "center" },
-  button: { minHeight: MIN_TOUCH, borderRadius: 999, borderWidth: 1.5, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
-  buttonLg: { paddingHorizontal: 28, paddingVertical: 12 },
-  buttonSm: { paddingHorizontal: 16, paddingVertical: 8 },
-  card: { borderRadius: 20, borderWidth: 1, paddingHorizontal: 20, paddingVertical: 18 },
-  tile: { flex: 1, minHeight: 84, borderRadius: 16, borderWidth: 1.5, alignItems: "center", justifyContent: "center", gap: 7, paddingHorizontal: 6, paddingVertical: 12 },
-  switch: { flexDirection: "row", borderRadius: 999, padding: 3 },
-  switchOpt: { flex: 1, minHeight: MIN_TOUCH - 4, borderRadius: 999, alignItems: "center", justifyContent: "center" },
-  chip: { minHeight: MIN_TOUCH, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 14, borderRadius: 999, borderWidth: 1 },
+  button: { minHeight: MIN_TOUCH, justifyContent: "center" },
+  card: { borderWidth: 1, paddingHorizontal: 20, paddingVertical: 18 },
+  tile: { flex: 1, minHeight: 84, borderWidth: 1.5, alignItems: "center", justifyContent: "center", gap: 7, paddingHorizontal: 6, paddingVertical: 12 },
+  switch: { flexDirection: "row", padding: 3 },
+  switchOpt: { flex: 1, minHeight: MIN_TOUCH - 4, alignItems: "center", justifyContent: "center" },
+  chip: { minHeight: MIN_TOUCH, justifyContent: "center" },
   sheetBackdrop: { flex: 1, backgroundColor: "rgba(42,38,34,0.35)" },
-  sheet: { height: "50%", backgroundColor: T.canvas, borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingHorizontal: 24, paddingTop: 20, paddingBottom: 28 },
+  sheet: { height: "50%", backgroundColor: T.canvas, paddingHorizontal: 24, paddingTop: 20, paddingBottom: 28 },
 });

@@ -1,16 +1,19 @@
 import React from "react";
 import { View } from "react-native";
-import { render, screen, fireEvent, act } from "@testing-library/react-native";
+import { render, screen, fireEvent, act, cleanup } from "@testing-library/react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router, useLocalSearchParams } from "expo-router";
 import { AppProvider, useApp, dateKey, STATE_KEY } from "../state/AppState";
 import { TrackerSessionProvider } from "../state/TrackerSession";
 import { findBlocked, AGREEMENT_VERSION } from "../shared";
 import { Training } from "../screens/Training";
+import { WorkoutToday } from "../screens/WorkoutToday";
 import { ActivityAdd } from "../screens/ActivityAdd";
 import { Meditate } from "../screens/Meditate";
 import { Photos } from "../screens/Photos";
 import { Profile } from "../screens/Profile";
+import { ProfileSection } from "../screens/ProfileSection";
+const part = (section) => () => <ProfileSection section={section} />;
 import { FoodGoal } from "../screens/FoodGoal";
 import { Home } from "../screens/Home";
 import { caloriesFor, stepCalories, activitiesOf, dayMovement, youTubeId, fetchVideoTitle, youTubeSearch } from "../lib/activity";
@@ -169,9 +172,7 @@ describe("journey numbers", () => {
 describe("the Workouts tab", () => {
   it("shows today's activity, reads steps from the iPhone and encourages luteal training", async () => {
     await showNumbers();
-    await mount(Training);
-    expect(screen.getByTestId("yoga-meditation")).toBeOnTheScreen();
-    expect(screen.queryByTestId("encouragement")).toBeNull();
+    await mount(WorkoutToday);
     await fireEvent.press(screen.getByRole("button", { name: "Get steps from iPhone" }));
     await act(async () => {});
     expect(screen.getByTestId("steps-value")).toHaveTextContent("6,400 / 8,000");
@@ -189,7 +190,6 @@ describe("the Workouts tab", () => {
       days: { [TODAY]: { activities: [{ id: "x", kind: "yoga", minutes: 25, title: "Yin yoga" }] } },
     });
     expect(screen.getByTestId("encouragement")).toHaveTextContent(/Wow, look at you!/);
-    expect(screen.getByTestId("today-activity")).toHaveTextContent(/Yin yoga/);
     await fireEvent.press(screen.getByRole("button", { name: "Take a progress photo" }));
     expect(router.push).toHaveBeenCalledWith({ pathname: "/photos", params: { take: "1" } });
     await fireEvent.press(screen.getByRole("button", { name: "Not today" }));
@@ -251,18 +251,20 @@ describe("progress photos", () => {
 
 describe("Profile", () => {
   it("shows the journey and every goal, hiding figures when asked", async () => {
-    await mount(Profile, { days: { [TODAY]: { activities: [{ id: "a", kind: "yoga", minutes: 30 }] } } });
+    await mount(part("journey"), { days: { [TODAY]: { activities: [{ id: "a", kind: "yoga", minutes: 30 }] } } });
     expect(screen.getByTestId("journey")).toBeOnTheScreen();
     expect(screen.getByTestId("journey-move")).toHaveTextContent(/Yoga 30 min/);
-    expect(screen.getByTestId("profile-energy")).toHaveTextContent(/Hidden/);
     expect(screen.queryByTestId("journey-burned")).toBeNull();
+    await cleanup();
+    await mount(part("goals"));
+    expect(screen.getByTestId("profile-energy")).toHaveTextContent(/Hidden/);
     await fireEvent.press(screen.getByRole("button", { name: "Edit your goals" }));
     expect(router.push).toHaveBeenCalledWith("/food/goal");
   });
 
   it("shows figures when numbers are on", async () => {
     await showNumbers();
-    await mount(Profile, { profile: { nutritionGoal: { kcal: 1700, protein: 100, carbs: 180, fat: 60 }, diet: "low-fat" } });
+    await mount(part("goals"), { profile: { nutritionGoal: { kcal: 1700, protein: 100, carbs: 180, fat: 60 }, diet: "low-fat" } });
     expect(screen.getByTestId("profile-energy")).toHaveTextContent(/1,700 kcal a day/);
     expect(screen.getByTestId("profile-diet")).toHaveTextContent(/Low fat/);
   });

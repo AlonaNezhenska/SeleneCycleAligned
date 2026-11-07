@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useApp, dateKey } from "./AppState";
 import { CONTRACEPTION_METHODS } from "../content/journal";
+import { periodMoments } from "../lib/moments";
 
 /* ---------------------------------------------------------------
    TRACKING SESSION — one journal entry in the making.
@@ -35,7 +36,7 @@ let nextId = 0;
 const newId = () => `${Date.now().toString(36)}-${(nextId++).toString(36)}`;
 
 export const TrackerSessionProvider = ({ children }) => {
-  const { today, setToday, profile, setProfile, now } = useApp();
+  const { today, setToday, profile, setProfile, now, showMoments } = useApp();
   const saved = today.journal ?? {};
   const savedKey = JSON.stringify(saved);
 
@@ -119,7 +120,11 @@ export const TrackerSessionProvider = ({ children }) => {
     if (profileDraft.conditions) patch.health = { ...profile.health, ...profileDraft.conditions };
     // logging the first or last day of a period moves the cycle itself
     const flow = journal.flow?.items ?? {};
-    if (flow.started) Object.assign(patch, { lastPeriod: dateKey(now), lastPeriodEnd: null, periodOngoing: true, lastPeriodUnknown: false });
+    if (flow.started) {
+      // read before the cycle moves: was this one late?
+      if (profile.lastPeriod !== dateKey(now)) showMoments(periodMoments(profile, dateKey(now)), dateKey(now));
+      Object.assign(patch, { lastPeriod: dateKey(now), lastPeriodEnd: null, periodOngoing: true, lastPeriodUnknown: false });
+    }
     if (flow.ended) Object.assign(patch, { lastPeriodEnd: dateKey(now), periodOngoing: false });
     if (Object.keys(patch).length) setProfile(patch);
 
@@ -127,7 +132,7 @@ export const TrackerSessionProvider = ({ children }) => {
     setDirty(false);
     setSavedAt(Date.now());
     return journal;
-  }, [draft, profileDraft, profile.contraception, profile.health, setToday, setProfile, now]);
+  }, [draft, profileDraft, profile, setToday, setProfile, now, showMoments]);
 
   const value = useMemo(
     () => ({

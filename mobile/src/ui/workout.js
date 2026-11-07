@@ -36,20 +36,21 @@ export const useNow = (active = true) => {
 };
 
 export const useWorkoutActions = () => {
-  const { activeWorkout, startWorkout, finishWorkout, discardWorkout, setSession, markDone, customExercises } = useApp();
+  const { activeWorkout, startWorkout, finishWorkout, discardWorkout, setSession, markDone, customExercises, showMoments, todayKey } = useApp();
   /** Start a workout (or return to the one already going) and open the log. */
-  const begin = ({ name = "Workout", routineId = null, items = [] } = {}) => {
+  const begin = ({ name = "Workout", routineId = null, items = [], replace = false } = {}) => {
     if (!activeWorkout) {
       startWorkout({ name, routineId, exercises: items.map((i) => entryFrom(i, customExercises)) });
       setSession({ startedAt: Date.now(), endedAt: null, bailoutOffered: false, bailoutVisible: false });
     }
-    router.push("/workout/log");
+    router[replace ? "replace" : "push"]("/workout/log");
   };
   /** Keep the workout, open the protein window and earn today's check. */
   const finish = (note = "", kind) => {
     setSession({ endedAt: Date.now(), bailoutVisible: false });
     finishWorkout(note);
     markDone(kind);
+    if (kind !== "rest") showMoments(["strength"], todayKey);
   };
   const discard = () => {
     setSession({ startedAt: null, endedAt: null, bailoutOffered: false, bailoutVisible: false });
@@ -115,13 +116,13 @@ export const RoutineCard = ({ routine, onStart, onEdit, custom = [] }) => {
 };
 
 const styles = StyleSheet.create({
-  banner: { gap: 8, padding: 14, borderRadius: 20, backgroundColor: OLIVE, marginBottom: 14 },
+  banner: { gap: 8, padding: 14, backgroundColor: OLIVE, marginBottom: 14 },
   bannerTitle: { fontFamily: F.serif, fontSize: 17, color: T.canvas },
   bannerClock: { fontFamily: F.sans, fontSize: 12.5, color: T.canvas, opacity: 0.9, marginTop: 2 },
-  bannerBtn: { minHeight: 40, paddingHorizontal: 14, borderRadius: 999, borderWidth: 1, borderColor: T.canvas, alignItems: "center", justifyContent: "center" },
+  bannerBtn: { minHeight: 40, paddingHorizontal: 14, borderWidth: 1, borderColor: T.canvas, alignItems: "center", justifyContent: "center" },
   bannerBtnText: { fontFamily: F.sansMed, fontSize: 13, color: T.canvas },
-  card: { gap: 12, padding: 16, borderRadius: 20, backgroundColor: T.surface, borderWidth: 1, borderColor: T.hair },
+  card: { gap: 12, padding: 16, backgroundColor: T.surface, borderWidth: 1, borderColor: T.hair },
   cardTitle: { fontFamily: F.serif, fontSize: 17, color: T.ink },
-  start: { flexDirection: "row", gap: 8, minHeight: 44, borderRadius: 999, backgroundColor: OLIVE, alignItems: "center", justifyContent: "center" },
+  start: { flexDirection: "row", gap: 8, minHeight: 44, backgroundColor: OLIVE, alignItems: "center", justifyContent: "center" },
   startText: { fontFamily: F.sansMed, fontSize: 14, color: T.canvas },
 });

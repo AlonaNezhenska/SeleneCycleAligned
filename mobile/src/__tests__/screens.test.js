@@ -9,11 +9,23 @@ import { findBlocked, AGREEMENT_VERSION } from "../shared";
 import { Privacy } from "../screens/Privacy";
 import { AuthCallback } from "../screens/AuthCallback";
 import { Profile } from "../screens/Profile";
+import { ProfileSection } from "../screens/ProfileSection";
+const part = (section) => () => <ProfileSection section={section} />;
 import { EditCycle, EditAbout } from "../screens/EditProfile";
 import { Home } from "../screens/Home";
 import { Triad } from "../screens/Triad";
 import { Cycle } from "../screens/Cycle";
 import { Training } from "../screens/Training";
+import { WorkoutStart } from "../screens/WorkoutStart";
+import { WorkoutToday } from "../screens/WorkoutToday";
+
+/** The question and the tab together, as the session stays between them. */
+const StartAndTab = () => (
+  <>
+    <WorkoutStart />
+    <Training />
+  </>
+);
 import { Fuel } from "../screens/Fuel";
 import { Onboarding } from "../screens/Onboarding";
 
@@ -162,8 +174,8 @@ describe("Late Luteal Fork", () => {
 describe("Training Protocol", () => {
   it("offers the Bailout at ten minutes, once", async () => {
     jest.useFakeTimers({ now: NOW });
-    await mount(Training);
-    await fireEvent.press(screen.getByRole("button", { name: "Start empty workout" }));
+    await mount(StartAndTab);
+    await fireEvent.press(screen.getByRole("button", { name: "Empty workout" }));
 
     await act(async () => jest.advanceTimersByTime(9 * 60 * 1000 + 59 * 1000));
     expect(screen.queryByTestId("bailout")).toBeNull();
@@ -177,8 +189,8 @@ describe("Training Protocol", () => {
 
   it("ending a session opens the 45-minute 35g window and earns the check", async () => {
     jest.useFakeTimers({ now: NOW });
-    await mount(Training);
-    await fireEvent.press(screen.getByRole("button", { name: "Start empty workout" }));
+    await mount(StartAndTab);
+    await fireEvent.press(screen.getByRole("button", { name: "Empty workout" }));
     await act(async () => jest.advanceTimersByTime(20 * 60 * 1000));
     await fireEvent.press(screen.getByRole("button", { name: "Finish workout" }));
     const win = screen.getByTestId("protein-window");
@@ -188,22 +200,30 @@ describe("Training Protocol", () => {
   });
 
   it("shows the 15g Pre-Flight nudge before 11:00", async () => {
-    await mount(Training, { now: new Date(2026, 9, 29, 7, 0) });
+    await mount(WorkoutToday, { now: new Date(2026, 9, 29, 7, 0) });
     expect(screen.getByTestId("preflight")).toHaveTextContent(/15g/);
   });
 
   it("swaps spin to SIT on an Outward day", async () => {
-    await mount(Training, { profile: { lastPeriod: periodDaysAgo(8) } });
+    await mount(WorkoutToday, { profile: { lastPeriod: periodDaysAgo(8) } });
     await fireEvent.press(screen.getByRole("button", { name: "Spin class" }));
     expect(screen.getByText(/Spin class swaps to SIT/)).toBeOnTheScreen();
   });
 
   it("40+ on an Inward day gets rest with no plyometrics", async () => {
-    await mount(Training, { profile: { ageGroup: "40+", lastPeriod: periodDaysAgo(1) } });
+    await mount(WorkoutToday, { profile: { ageGroup: "40+", lastPeriod: periodDaysAgo(1) } });
     expect(screen.getByText("Recovery Day")).toBeOnTheScreen();
     expect(screen.queryByText(/plyometrics/i)).toBeNull();
     await fireEvent.press(screen.getByRole("button", { name: "Rest taken" }));
     expect(screen.getByLabelText("Done today")).toBeOnTheScreen();
+  });
+
+  it("the Workouts tab is one button, and that button asks what she wants to do", async () => {
+    await mount(Training);
+    expect(screen.queryByTestId("today-plan")).toBeNull();
+    expect(screen.queryByTestId("today-activity")).toBeNull();
+    await fireEvent.press(screen.getByRole("button", { name: "Start workout" }));
+    expect(router.push).toHaveBeenCalledWith("/workout/start");
   });
 });
 
@@ -427,7 +447,7 @@ describe("Not remembering", () => {
 
 describe("Profile tab", () => {
   it("shows the cycle details in plain language", async () => {
-    await mount(Profile, {
+    await mount(part("cycle"), {
       profile: {
         lastPeriod: periodDaysAgo(20),
         lastPeriodEnd: periodDaysAgo(16),
@@ -435,17 +455,18 @@ describe("Profile tab", () => {
         cycleVaries: true,
         cycleLengthMin: 27,
         cycleLengthMax: 31,
-        hurdles: ["PMDD", "Poor sleep"],
       },
     });
     expect(screen.getByTestId("profile-period-length")).toHaveTextContent(/5 days/);
     expect(screen.getByTestId("profile-cycle-length")).toHaveTextContent(/27–31 days \(varies\)/);
     expect(screen.getByTestId("profile-next-period")).toHaveTextContent(/Around/);
+    await cleanup();
+    await mount(part("about"), { profile: { hurdles: ["PMDD", "Poor sleep"] } });
     expect(screen.getByTestId("profile-hurdles")).toHaveTextContent(/PMDD, Poor sleep/);
   });
 
   it("says not sure instead of inventing numbers", async () => {
-    await mount(Profile, { profile: { lastPeriod: null, cycleMode: "unknown", cycleLength: null } });
+    await mount(part("cycle"), { profile: { lastPeriod: null, cycleMode: "unknown", cycleLength: null } });
     expect(screen.getByTestId("profile-last-period")).toHaveTextContent(/Not sure yet/);
     expect(screen.getByTestId("profile-cycle-length")).toHaveTextContent(/using 28 days for now/);
     expect(screen.getByTestId("profile-next-period")).toHaveTextContent(/Not sure yet/);
@@ -453,8 +474,14 @@ describe("Profile tab", () => {
 
   it("opens the edit screens", async () => {
     await mount(Profile);
+    await fireEvent.press(screen.getByRole("button", { name: "Your cycle" }));
+    expect(router.push).toHaveBeenCalledWith({ pathname: "/me/[section]", params: { section: "cycle" } });
+    await cleanup();
+    await mount(part("cycle"));
     await fireEvent.press(screen.getByRole("button", { name: "Edit cycle details" }));
     expect(router.push).toHaveBeenCalledWith("/edit-cycle");
+    await cleanup();
+    await mount(part("about"));
     await fireEvent.press(screen.getByRole("button", { name: "Edit about you" }));
     expect(router.push).toHaveBeenCalledWith("/edit-about");
   });

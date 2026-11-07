@@ -193,7 +193,7 @@ export function ExerciseDetail() {
 }
 
 const styles = StyleSheet.create({
-  picture: { width: 220, height: 220, borderRadius: 16, backgroundColor: "#FFFFFF" },
+  picture: { width: 220, height: 220, backgroundColor: "#FFFFFF" },
   credit: { fontFamily: F.sans, fontSize: 10.5, color: T.inkFaint },
   headTitle: { flex: 1, fontFamily: F.serif, fontSize: 19, color: T.ink },
   tabs: { marginTop: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: T.hair },
@@ -204,5 +204,5 @@ const styles = StyleSheet.create({
   big: { fontFamily: F.sansSemi, fontSize: 20, color: T.ink },
   bigDate: { fontFamily: F.sans, fontSize: 15, color: OLIVE },
   cardTitle: { fontFamily: F.serif, fontSize: 17, color: T.ink },
-  stepNum: { width: 26, height: 26, borderRadius: 13, backgroundColor: T.canvasDeep, textAlign: "center", lineHeight: 26, fontFamily: F.sansMed, fontSize: 12.5, color: T.ink },
+  stepNum: { width: 26, height: 26, backgroundColor: T.canvasDeep, textAlign: "center", lineHeight: 26, fontFamily: F.sansMed, fontSize: 12.5, color: T.ink },
 });

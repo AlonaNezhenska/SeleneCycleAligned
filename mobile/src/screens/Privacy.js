@@ -105,5 +105,5 @@ export function Privacy() {
 }
 
 const styles = StyleSheet.create({
-  delete: { minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 999, borderWidth: 1.5, borderColor: T.terracotta },
+  delete: { minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1.5, borderColor: T.terracotta },
 });

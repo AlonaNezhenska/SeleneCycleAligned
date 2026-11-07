@@ -232,17 +232,17 @@ export const PhotoNudge = ({ onTake, onDismiss }) => (
 );
 
 const styles = StyleSheet.create({
-  disc: { width: 38, height: 38, borderRadius: 19, backgroundColor: T.sage, alignItems: "center", justifyContent: "center" },
+  disc: { width: 38, height: 38, backgroundColor: T.sage, alignItems: "center", justifyContent: "center" },
   value: { fontFamily: F.sans, fontSize: 13, color: T.inkSoft },
-  pill: { minHeight: 40, paddingHorizontal: 14, borderRadius: 999, borderWidth: 1, borderColor: T.hair, alignItems: "center", justifyContent: "center" },
+  pill: { minHeight: 40, paddingHorizontal: 14, borderWidth: 1, borderColor: T.hair, alignItems: "center", justifyContent: "center" },
   pillText: { fontFamily: F.sansMed, fontSize: 12.5, color: T.ink },
-  input: { flex: 1, minHeight: 44, paddingHorizontal: 14, borderRadius: 14, borderWidth: 1, borderColor: T.hair, backgroundColor: T.surface, fontFamily: F.sans, fontSize: 15, color: T.ink },
+  input: { flex: 1, minHeight: 44, paddingHorizontal: 14, borderWidth: 1, borderColor: T.hair, backgroundColor: T.surface, fontFamily: F.sans, fontSize: 15, color: T.ink },
   item: { gap: 8, minHeight: 48, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: T.hair, paddingTop: 8 },
   itemName: { fontFamily: F.sansMed, fontSize: 14.5, color: T.ink },
   iconBtn: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
-  add: { flexDirection: "row", gap: 8, minHeight: 48, borderRadius: 999, backgroundColor: OLIVE, alignItems: "center", justifyContent: "center" },
+  add: { flexDirection: "row", gap: 8, minHeight: 48, backgroundColor: OLIVE, alignItems: "center", justifyContent: "center" },
   addText: { fontFamily: F.sansMed, fontSize: 15, color: T.canvas },
-  practice: { gap: 12, padding: 14, borderRadius: 20, backgroundColor: T.surface, borderWidth: 1, borderColor: T.hair },
+  practice: { gap: 12, padding: 14, backgroundColor: T.surface, borderWidth: 1, borderColor: T.hair },
   encourage: { gap: 12, alignItems: "flex-start", marginBottom: 14, backgroundColor: "#EEF0E2", borderColor: "#D6DABF" },
   encourageTitle: { fontFamily: F.serif, fontSize: 18, color: T.ink, marginBottom: 2 },
 });

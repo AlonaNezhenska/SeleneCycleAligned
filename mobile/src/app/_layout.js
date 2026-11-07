@@ -3,6 +3,7 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
+import { PaperProvider } from "react-native-paper";
 import {
   PlayfairDisplay_400Regular,
   PlayfairDisplay_400Regular_Italic,
@@ -12,6 +13,8 @@ import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } f
 import { AppProvider, useApp } from "../state/AppState";
 import { TrackerSessionProvider } from "../state/TrackerSession";
 import { T } from "../ui/theme";
+import { selenaTheme } from "../ui/paperTheme";
+import { MomentCard } from "../ui/MomentCard";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -44,6 +47,8 @@ const Gate = ({ fontsReady }) => {
         <Stack.Screen name="activity/add" />
         <Stack.Screen name="meditate" />
         <Stack.Screen name="photos" />
+        <Stack.Screen name="workout/start" />
+        <Stack.Screen name="workout/today" />
         <Stack.Screen name="workout/log" />
         <Stack.Screen name="workout/exercises" />
         <Stack.Screen name="workout/exercise/[id]" />
@@ -55,9 +60,11 @@ const Gate = ({ fontsReady }) => {
         <Stack.Screen name="workout/stats" />
         <Stack.Screen name="workout/calendar" />
         <Stack.Screen name="workout/history/[id]" />
+        <Stack.Screen name="me/[section]" />
         <Stack.Screen name="measures" />
         <Stack.Screen name="recipe/[id]" />
       </Stack>
+      <MomentCard />
     </>
   );
 };
@@ -74,10 +81,12 @@ export default function RootLayout() {
   });
 
   return (
-    <AppProvider>
-      <TrackerSessionProvider>
-        <Gate fontsReady={fontsReady} />
-      </TrackerSessionProvider>
-    </AppProvider>
+    <PaperProvider theme={selenaTheme}>
+      <AppProvider>
+        <TrackerSessionProvider>
+          <Gate fontsReady={fontsReady} />
+        </TrackerSessionProvider>
+      </AppProvider>
+    </PaperProvider>
   );
 }
