@@ -14,11 +14,24 @@ import { FoodMeal } from "../screens/FoodMeal";
 import { RecipeDetail } from "../screens/Recipes";
 import { FoodGoal } from "../screens/FoodGoal";
 import { goalFromBody, navyBodyFat, kgFromStones, cmFromFeet, MIN_KCAL } from "../lib/energy";
-import { scale, amountLabel, perServing, searchLocal, fullnessWord, remember, nutrientsOf, quickEntry, emptyLibrary } from "../lib/food";
+import { scale, amountLabel, perServing, searchLocal, fullnessWord, remember, rememberSearch, byFrequency, rankByQuery, unitsFor, nutritionFacts, nutrientsOf, quickEntry, emptyLibrary } from "../lib/food";
 import { fromOff, lookupBarcode, searchProducts } from "../lib/openFoodFacts";
 import { EVERYDAY } from "../content/foods";
 import { SELENA_RECIPES } from "../content/recipes";
 import { toBackup, mergeBackup } from "../lib/backup";
+
+// Paper's Menu waits for a native measurement that tests never get
+jest.mock("react-native-paper", () => {
+  const actual = jest.requireActual("react-native-paper");
+  const Menu = ({ visible, anchor, children }) => (
+    <>
+      {anchor}
+      {visible ? children : null}
+    </>
+  );
+  Menu.Item = actual.Menu.Item;
+  return new Proxy(actual, { get: (target, key) => (key === "Menu" ? Menu : target[key]) });
+});
 
 const NOW = new Date(2026, 9, 29, 15, 0);
 const TODAY = dateKey(NOW);
@@ -167,11 +180,87 @@ describe("Open Food Facts", () => {
   });
 });
 
+describe("finding food", () => {
+  it("keeps count of what is eaten, and shows the most eaten first", () => {
+    const a = { id: "a", name: "A" };
+    const b = { id: "b", name: "B" };
+    let recent = remember([], a, 10);
+    recent = remember(recent, a, 10);
+    recent = remember(recent, b, 10);
+    expect(recent.map((f) => f.id)).toEqual(["b", "a"]);
+    expect(byFrequency(recent).map((f) => [f.id, f.uses])).toEqual([
+      ["a", 2],
+      ["b", 1],
+    ]);
+  });
+
+  it("remembers searches without repeats, newest first", () => {
+    let s = rememberSearch([], "oats");
+    s = rememberSearch(s, " Tomato ");
+    s = rememberSearch(s, "OATS");
+    s = rememberSearch(s, "a");
+    expect(s).toEqual(["OATS", "Tomato"]);
+  });
+
+  it("measures a food by its portion or in grams, and only shows facts it knows", () => {
+    const tomato = { id: "t", name: "Tomato", per100: { kcal: 18, protein: 0.9, carbs: 3.9, fat: 0.2 }, serving: { label: "Whole", grams: 62 }, more: { sugars: 2.6 } };
+    expect(unitsFor(tomato).map((u) => u.label)).toEqual(["Whole (62 g)", "Gram"]);
+    expect(unitsFor({ per100: {} }).map((u) => u.key)).toEqual(["g"]);
+    expect(unitsFor({ servingsOnly: true }).map((u) => u.key)).toEqual(["serving"]);
+    const facts = nutritionFacts(tomato, 200);
+    expect(facts.find((f) => f.label === "of which Sugars").value).toBe(5.2);
+    expect(facts.some((f) => f.label === "Fibre")).toBe(false);
+  });
+
+  it("puts names that start with the search first", () => {
+    const foods = [{ name: "Baked beans in tomato sauce" }, { name: "Tomato" }];
+    expect(rankByQuery(foods, "tomato").map((f) => f.name)).toEqual(["Tomato", "Baked beans in tomato sauce"]);
+  });
+
+  it("keeps searches on the phone when backing up", () => {
+    const backup = toBackup({ profile: {}, days: {}, foodLibrary: { foods: [], searches: ["private"], favorites: [{ id: "f" }] } }, "nutrition");
+    expect(backup.foodLibrary.searches).toBeUndefined();
+    expect(backup.foodLibrary.favorites).toEqual([{ id: "f" }]);
+  });
+
+  it("clears the screen for search, and offers recent searches", async () => {
+    await mount(FoodAdd, { params: { meal: "breakfast" } });
+    expect(screen.getByRole("button", { name: "Barcode" })).toBeOnTheScreen();
+    await fireEvent.changeText(screen.getByLabelText("Search foods"), "oats");
+    expect(screen.queryByRole("button", { name: "Barcode" })).toBeNull();
+    await fireEvent.press(screen.getByRole("button", { name: "Add Porridge oats" }));
+    await fireEvent.changeText(screen.getByLabelText("Search foods"), "");
+    await fireEvent(screen.getByLabelText("Search foods"), "focus");
+    expect(screen.getByRole("button", { name: "Search for oats" })).toBeOnTheScreen();
+  });
+
+  it("stars a food from its own page and finds it under Favourites", async () => {
+    await mount(FoodAdd, { params: { meal: "breakfast" } });
+    await fireEvent.changeText(screen.getByLabelText("Search foods"), "banana");
+    await fireEvent.press(screen.getByRole("button", { name: "Banana, choose amount" }));
+    await fireEvent.press(screen.getByRole("button", { name: "Add to favourites" }));
+    await fireEvent.press(screen.getByRole("button", { name: "Close" }));
+    await fireEvent.press(screen.getByRole("button", { name: "Favourites" }));
+    expect(screen.getByTestId("filtered-foods")).toHaveTextContent(/Banana/);
+  });
+
+  it("hides every figure on a food's page with Hide numbers on", async () => {
+    await mount(FoodAdd, { params: { meal: "breakfast" } });
+    await fireEvent.changeText(screen.getByLabelText("Search foods"), "banana");
+    await fireEvent.press(screen.getByRole("button", { name: "Banana, choose amount" }));
+    expect(screen.queryByTestId("amount-preview")).toBeNull();
+    expect(screen.queryByTestId("nutrition-facts")).toBeNull();
+    await fireEvent.press(screen.getByRole("button", { name: "Choose amount and unit" }));
+    expect(screen.getByTestId("amount-wheel")).toBeOnTheScreen();
+  });
+});
+
 describe("the diary", () => {
   it("adds a food with one tap and shows it on the diary", async () => {
     await mount(FoodAdd, { params: { meal: "breakfast" } });
     await fireEvent.changeText(screen.getByLabelText("Search foods"), "oats");
     await fireEvent.press(screen.getByRole("button", { name: "Add Porridge oats" }));
+    await fireEvent.press(screen.getByRole("button", { name: "Cancel search" }));
     expect(screen.getByTestId("added-count")).toHaveTextContent("1");
     expect(await entries()).toEqual([expect.objectContaining({ meal: "breakfast", name: "Porridge oats", grams: 40 })]);
 
@@ -190,7 +279,7 @@ describe("the diary", () => {
     await fireEvent.press(screen.getByRole("button", { name: "Add Banana" }));
     await cleanup();
     await mount(FoodAdd, { params: { meal: "snacks" } });
-    expect(screen.getByTestId("list-recent")).toHaveTextContent(/Banana/);
+    expect(screen.getByTestId("list-foods")).toHaveTextContent(/Banana/);
   });
 
   it("lets a different amount be chosen", async () => {
@@ -198,7 +287,7 @@ describe("the diary", () => {
     await mount(FoodAdd, { params: { meal: "lunch" } });
     await fireEvent.changeText(screen.getByLabelText("Search foods"), "white rice");
     await fireEvent.press(screen.getByRole("button", { name: "White rice, boiled, choose amount" }));
-    await fireEvent.press(screen.getByRole("button", { name: "2" }));
+    await fireEvent.changeText(screen.getByLabelText("Amount"), "2");
     expect(screen.getByTestId("amount-preview")).toHaveTextContent(/^504 kcal/);
     await fireEvent.press(screen.getByRole("button", { name: "Add to Lunch" }));
     expect(await entries()).toEqual([expect.objectContaining({ name: "White rice, boiled", grams: 360 })]);
@@ -257,7 +346,8 @@ describe("the diary", () => {
     await cleanup();
 
     await mount(FoodAdd, { params: { meal: "breakfast" } });
-    await fireEvent.press(screen.getByRole("button", { name: "My meals" }));
+    await fireEvent.press(screen.getByRole("button", { name: "Choose a list" }));
+    await fireEvent.press(await screen.findByText("My meals"));
     await fireEvent.press(screen.getByRole("button", { name: "Add Cereal with milk" }));
     expect((await entries()).map((e) => e.name)).toEqual(["Cornflakes", "Semi-skimmed milk"]);
   });
@@ -288,7 +378,7 @@ describe("the diary", () => {
 
     await mount(FoodMeal, { params: { meal: "dinner" } });
     await fireEvent.press(screen.getByRole("button", { name: "Salmon fillet, baked, choose amount" }));
-    await fireEvent.press(screen.getByRole("button", { name: "2" }));
+    await fireEvent.changeText(screen.getByLabelText("Amount"), "2");
     await fireEvent.press(screen.getByRole("button", { name: "Save" }));
     expect((await entries())[0].grams).toBe(240);
     await fireEvent.press(screen.getByRole("button", { name: "Salmon fillet, baked, choose amount" }));

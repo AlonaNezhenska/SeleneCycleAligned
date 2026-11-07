@@ -51,6 +51,6 @@ export const TrackChoices = ({ value = DEFAULT_TRACKING, onChange, dark = false 
 };
 
 const styles = StyleSheet.create({
-  row: { minHeight: 64, flexDirection: "row", alignItems: "center", gap: 14, borderRadius: 18, borderWidth: 1.5, paddingHorizontal: 16, paddingVertical: 12 },
-  box: { width: 24, height: 24, borderRadius: 6, borderWidth: 1.5, borderColor: T.inkSoft, alignItems: "center", justifyContent: "center" },
+  row: { minHeight: 64, flexDirection: "row", alignItems: "center", gap: 14, borderWidth: 1.5, paddingHorizontal: 16, paddingVertical: 12 },
+  box: { width: 24, height: 24, borderWidth: 1.5, borderColor: T.inkSoft, alignItems: "center", justifyContent: "center" },
 });

@@ -29,6 +29,16 @@ export const fromOff = (p) => {
   const name = (p.product_name_en || p.product_name || p.generic_name || "").trim();
   if (kcal == null || !name) return null;
   const grams = num(p.serving_quantity);
+  const more = Object.fromEntries(
+    [
+      ["fibre", n.fiber_100g],
+      ["sugars", n.sugars_100g],
+      ["saturates", n["saturated-fat_100g"]],
+      ["salt", n.salt_100g],
+    ]
+      .map(([key, v]) => [key, num(v)])
+      .filter(([, v]) => v != null)
+  );
   return {
     id: `off:${p.code}`,
     barcode: p.code,
@@ -42,6 +52,7 @@ export const fromOff = (p) => {
       fat: num(n.fat_100g) ?? 0,
     },
     serving: grams && grams > 0 ? { label: p.serving_size?.trim() || "1 serving", grams: Math.round(grams) } : null,
+    ...(Object.keys(more).length ? { more } : {}),
   };
 };
 

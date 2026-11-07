@@ -118,5 +118,5 @@ export function EditAbout() {
 }
 
 const styles = StyleSheet.create({
-  option: { minHeight: 56, flexDirection: "row", alignItems: "center", gap: 12, borderRadius: 16, borderWidth: 1.5, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: T.canvas },
+  option: { minHeight: 56, flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1.5, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: T.canvas },
 });

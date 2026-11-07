@@ -150,12 +150,12 @@ export function Meditate() {
 
 const styles = StyleSheet.create({
   stage: { height: 300, alignItems: "center", justifyContent: "center", marginVertical: 18 },
-  circle: { position: "absolute", width: 260, height: 260, borderRadius: 130, backgroundColor: "rgba(91,107,74,0.22)", borderWidth: 1.5, borderColor: OLIVE },
+  circle: { position: "absolute", width: 260, height: 260, backgroundColor: "rgba(91,107,74,0.22)", borderWidth: 1.5, borderColor: OLIVE },
   centre: { alignItems: "center" },
   breath: { fontFamily: F.serifItalic, fontSize: 22, color: T.ink },
   time: { fontFamily: F.sans, fontSize: 15, color: T.inkSoft, marginTop: 6 },
-  primary: { minHeight: 52, borderRadius: 999, backgroundColor: OLIVE, alignItems: "center", justifyContent: "center" },
+  primary: { minHeight: 52, backgroundColor: OLIVE, alignItems: "center", justifyContent: "center" },
   primaryText: { fontFamily: F.sansMed, fontSize: 15.5, color: T.canvas },
-  ghost: { minHeight: 48, borderRadius: 999, borderWidth: 1, borderColor: T.hair, alignItems: "center", justifyContent: "center" },
+  ghost: { minHeight: 48, borderWidth: 1, borderColor: T.hair, alignItems: "center", justifyContent: "center" },
   ghostText: { fontFamily: F.sansMed, fontSize: 14.5, color: T.ink },
 });

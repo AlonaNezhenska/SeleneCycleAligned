@@ -219,7 +219,7 @@ export function Cycle() {
 
 const styles = StyleSheet.create({
   heading: { fontFamily: F.serif, fontSize: 24, letterSpacing: 3.2 },
-  unknown: { borderWidth: 1, borderColor: DARK_TEXT.textFaint, borderRadius: 18, padding: 16, marginBottom: 18 },
+  unknown: { borderWidth: 1, borderColor: DARK_TEXT.textFaint, padding: 16, marginBottom: 18 },
   title: { position: "absolute", left: 0, alignItems: "center", justifyContent: "center" },
   titleText: { fontFamily: F.serif, fontSize: 25, lineHeight: 31, textAlign: "center", color: DARK_TEXT.text },
   label: { position: "absolute", right: 0, minHeight: 44 },
@@ -230,12 +230,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignSelf: "center",
     padding: 4,
-    borderRadius: 999,
+    
     backgroundColor: "rgba(255,252,248,0.55)",
     borderWidth: 1,
     borderColor: "rgba(255,252,248,0.85)",
     marginBottom: 18,
   },
-  switchItem: { minHeight: 40, minWidth: 108, paddingHorizontal: 18, borderRadius: 999, alignItems: "center", justifyContent: "center" },
+  switchItem: { minHeight: 40, minWidth: 108, paddingHorizontal: 18, alignItems: "center", justifyContent: "center" },
   switchOn: { backgroundColor: T.ink },
 });

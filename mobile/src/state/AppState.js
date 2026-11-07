@@ -2,7 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { deriveToday, sunset, resumeOnOpen, AGREEMENT_VERSION } from "../shared";
 import { DEFAULT_BACKUP } from "../lib/backup";
-import { emptyLibrary, remember, newId } from "../lib/food";
+import { emptyLibrary, remember, rememberSearch, toggleFavorite as flipFavorite, newId } from "../lib/food";
 import { forgetPhoto } from "../lib/photos";
 import { useBackup } from "./useBackup";
 
@@ -92,6 +92,8 @@ export const AppProvider = ({ children, now: fixedNow, initial }) => {
     saved: {},
     // the user's own foods, saved meals, recipes and recently eaten
     foodLibrary: emptyLibrary(),
+    // pictures already shown, so each appears once
+    seenMoments: [],
     // progress photos: on this phone only, never backed up
     photos: [],
     // strength training: her routines, finished workouts, the one in progress
@@ -185,6 +187,17 @@ export const AppProvider = ({ children, now: fixedNow, initial }) => {
   const removeFoodEntry = useCallback((id, key = todayKey) => editEntries(key, (list) => list.filter((e) => e.id !== id)), [editEntries, todayKey]);
 
   /** Save or replace one of the user's own foods, meals or recipes. */
+  // pictures waiting to be shown: in memory only, one at a time
+  const [moments, setMoments] = useState([]);
+  const showMoments = useCallback((keys, date) => {
+    setMoments((q) => [...q, ...keys.filter((k) => !q.includes(k))]);
+    setData((d) => ({ ...d, seenMoments: [...keys.map((k) => `${k}:${date}`), ...(d.seenMoments ?? [])].slice(0, 60) }));
+  }, []);
+  const closeMoment = useCallback(() => setMoments((q) => q.slice(1)), []);
+
+  const saveSearch = useCallback((query) => updateLibrary((lib) => ({ ...lib, searches: rememberSearch(lib.searches, query) })), [updateLibrary]);
+  const toggleFavorite = useCallback((food) => updateLibrary((lib) => ({ ...lib, favorites: flipFavorite(lib.favorites, food) })), [updateLibrary]);
+
   const saveToLibrary = useCallback(
     (kind, item) => updateLibrary((lib) => ({ ...lib, [kind]: [item, ...lib[kind].filter((x) => x.id !== item.id)] })),
     [updateLibrary]
@@ -324,6 +337,12 @@ export const AppProvider = ({ children, now: fixedNow, initial }) => {
     updateFoodEntry,
     removeFoodEntry,
     saveToLibrary,
+    moments,
+    showMoments,
+    closeMoment,
+    seenMoments: data.seenMoments ?? [],
+    saveSearch,
+    toggleFavorite,
     removeFromLibrary,
     addActivity,
     removeActivity,

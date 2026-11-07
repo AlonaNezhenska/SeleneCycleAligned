@@ -62,7 +62,11 @@ export const toBackup = (data, category) => {
     if (Object.keys(part).length) days[date] = part;
   }
   // your own foods, meals and recipes travel with the food diary
-  if (category === "nutrition" && data.foodLibrary) return { days, foodLibrary: data.foodLibrary };
+  if (category === "nutrition" && data.foodLibrary) {
+    // what was typed into search stays on the phone
+    const { searches: _searches, ...foodLibrary } = data.foodLibrary;
+    return { days, foodLibrary };
+  }
   // finished workouts, routines and your own exercises travel with training
   if (category === "training") return { days, workouts: data.workouts ?? [], routines: data.routines ?? [], customExercises: data.customExercises ?? [] };
   return { days };
@@ -100,7 +104,7 @@ export const mergeBackup = (data, category, payload) => {
       const ids = new Set(local.map((x) => x.id));
       return [...local, ...(payload.foodLibrary[kind] ?? []).filter((x) => !ids.has(x.id))];
     };
-    return { ...data, days, foodLibrary: { foods: join("foods"), meals: join("meals"), recipes: join("recipes"), recent: join("recent").slice(0, 40) } };
+    return { ...data, days, foodLibrary: { ...lib, foods: join("foods"), meals: join("meals"), recipes: join("recipes"), recent: join("recent").slice(0, 40), favorites: join("favorites") } };
   }
   return { ...data, days };
 };

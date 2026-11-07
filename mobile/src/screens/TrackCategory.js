@@ -630,18 +630,18 @@ export function TrackCategory({ categoryKey }) {
 
 const styles = StyleSheet.create({
   sheet: { flex: 1, overflow: "hidden" },
-  roundBtn: { width: 52, height: 52, borderRadius: 26, borderWidth: 0, backgroundColor: "rgba(242,239,230,0.82)" },
-  privatePill: { gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: "rgba(242,239,230,0.82)" },
+  roundBtn: { width: 52, height: 52, borderWidth: 0, backgroundColor: "rgba(242,239,230,0.82)" },
+  privatePill: { gap: 6, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: "rgba(242,239,230,0.82)" },
   eyebrow: { fontFamily: F.serif, fontSize: 15, letterSpacing: 4, color: CREAM },
   rule: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: CREAM, opacity: 0.7 },
   heading: { fontFamily: F.serifItalic, fontSize: 28, lineHeight: 34, color: CREAM },
-  glass: { borderRadius: 28, padding: 16, backgroundColor: GLASS, borderWidth: 1, borderColor: "rgba(255,253,248,0.7)" },
+  glass: { padding: 16, backgroundColor: GLASS, borderWidth: 1, borderColor: "rgba(255,253,248,0.7)" },
   groupLabel: { fontFamily: F.serif, fontSize: 16, color: CREAM, marginBottom: 8 },
   tileRow: { flexDirection: "row", justifyContent: "center" },
   tileCell: { padding: 5 },
   tile: {
     minHeight: 104,
-    borderRadius: 34,
+    
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
@@ -654,16 +654,16 @@ const styles = StyleSheet.create({
   tileOn: { backgroundColor: OLIVE, borderColor: OLIVE },
   tileFocused: { borderColor: "#F2E2A6", borderWidth: 2 },
   tileText: { fontFamily: F.sans, fontSize: 13.5, textAlign: "center" },
-  check: { position: "absolute", top: 6, right: 8, width: 24, height: 24, borderRadius: 12, backgroundColor: T.canvas, alignItems: "center", justifyContent: "center" },
+  check: { position: "absolute", top: 6, right: 8, width: 24, height: 24, backgroundColor: T.canvas, alignItems: "center", justifyContent: "center" },
   hint: { textAlign: "center", paddingHorizontal: 12 },
-  input: { minHeight: 46, borderRadius: 16, borderWidth: 1, borderColor: "rgba(74,74,43,0.2)", backgroundColor: "rgba(255,253,248,0.65)", paddingHorizontal: 14, paddingVertical: 10, fontFamily: F.sans, fontSize: 14, color: T.ink },
-  addBtn: { flexDirection: "row", gap: 8, minHeight: 48, borderRadius: 999, backgroundColor: OLIVE, alignItems: "center", justifyContent: "center", marginTop: 4 },
+  input: { minHeight: 46, borderWidth: 1, borderColor: "rgba(74,74,43,0.2)", backgroundColor: "rgba(255,253,248,0.65)", paddingHorizontal: 14, paddingVertical: 10, fontFamily: F.sans, fontSize: 14, color: T.ink },
+  addBtn: { flexDirection: "row", gap: 8, minHeight: 48, backgroundColor: OLIVE, alignItems: "center", justifyContent: "center", marginTop: 4 },
   sheetFooter: { paddingHorizontal: 20, paddingTop: 6, paddingBottom: 14 },
   windowBackdrop: { flex: 1, backgroundColor: "rgba(20,24,16,0.25)" },
   window: {
     maxHeight: "62%",
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
+    
+    
     backgroundColor: "rgba(242,239,230,0.97)",
     paddingHorizontal: 20,
     paddingTop: 10,
@@ -674,8 +674,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -4 },
     elevation: 16,
   },
-  handle: { alignSelf: "center", width: 44, height: 5, borderRadius: 3, backgroundColor: "rgba(74,74,43,0.25)", marginBottom: 12 },
-  removeBtn: { minHeight: 50, paddingHorizontal: 20, borderRadius: 999, borderWidth: 1, borderColor: "rgba(74,74,43,0.3)", alignItems: "center", justifyContent: "center" },
-  continue: { minHeight: 56, borderRadius: 999, backgroundColor: OLIVE, alignItems: "center", justifyContent: "center" },
+  handle: { alignSelf: "center", width: 44, height: 5, backgroundColor: "rgba(74,74,43,0.25)", marginBottom: 12 },
+  removeBtn: { minHeight: 50, paddingHorizontal: 20, borderWidth: 1, borderColor: "rgba(74,74,43,0.3)", alignItems: "center", justifyContent: "center" },
+  continue: { minHeight: 56, backgroundColor: OLIVE, alignItems: "center", justifyContent: "center" },
   continueText: { fontFamily: F.serif, fontSize: 21, color: T.canvas },
 });

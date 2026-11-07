@@ -19,7 +19,7 @@ import { Screen, Body, Serif, Card, IconBtn, ToggleRow, s } from "../ui/kit";
 
 /** A photo with the face area softened, as in the baseline Polaroid. */
 export const SoftPhoto = ({ uri, height = 220, label }) => (
-  <View style={{ height, borderRadius: 14, overflow: "hidden", backgroundColor: T.canvasDeep }}>
+  <View style={{ height, overflow: "hidden", backgroundColor: T.canvasDeep }}>
     <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" accessibilityLabel={label} />
     <View style={{ position: "absolute", left: 0, right: 0, top: 0, height: "38%", overflow: "hidden" }}>
       <Image source={{ uri }} blurRadius={28} style={{ width: "100%", height }} resizeMode="cover" />
@@ -165,12 +165,12 @@ export function Photos() {
 }
 
 const styles = StyleSheet.create({
-  btn: { flex: 1, flexDirection: "row", gap: 8, minHeight: 48, borderRadius: 999, borderWidth: 1, borderColor: T.hair, alignItems: "center", justifyContent: "center" },
+  btn: { flex: 1, flexDirection: "row", gap: 8, minHeight: 48, borderWidth: 1, borderColor: T.hair, alignItems: "center", justifyContent: "center" },
   btnText: { fontFamily: F.sansMed, fontSize: 14.5, color: T.ink },
   grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: 12 },
   cell: { width: "48.5%", padding: 8, gap: 6 },
   date: { fontFamily: F.serif, fontSize: 14, color: T.ink },
-  note: { minHeight: 40, fontFamily: F.serifItalic, fontSize: 13.5, color: T.ink, borderRadius: 10, borderWidth: StyleSheet.hairlineWidth, borderColor: T.hair, padding: 8 },
+  note: { minHeight: 40, fontFamily: F.serifItalic, fontSize: 13.5, color: T.ink, borderWidth: StyleSheet.hairlineWidth, borderColor: T.hair, padding: 8 },
   backdrop: { flex: 1, backgroundColor: "rgba(20,24,18,0.35)" },
-  sheet: { backgroundColor: T.canvas, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 20, paddingBottom: 32 },
+  sheet: { backgroundColor: T.canvas, padding: 20, paddingBottom: 32 },
 });

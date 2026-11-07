@@ -155,7 +155,7 @@ export const BackupSection = ({ backup }) => (
 );
 
 const styles = StyleSheet.create({
-  input: { minHeight: 48, borderRadius: 14, borderWidth: 1, borderColor: T.hair, backgroundColor: T.canvas, paddingHorizontal: 14, fontFamily: F.sans, fontSize: 15, color: T.ink },
-  choice: { minHeight: 56, flexDirection: "row", alignItems: "center", gap: 12, borderRadius: 16, borderWidth: 1.5, paddingHorizontal: 14, paddingVertical: 10 },
-  box: { width: 24, height: 24, borderRadius: 6, borderWidth: 1.5, borderColor: T.inkSoft, alignItems: "center", justifyContent: "center" },
+  input: { minHeight: 48, borderWidth: 1, borderColor: T.hair, backgroundColor: T.canvas, paddingHorizontal: 14, fontFamily: F.sans, fontSize: 15, color: T.ink },
+  choice: { minHeight: 56, flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1.5, paddingHorizontal: 14, paddingVertical: 10 },
+  box: { width: 24, height: 24, borderWidth: 1.5, borderColor: T.inkSoft, alignItems: "center", justifyContent: "center" },
 });

@@ -174,7 +174,7 @@ const ViewSwitch = ({ value, onChange }) => (
 );
 
 export function Fuel() {
-  const { ctx, today, setToday, hideNumbers, setHideNumbers, profile, todayKey, dayAt, updateDay } = useApp();
+  const { ctx, today, setToday, hideNumbers, setHideNumbers, profile, todayKey, dayAt, updateDay, showMoments } = useApp();
   const [mode, setMode] = useState("diary");
   const [date, setDate] = useState(todayKey);
   const isToday = date === todayKey;
@@ -273,7 +273,10 @@ export function Fuel() {
 
           {/* a treat day: marked with one tap, held in the month's insight, never a number here */}
           <Pressable
-            onPress={() => updateDay(date, (d) => ({ ...d, food: { ...d.food, treat: !d.food?.treat } }))}
+            onPress={() => {
+              if (!day.food?.treat) showMoments(["treat"], date);
+              updateDay(date, (d) => ({ ...d, food: { ...d.food, treat: !d.food?.treat } }));
+            }}
             accessibilityRole="switch"
             accessibilityLabel="Treat day"
             accessibilityState={{ checked: !!day.food?.treat }}
@@ -315,24 +318,24 @@ export function Fuel() {
 }
 
 const styles = StyleSheet.create({
-  hideBtn: { flexDirection: "row", alignItems: "center", gap: 6, minHeight: 44, paddingHorizontal: 14, borderRadius: 999, borderWidth: 1, borderColor: TOILE.line, backgroundColor: TOILE.cream },
-  paper: { backgroundColor: TOILE.cream, borderColor: TOILE.line, borderRadius: 24 },
+  hideBtn: { flexDirection: "row", alignItems: "center", gap: 6, minHeight: 44, paddingHorizontal: 14, borderWidth: 1, borderColor: TOILE.line, backgroundColor: TOILE.cream },
+  paper: { backgroundColor: TOILE.cream, borderColor: TOILE.line },
   eyebrow: { fontFamily: F.serif, fontSize: 13, letterSpacing: 3.5, textTransform: "uppercase", color: TOILE.ink },
   bow: { position: "absolute", top: -16, right: -12, width: 74, height: 72, zIndex: 1 },
   lace: { marginHorizontal: -24, marginTop: 22, marginBottom: -32, height: 44, overflow: "hidden" },
   dayBar: { gap: 6, marginBottom: 14 },
-  treat: { gap: 12, minHeight: 52, paddingHorizontal: 16, paddingVertical: 10, marginBottom: 14, borderRadius: 20, borderWidth: 1, borderColor: TOILE.line, backgroundColor: TOILE.cream },
+  treat: { gap: 12, minHeight: 52, paddingHorizontal: 16, paddingVertical: 10, marginBottom: 14, borderWidth: 1, borderColor: TOILE.line, backgroundColor: TOILE.cream },
   treatOn: { backgroundColor: TOILE.navy, borderColor: TOILE.navy },
   treatTitle: { fontFamily: F.serif, fontSize: 16, color: TOILE.ink },
   treatSub: { fontFamily: F.sans, fontSize: 12.5, color: T.canvas, marginTop: 2 },
-  dayArrow: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: TOILE.line, backgroundColor: TOILE.cream, alignItems: "center", justifyContent: "center" },
+  dayArrow: { width: 44, height: 44, borderWidth: 1, borderColor: TOILE.line, backgroundColor: TOILE.cream, alignItems: "center", justifyContent: "center" },
   dayLabel: { fontFamily: F.serif, fontSize: 26, color: TOILE.ink },
   dayHint: { fontFamily: F.sans, fontSize: 11.5, color: TOILE.inkSoft, marginTop: 1 },
-  switch: { flexDirection: "row", alignSelf: "center", padding: 4, borderRadius: 999, borderWidth: 1, borderColor: TOILE.line, backgroundColor: TOILE.cream, marginBottom: 18 },
-  switchItem: { minHeight: 40, minWidth: 108, paddingHorizontal: 18, borderRadius: 999, alignItems: "center", justifyContent: "center" },
+  switch: { flexDirection: "row", alignSelf: "center", padding: 4, borderWidth: 1, borderColor: TOILE.line, backgroundColor: TOILE.cream, marginBottom: 18 },
+  switchItem: { minHeight: 40, minWidth: 108, paddingHorizontal: 18, alignItems: "center", justifyContent: "center" },
   switchOn: { backgroundColor: TOILE.navy },
   side: { width: 76, alignItems: "center", minHeight: 44, justifyContent: "center" },
-  sideNum: { fontFamily: F.serif, fontSize: 21, color: TOILE.ink },
+  sideNum: { fontFamily: F.serif, fontSize: 18, color: TOILE.ink },
   sideLabel: { fontFamily: F.sans, fontSize: 12.5, color: TOILE.inkSoft, marginTop: 2 },
   arcCentre: { position: "absolute", alignItems: "center", justifyContent: "center", left: 0, right: 0, top: 46 },
   arcNum: { fontFamily: F.serif, fontSize: 34, color: TOILE.ink },
@@ -343,14 +346,14 @@ const styles = StyleSheet.create({
   mealName: { fontFamily: F.serif, fontSize: 19, color: TOILE.ink },
   mealKcal: { fontFamily: F.sans, fontSize: 13, color: TOILE.ink, marginTop: 2 },
   mealItems: { fontFamily: F.serifItalic, fontSize: 13, color: TOILE.inkSoft, marginTop: 2 },
-  addBtn: { width: 46, height: 46, borderRadius: 23, backgroundColor: TOILE.navy, alignItems: "center", justifyContent: "center" },
-  thumb: { width: 60, height: 60, borderRadius: 30, borderWidth: 1, borderColor: TOILE.line },
-  pill: { flexDirection: "row", alignItems: "center", gap: 6, minHeight: 44, paddingHorizontal: 16, borderRadius: 999, borderWidth: 1, borderColor: TOILE.navy },
+  addBtn: { width: 46, height: 46, backgroundColor: TOILE.navy, alignItems: "center", justifyContent: "center" },
+  thumb: { width: 60, height: 60, borderWidth: 1, borderColor: TOILE.line },
+  pill: { flexDirection: "row", alignItems: "center", gap: 6, minHeight: 44, paddingHorizontal: 16, borderWidth: 1, borderColor: TOILE.navy },
   pillNavy: { backgroundColor: TOILE.navy, borderColor: TOILE.navy },
   pillText: { fontFamily: F.sansMed, fontSize: 12.5, color: TOILE.navy },
-  note: { alignItems: "flex-start", gap: 14, borderRadius: 20, padding: 18, borderWidth: 1, borderColor: TOILE.line, backgroundColor: TOILE.cream },
-  noteIcon: { width: 32, height: 32, borderRadius: 16, backgroundColor: TOILE.creamDeep, alignItems: "center", justifyContent: "center" },
-  setup: { gap: 12, padding: 16, marginBottom: 18, borderRadius: 20, borderWidth: 1, borderColor: TOILE.navy, backgroundColor: TOILE.cream },
+  note: { alignItems: "flex-start", gap: 14, padding: 18, borderWidth: 1, borderColor: TOILE.line, backgroundColor: TOILE.cream },
+  noteIcon: { width: 32, height: 32, backgroundColor: TOILE.creamDeep, alignItems: "center", justifyContent: "center" },
+  setup: { gap: 12, padding: 16, marginBottom: 18, borderWidth: 1, borderColor: TOILE.navy, backgroundColor: TOILE.cream },
   setupTitle: { fontFamily: F.serif, fontSize: 17, color: TOILE.ink, marginBottom: 2 },
   goalLink: { alignSelf: "center", minHeight: 44, justifyContent: "center", marginTop: -8, marginBottom: 10 },
   goalLinkText: { fontFamily: F.sans, fontSize: 13, color: TOILE.inkSoft, textDecorationLine: "underline" },

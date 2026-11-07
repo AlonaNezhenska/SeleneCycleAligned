@@ -63,7 +63,7 @@ const MoveChart = ({ rows, weekly }) => {
         {rows.map((r) => (
           <View key={r.date} style={styles.col}>
             {["meditation", "yoga", "exercise"].map((k) =>
-              r[k] > 0 ? <View key={k} style={[styles.bar, { height: (r[k] / top) * CHART, backgroundColor: COLORS[k], borderRadius: 3 }]} /> : null
+              r[k] > 0 ? <View key={k} style={[styles.bar, { height: (r[k] / top) * CHART, backgroundColor: COLORS[k] }]} /> : null
             )}
           </View>
         ))}
@@ -185,12 +185,12 @@ export const Journey = ({ days, todayKey, goalKcal, kg, hidden, photos, baseline
 const styles = StyleSheet.create({
   title: { fontFamily: F.serif, fontSize: 22, color: T.ink },
   cardTitle: { fontFamily: F.serif, fontSize: 17, color: T.ink },
-  switch: { flexDirection: "row", padding: 3, borderRadius: 999, backgroundColor: T.canvasDeep },
-  switchItem: { minHeight: 34, paddingHorizontal: 12, borderRadius: 999, alignItems: "center", justifyContent: "center" },
+  switch: { flexDirection: "row", padding: 3, backgroundColor: T.canvasDeep },
+  switchItem: { minHeight: 34, paddingHorizontal: 12, alignItems: "center", justifyContent: "center" },
   switchOn: { backgroundColor: T.ink },
   chart: { height: CHART, flexDirection: "row", alignItems: "flex-end", gap: 6, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: T.hair },
   col: { flex: 1, justifyContent: "flex-end", gap: 1 },
-  bar: { width: "100%", borderTopLeftRadius: 4, borderTopRightRadius: 4 },
+  bar: { width: "100%" },
   goalLine: { position: "absolute", left: 0, right: 0, height: 1, borderTopWidth: 1, borderStyle: "dashed", borderColor: T.inkSoft },
   tick: { flex: 1, textAlign: "center", fontFamily: F.sans, fontSize: 11, color: T.inkSoft, marginTop: 4 },
   swatch: { width: 10, height: 10, borderRadius: 5 },

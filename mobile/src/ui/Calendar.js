@@ -120,8 +120,8 @@ export const shortDate = (isoDate) =>
   new Date(`${isoDate}T12:00:00`).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
 
 const styles = StyleSheet.create({
-  wrap: { borderRadius: 20, borderWidth: 1, padding: 8 },
+  wrap: { borderWidth: 1, padding: 8 },
   weekday: { flex: 1, textAlign: "center", fontFamily: F.sansMed, fontSize: 11.5, paddingVertical: 4 },
   cell: { flex: 1, height: 44, alignItems: "center", justifyContent: "center" },
-  day: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
+  day: { width: 38, height: 38, alignItems: "center", justifyContent: "center" },
 });

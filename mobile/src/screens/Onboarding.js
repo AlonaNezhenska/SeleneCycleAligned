@@ -318,7 +318,7 @@ const Tracking = ({ data, set, next, back }) => (
  *  this before launch. */
 const Polaroid = ({ uri }) => (
   <View style={styles.polaroid}>
-    <View style={{ height: 250, borderRadius: 2, overflow: "hidden", backgroundColor: T.canvasDeep }}>
+    <View style={{ height: 250, overflow: "hidden", backgroundColor: T.canvasDeep }}>
       {uri ? (
         <>
           <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" accessibilityLabel="Your baseline photo, face softened" />
@@ -448,17 +448,17 @@ export function Onboarding() {
 }
 
 const styles = StyleSheet.create({
-  pill: { minHeight: 52, borderRadius: 999, borderWidth: 1.5, flexDirection: "row", alignItems: "center", gap: 14, paddingHorizontal: 22 },
-  option: { minHeight: 64, borderRadius: 20, borderWidth: 1.5, flexDirection: "row", alignItems: "center", gap: 14, paddingHorizontal: 20, paddingVertical: 12 },
-  check: { width: 24, height: 24, borderRadius: 12, backgroundColor: T.sage, alignItems: "center", justifyContent: "center" },
-  box: { width: 24, height: 24, borderRadius: 6, borderWidth: 1.5, borderColor: T.inkSoft, alignItems: "center", justifyContent: "center", marginTop: 1 },
+  pill: { minHeight: 52, borderWidth: 1.5, flexDirection: "row", alignItems: "center", gap: 14, paddingHorizontal: 22 },
+  option: { minHeight: 64, borderWidth: 1.5, flexDirection: "row", alignItems: "center", gap: 14, paddingHorizontal: 20, paddingVertical: 12 },
+  check: { width: 24, height: 24, backgroundColor: T.sage, alignItems: "center", justifyContent: "center" },
+  box: { width: 24, height: 24, borderWidth: 1.5, borderColor: T.inkSoft, alignItems: "center", justifyContent: "center", marginTop: 1 },
   polaroid: {
     alignSelf: "center",
     width: 236,
     padding: 12,
     paddingBottom: 18,
     backgroundColor: T.canvas,
-    borderRadius: 6,
+    
     transform: [{ rotate: "-2deg" }],
     shadowColor: "#000",
     shadowOpacity: 0.35,

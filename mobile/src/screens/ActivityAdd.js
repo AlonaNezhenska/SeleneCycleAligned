@@ -154,8 +154,8 @@ export function ActivityAdd() {
 const styles = StyleSheet.create({
   label: { fontFamily: F.sansMed, fontSize: 13, color: T.inkSoft, marginBottom: 8 },
   minutes: { fontFamily: F.serif, fontSize: 24, color: T.ink, minWidth: 90, textAlign: "center" },
-  input: { minHeight: 48, paddingHorizontal: 16, borderRadius: 16, borderWidth: 1, borderColor: T.hair, backgroundColor: T.surface, fontFamily: F.sans, fontSize: 15, color: T.ink },
+  input: { minHeight: 48, paddingHorizontal: 16, borderWidth: 1, borderColor: T.hair, backgroundColor: T.surface, fontFamily: F.sans, fontSize: 15, color: T.ink },
   footer: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 18, backgroundColor: T.canvas, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: T.hair },
-  primary: { minHeight: 52, borderRadius: 999, backgroundColor: OLIVE, alignItems: "center", justifyContent: "center" },
+  primary: { minHeight: 52, backgroundColor: OLIVE, alignItems: "center", justifyContent: "center" },
   primaryText: { fontFamily: F.sansMed, fontSize: 15.5, color: T.canvas },
 });

@@ -312,7 +312,7 @@ export const HurdlesSection = ({ value = [], onChange }) => {
 };
 
 const styles = StyleSheet.create({
-  stepper: { borderRadius: 16, borderWidth: 1, paddingHorizontal: 4 },
-  hurdle: { minHeight: 56, flexDirection: "row", alignItems: "center", gap: 12, borderRadius: 16, borderWidth: 1.5, paddingHorizontal: 14, paddingVertical: 10 },
-  box: { width: 24, height: 24, borderRadius: 6, borderWidth: 1.5, borderColor: T.inkSoft, alignItems: "center", justifyContent: "center" },
+  stepper: { borderWidth: 1, paddingHorizontal: 4 },
+  hurdle: { minHeight: 56, flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1.5, paddingHorizontal: 14, paddingVertical: 10 },
+  box: { width: 24, height: 24, borderWidth: 1.5, borderColor: T.inkSoft, alignItems: "center", justifyContent: "center" },
 });

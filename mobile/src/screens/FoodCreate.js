@@ -5,7 +5,8 @@ import { ArrowLeft, Minus, Plus, X } from "lucide-react-native";
 import { useApp } from "../state/AppState";
 import { MEAL, newId, quickEntry, foodEntry, defaultGrams, amountLabel, itemsTotal, perServing } from "../lib/food";
 import { RECIPE_CATEGORIES } from "../content/recipes";
-import { FoodRow, AmountSheet, SectionTitle, useFoodSearch, kcalText, OLIVE, diaryDay } from "../ui/food";
+import { FoodRow, SectionTitle, useFoodSearch, kcalText, OLIVE, diaryDay } from "../ui/food";
+import { FoodDetail } from "../ui/FoodDetail";
 import { T, F } from "../ui/theme";
 import { Screen, Body, Serif, Chip, IconBtn, s } from "../ui/kit";
 
@@ -80,7 +81,7 @@ const IngredientPicker = ({ items, onChange, hidden }) => {
         <FoodRow key={f.id} name={f.name} sub={[f.brand, "per 100 g"].filter(Boolean).join(", ")} kcal={f.per100.kcal} hidden={hidden} onAdd={() => add(f)} onPress={() => add(f)} />
       ))}
       {query.trim().length >= 3 && remote.status === "loading" && <Body size={12.5}>Looking through UK products…</Body>}
-      <AmountSheet
+      <FoodDetail
         food={editing != null ? items[editing]?.food : null}
         grams={editing != null ? items[editing]?.grams : undefined}
         visible={editing != null}
@@ -318,13 +319,13 @@ export function FoodCreate() {
 
 const styles = StyleSheet.create({
   label: { fontFamily: F.sansMed, fontSize: 12.5, color: T.inkSoft, marginBottom: 6 },
-  input: { flex: 1, minHeight: 48, paddingHorizontal: 16, borderRadius: 16, borderWidth: 1, borderColor: T.hair, backgroundColor: T.surface, fontFamily: F.sans, fontSize: 15.5, color: T.ink },
+  input: { flex: 1, minHeight: 48, paddingHorizontal: 16, borderWidth: 1, borderColor: T.hair, backgroundColor: T.surface, fontFamily: F.sans, fontSize: 15.5, color: T.ink },
   itemRow: { gap: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: T.hair },
   itemName: { fontFamily: F.sansMed, fontSize: 14.5, color: T.ink },
   iconHit: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
   footer: { gap: 8, paddingHorizontal: 20, paddingTop: 10, paddingBottom: 18, backgroundColor: T.canvas, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: T.hair },
-  primary: { minHeight: 52, borderRadius: 999, backgroundColor: OLIVE, alignItems: "center", justifyContent: "center" },
+  primary: { minHeight: 52, backgroundColor: OLIVE, alignItems: "center", justifyContent: "center" },
   primaryText: { fontFamily: F.sansMed, fontSize: 15.5, color: T.canvas },
-  ghost: { minHeight: 48, borderRadius: 999, borderWidth: 1, borderColor: T.hair, alignItems: "center", justifyContent: "center" },
+  ghost: { minHeight: 48, borderWidth: 1, borderColor: T.hair, alignItems: "center", justifyContent: "center" },
   ghostText: { fontFamily: F.sansMed, fontSize: 14.5, color: T.ink },
 });

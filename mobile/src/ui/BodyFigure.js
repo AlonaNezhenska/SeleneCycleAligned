@@ -149,7 +149,7 @@ export const BodyFigure = ({ primary = [], secondary = [], height = 240, still =
 export const BodyThumb = ({ primary = [], secondary = [], size = 56 }) => {
   const back = primary.some((m) => BACK[m] && !FRONT[m]);
   return (
-    <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center", borderRadius: 14, backgroundColor: "#F6F1E7" }} accessibilityElementsHidden importantForAccessibility="no">
+    <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center", backgroundColor: "#F6F1E7" }} accessibilityElementsHidden importantForAccessibility="no">
       <Svg width={size * 0.5} height={size} viewBox="0 0 200 400">
         <Silhouette back={back} />
         <Muscles map={back ? BACK : FRONT} primary={primary} secondary={secondary} />

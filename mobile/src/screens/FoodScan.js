@@ -6,7 +6,8 @@ import { ArrowLeft } from "lucide-react-native";
 import { useApp } from "../state/AppState";
 import { MEAL, defaultGrams, foodEntry } from "../lib/food";
 import { lookupBarcode } from "../lib/openFoodFacts";
-import { AmountSheet, OLIVE, diaryDay } from "../ui/food";
+import { OLIVE, diaryDay } from "../ui/food";
+import { FoodDetail } from "../ui/FoodDetail";
 import { T, F } from "../ui/theme";
 import { Screen, Body, Serif, IconBtn, s } from "../ui/kit";
 
@@ -135,11 +136,12 @@ export function FoodScan() {
         </Pressable>
       </View>
 
-      <AmountSheet
+      <FoodDetail
         food={state.food}
         grams={state.food ? defaultGrams(state.food, foodLibrary.recent) : undefined}
         visible={state.status === "found"}
         hidden={hidden}
+        title={MEAL[meal].label}
         confirmLabel={`Add to ${MEAL[meal].label}`}
         onClose={again}
         onConfirm={(g) => {
@@ -152,13 +154,13 @@ export function FoodScan() {
 }
 
 const styles = StyleSheet.create({
-  cameraWrap: { height: 300, borderRadius: 24, overflow: "hidden", backgroundColor: "#111" },
-  frame: { position: "absolute", left: "12%", right: "12%", top: "32%", bottom: "32%", borderWidth: 2, borderColor: "rgba(242,239,230,0.85)", borderRadius: 14 },
-  card: { gap: 12, padding: 18, borderRadius: 22, backgroundColor: T.surface, borderWidth: 1, borderColor: T.hair },
-  primary: { minHeight: 50, borderRadius: 999, backgroundColor: OLIVE, alignItems: "center", justifyContent: "center" },
+  cameraWrap: { height: 300, overflow: "hidden", backgroundColor: "#111" },
+  frame: { position: "absolute", left: "12%", right: "12%", top: "32%", bottom: "32%", borderWidth: 2, borderColor: "rgba(242,239,230,0.85)" },
+  card: { gap: 12, padding: 18, backgroundColor: T.surface, borderWidth: 1, borderColor: T.hair },
+  primary: { minHeight: 50, backgroundColor: OLIVE, alignItems: "center", justifyContent: "center" },
   primaryText: { fontFamily: F.sansMed, fontSize: 15, color: T.canvas },
-  ghost: { minHeight: 48, borderRadius: 999, borderWidth: 1, borderColor: T.hair, alignItems: "center", justifyContent: "center" },
+  ghost: { minHeight: 48, borderWidth: 1, borderColor: T.hair, alignItems: "center", justifyContent: "center" },
   or: { fontFamily: F.serifItalic, fontSize: 15, color: T.inkSoft, textAlign: "center", marginTop: 22, marginBottom: 10 },
-  input: { flex: 1, minHeight: 50, paddingHorizontal: 16, borderRadius: 999, borderWidth: 1, borderColor: T.hair, backgroundColor: T.surface, fontFamily: F.sans, fontSize: 15.5, color: T.ink },
-  lookBtn: { minHeight: 50, paddingHorizontal: 20, borderRadius: 999, backgroundColor: OLIVE, alignItems: "center", justifyContent: "center" },
+  input: { flex: 1, minHeight: 50, paddingHorizontal: 16, borderWidth: 1, borderColor: T.hair, backgroundColor: T.surface, fontFamily: F.sans, fontSize: 15.5, color: T.ink },
+  lookBtn: { minHeight: 50, paddingHorizontal: 20, backgroundColor: OLIVE, alignItems: "center", justifyContent: "center" },
 });

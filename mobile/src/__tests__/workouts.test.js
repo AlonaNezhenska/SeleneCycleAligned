@@ -7,6 +7,16 @@ import { AppProvider, useApp, dateKey, STATE_KEY } from "../state/AppState";
 import { TrackerSessionProvider } from "../state/TrackerSession";
 import { findBlocked, AGREEMENT_VERSION } from "../shared";
 import { Training } from "../screens/Training";
+import { WorkoutStart } from "../screens/WorkoutStart";
+import { WorkoutToday } from "../screens/WorkoutToday";
+
+/** The question and the tab together, as the session stays between them. */
+const StartAndTab = () => (
+  <>
+    <WorkoutStart />
+    <Training />
+  </>
+);
 import { WorkoutLog } from "../screens/WorkoutLog";
 import { ExercisePicker } from "../screens/ExercisePicker";
 import { ExerciseDetail } from "../screens/ExerciseDetail";
@@ -14,6 +24,8 @@ import { Explore, ProgramDetail, Trainer, Place } from "../screens/Explore";
 import { RoutineEditor } from "../screens/RoutineEditor";
 import { WorkoutStats, Measures, WorkoutCalendar, WorkoutDetail } from "../screens/WorkoutPages";
 import { Profile } from "../screens/Profile";
+import { ProfileSection } from "../screens/ProfileSection";
+const part = (section) => () => <ProfileSection section={section} />;
 import { Fuel } from "../screens/Fuel";
 import { LIBRARY, findExercises, logType, exerciseById } from "../lib/exercises";
 import { exercisePicture } from "../content/exerciseMedia";
@@ -134,9 +146,9 @@ describe("workout arithmetic", () => {
 
 describe("logging a workout", () => {
   it("starts an empty workout, adds an exercise, ticks a set and finishes", async () => {
-    await mount(Training);
-    await fireEvent.press(screen.getByRole("button", { name: "Start empty workout" }));
-    expect(router.push).toHaveBeenCalledWith("/workout/log");
+    await mount(WorkoutStart);
+    await fireEvent.press(screen.getByRole("button", { name: "Empty workout" }));
+    expect(router.replace).toHaveBeenCalledWith("/workout/log");
     await act(async () => {});
     let data = await stored();
     expect(data.activeWorkout).toMatchObject({ name: "Workout", exercises: [] });
@@ -193,10 +205,9 @@ describe("logging a workout", () => {
   });
 
   it("starts the routine suggested for today's phase", async () => {
-    await mount(Training);
-    expect(screen.getByTestId("today-plan")).toBeOnTheScreen();
-    const start = screen.getAllByRole("button", { name: /^Start / }).find((b) => b.props.accessibilityLabel !== "Start empty workout");
-    await fireEvent.press(start);
+    await mount(WorkoutStart);
+    expect(screen.getByText(/^Suggested for today/)).toBeOnTheScreen();
+    await fireEvent.press(screen.getByText(/^Suggested for today/));
     expect((await stored()).activeWorkout.exercises.length).toBeGreaterThan(2);
   });
 });
@@ -259,7 +270,7 @@ describe("exercise page", () => {
 
 describe("Profile training", () => {
   it("shows hours this week, the dashboard and recent workouts", async () => {
-    await mount(Profile, { initial: { workouts: [{ ...PAST, date: TODAY }] } });
+    await mount(part("training"), { initial: { workouts: [{ ...PAST, date: TODAY }] } });
     expect(screen.getByTestId("training-stats")).toHaveTextContent(/0.8 hours this week · 1 workout/);
     await fireEvent.press(screen.getByRole("button", { name: "Statistics" }));
     expect(router.push).toHaveBeenCalledWith("/workout/stats");

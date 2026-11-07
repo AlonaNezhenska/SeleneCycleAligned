@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, Pressable, TextInput, Modal, ScrollView, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
+import { Divider, IconButton, Surface, TouchableRipple } from "react-native-paper";
 import Svg, { Circle, Path } from "react-native-svg";
-import { Plus, Check, Minus } from "lucide-react-native";
-import { scale, amountLabel, share, fullnessWord, searchLocal } from "../lib/food";
+import { Plus, Check, History } from "lucide-react-native";
+import { share, fullnessWord, searchLocal } from "../lib/food";
 import { searchProducts } from "../lib/openFoodFacts";
-import { T, F } from "./theme";
-import { Body, Chip, s } from "./kit";
+import { T, F, TOILE } from "./theme";
+import { s } from "./kit";
 
 /* ---------------------------------------------------------------
    FOOD PIECES — what the diary, the add screen and recipes share.
@@ -23,8 +24,8 @@ export const gramsText = (n) => `${Math.round(n)} g`;
 
 /** A soft progress bar; full at the goal and never past it. */
 export const Bar = ({ value, goal, color = OLIVE, height = 7, testID }) => (
-  <View style={[styles.track, { height, borderRadius: height / 2 }]} testID={testID}>
-    <View style={{ width: `${share(value, goal) * 100}%`, height: "100%", borderRadius: height / 2, backgroundColor: color }} />
+  <View style={[styles.track, { height }]} testID={testID}>
+    <View style={{ width: `${share(value, goal) * 100}%`, height: "100%", backgroundColor: color }} />
   </View>
 );
 
@@ -86,144 +87,82 @@ export const MacroBar = ({ label, value, goal, hidden, color }) => (
   </View>
 );
 
-/** A food in a list: tap the row to choose an amount, or + to add the usual amount. */
+/** A food in a list: tap the row to look at it, or + to add the usual amount. */
 export const FoodRow = ({ name, sub, kcal, hidden, onPress, onAdd, added }) => (
   <View style={styles.row}>
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${name}, choose amount`} style={{ flex: 1, minHeight: 48, justifyContent: "center" }}>
-      <Text style={styles.rowName} numberOfLines={1}>
-        {name}
-      </Text>
-      {!!sub && (
-        <Text style={styles.rowSub} numberOfLines={1}>
-          {sub}
+    <TouchableRipple onPress={onPress} accessibilityRole="button" accessibilityLabel={`${name}, choose amount`} style={{ flex: 1, minHeight: 56, justifyContent: "center" }}>
+      <View>
+        <Text style={styles.rowName} numberOfLines={1}>
+          {name}
         </Text>
-      )}
-    </Pressable>
+        {!!sub && (
+          <Text style={styles.rowSub} numberOfLines={1}>
+            {sub}
+          </Text>
+        )}
+      </View>
+    </TouchableRipple>
     {!hidden && kcal != null && <Text style={styles.rowKcal}>{kcalText(kcal)}</Text>}
-    {onAdd && (
-      <Pressable onPress={onAdd} accessibilityRole="button" accessibilityLabel={`Add ${name}`} hitSlop={6} style={[styles.plus, added && styles.plusOn]}>
-        {added ? <Check size={18} color={T.canvas} strokeWidth={2.4} /> : <Plus size={18} color={OLIVE} strokeWidth={2.2} />}
-      </Pressable>
-    )}
+    {onAdd && <AddButton name={name} added={added} onPress={onAdd} />}
   </View>
 );
 
-export const SectionTitle = ({ children, style }) => <Text style={[styles.section, style]}>{children}</Text>;
-
-/* ---- choosing an amount ---- */
-
-const StepBtn = ({ label, onPress, children }) => (
-  <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={styles.step}>
-    {children}
-  </Pressable>
+const AddButton = ({ name, added, onPress }) => (
+  <IconButton
+    icon={() => (added ? <Check size={18} color={T.canvas} strokeWidth={2.4} /> : <Plus size={18} color={TOILE.navy} strokeWidth={2.2} />)}
+    mode={added ? "contained" : "outlined"}
+    containerColor={added ? TOILE.navy : undefined}
+    onPress={onPress}
+    accessibilityLabel={`Add ${name}`}
+    style={styles.plus}
+  />
 );
 
-/**
- * A window that slides up to choose how much of a food: in portions when
- * the food has one, or in grams. Shows what that amount adds up to,
- * unless numbers are hidden.
- */
-export const AmountSheet = ({ food, grams: initial, visible, onClose, onConfirm, confirmLabel, onRemove, hidden }) => {
-  const portion = food?.serving?.grams > 0 ? food.serving : null;
-  // quick adds and recipe servings are counted in servings only
-  const servingsOnly = !!food?.servingsOnly;
-  const [unit, setUnit] = useState(portion ? "portion" : "g");
-  const [grams, setGrams] = useState(initial ?? portion?.grams ?? 100);
-  const [text, setText] = useState(String(initial ?? portion?.grams ?? 100));
-
-  useEffect(() => {
-    if (!visible) return;
-    const g = initial ?? portion?.grams ?? 100;
-    setGrams(g);
-    setText(String(g));
-    setUnit(portion ? "portion" : "g");
-  }, [visible, food?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  if (!food) return null;
-  const set = (g) => {
-    const v = Math.max(1, Math.round(g));
-    setGrams(v);
-    setText(String(v));
-  };
-  const step = unit === "portion" ? portion.grams / 2 : grams >= 100 ? 25 : 10;
-  const n = scale(food.per100, grams);
-
-  return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        <Pressable style={{ flex: 1 }} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close" />
-        <View style={styles.sheet} testID="amount-sheet">
-          <View style={styles.handle} />
-          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 6 }}>
-            <Text style={styles.sheetTitle}>{food.name}</Text>
-            {!!food.brand && <Body size={13}>{food.brand}</Body>}
-
-            {portion && !servingsOnly && (
-              <View style={[s.row, { gap: 8, marginTop: 14 }]}>
-                <Chip label="Portions" selected={unit === "portion"} onPress={() => setUnit("portion")} />
-                <Chip label="Grams" selected={unit === "g"} onPress={() => setUnit("g")} />
-              </View>
-            )}
-
-            <View style={[s.row, { gap: 12, marginTop: 14, justifyContent: "center" }]}>
-              <StepBtn label="Less" onPress={() => set(Math.max(step, grams - step))}>
-                <Minus size={18} color={T.ink} />
-              </StepBtn>
-              {unit === "portion" ? (
-                <Text style={styles.amountBig} accessibilityLiveRegion="polite">
-                  {servingsOnly ? `${grams / 100} ${grams === 100 ? "serving" : "servings"}` : amountLabel(food, grams)}
-                </Text>
-              ) : (
-                <View style={[s.row, { gap: 6 }]}>
-                  <TextInput
-                    value={text}
-                    onChangeText={(t) => {
-                      setText(t.replace(/[^\d]/g, ""));
-                      const v = parseInt(t, 10);
-                      if (v > 0) setGrams(v);
-                    }}
-                    keyboardType="number-pad"
-                    accessibilityLabel="Amount in grams"
-                    style={styles.gramsInput}
-                  />
-                  <Text style={styles.amountBig}>g</Text>
-                </View>
-              )}
-              <StepBtn label="More" onPress={() => set(grams + step)}>
-                <Plus size={18} color={T.ink} />
-              </StepBtn>
-            </View>
-
-            {portion && unit === "portion" && (
-              <View style={[s.row, { gap: 8, marginTop: 12, justifyContent: "center", flexWrap: "wrap" }]}>
-                {[0.5, 1, 2].map((k) => (
-                  <Chip key={k} label={k === 0.5 ? "½" : String(k)} selected={grams === Math.round(portion.grams * k)} onPress={() => set(portion.grams * k)} />
-                ))}
-              </View>
-            )}
-
-            {!hidden && (
-              <Text style={styles.preview} testID="amount-preview">
-                {`${kcalText(n.kcal)} · protein ${n.protein} g · carbs ${n.carbs} g · fat ${n.fat} g`}
-              </Text>
-            )}
-          </ScrollView>
-
-          <View style={[s.row, { gap: 10, marginTop: 12 }]}>
-            {onRemove && (
-              <Pressable onPress={onRemove} accessibilityRole="button" accessibilityLabel={`Remove ${food.name}`} style={styles.ghostBtn}>
-                <Text style={{ fontFamily: F.sansMed, fontSize: 14.5, color: T.ink }}>Remove</Text>
-              </Pressable>
-            )}
-            <Pressable onPress={() => onConfirm(grams)} accessibilityRole="button" accessibilityLabel={confirmLabel} style={styles.primaryBtn}>
-              <Text style={styles.primaryText}>{confirmLabel}</Text>
-            </Pressable>
+/** A search result: what it is, how much, and for the best match its macros. */
+export const ResultCard = ({ name, sub, tag, logged, kcal, macros, hidden, onPress, onAdd, added }) => (
+  <Surface mode="flat" elevation={0} style={styles.card}>
+    <View style={[s.row, { alignItems: "flex-start", gap: 10 }]}>
+      <TouchableRipple onPress={onPress} accessibilityRole="button" accessibilityLabel={`${name}, choose amount`} style={{ flex: 1 }}>
+        <View>
+          <Text style={styles.cardName} numberOfLines={2}>
+            {name}
+          </Text>
+          {!!sub && (
+            <Text style={styles.rowSub} numberOfLines={1}>
+              {sub}
+            </Text>
+          )}
+          <View style={[s.row, { gap: 8, marginTop: 10 }]}>
+            <Text style={styles.tag}>{tag}</Text>
+            {logged && <History size={15} color={TOILE.inkSoft} accessibilityLabel="Logged before" />}
+            <View style={{ flex: 1 }} />
+            {!hidden && kcal != null && <Text style={styles.rowKcal}>{kcalText(kcal)}</Text>}
           </View>
         </View>
-      </View>
-    </Modal>
-  );
-};
+      </TouchableRipple>
+      {onAdd && <AddButton name={name} added={added} onPress={onAdd} />}
+    </View>
+    {!hidden && macros && (
+      <>
+        <Divider style={{ marginTop: 12 }} />
+        <View style={[s.row, { justifyContent: "space-around", marginTop: 10 }]}>
+          {[
+            ["Carbs", macros.carbs],
+            ["Protein", macros.protein],
+            ["Fat", macros.fat],
+          ].map(([label, g]) => (
+            <View key={label} style={{ alignItems: "center" }}>
+              <Text style={styles.cardMacro}>{`${g} g`}</Text>
+              <Text style={styles.rowSub}>{label}</Text>
+            </View>
+          ))}
+        </View>
+      </>
+    )}
+  </Surface>
+);
+
+export const SectionTitle = ({ children, style }) => <Text style={[styles.section, style]}>{children}</Text>;
 
 /* ---- search: the phone first, then packaged products ---- */
 
@@ -272,23 +211,15 @@ const styles = StyleSheet.create({
   macroLabel: { fontFamily: F.sansMed, fontSize: 12.5, color: T.ink, textAlign: "center" },
   macroValue: { fontFamily: F.sans, fontSize: 12.5, color: T.inkSoft, textAlign: "center" },
   row: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 6, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: T.hair },
-  rowName: { fontFamily: F.sansMed, fontSize: 15, color: T.ink },
+  rowName: { fontFamily: F.sansMed, fontSize: 15.5, color: T.ink },
   rowSub: { fontFamily: F.sans, fontSize: 12.5, color: T.inkSoft, marginTop: 2 },
-  rowKcal: { fontFamily: F.sans, fontSize: 13.5, color: T.ink },
-  plus: { width: 40, height: 40, borderRadius: 20, borderWidth: 1.5, borderColor: OLIVE, alignItems: "center", justifyContent: "center" },
-  plusOn: { backgroundColor: OLIVE },
+  rowKcal: { fontFamily: F.sans, fontSize: 14, color: T.inkSoft },
+  plus: { width: 40, height: 40, margin: 0, borderRadius: 0 },
   section: { fontFamily: F.serif, fontSize: 13, letterSpacing: 2.4, color: T.inkSoft, marginTop: 18, marginBottom: 4 },
-  backdrop: { flex: 1, backgroundColor: "rgba(20,24,18,0.35)" },
-  sheet: { backgroundColor: T.canvas, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 20, paddingBottom: 30, maxHeight: "75%" },
-  handle: { alignSelf: "center", width: 40, height: 4, borderRadius: 2, backgroundColor: T.hair, marginBottom: 12 },
-  sheetTitle: { fontFamily: F.serif, fontSize: 22, color: T.ink },
-  step: { width: 46, height: 46, borderRadius: 23, borderWidth: 1, borderColor: T.hair, alignItems: "center", justifyContent: "center" },
-  amountBig: { fontFamily: F.serif, fontSize: 20, color: T.ink, textAlign: "center", maxWidth: 200 },
-  gramsInput: { minWidth: 70, fontFamily: F.serif, fontSize: 24, color: T.ink, textAlign: "center", borderBottomWidth: 1, borderBottomColor: T.hair, paddingVertical: 2 },
-  preview: { fontFamily: F.sans, fontSize: 13, color: T.inkSoft, textAlign: "center", marginTop: 14 },
-  ghostBtn: { minHeight: 52, paddingHorizontal: 20, borderRadius: 999, borderWidth: 1, borderColor: T.hair, alignItems: "center", justifyContent: "center" },
-  primaryBtn: { flex: 1, minHeight: 52, borderRadius: 999, backgroundColor: OLIVE, alignItems: "center", justifyContent: "center" },
-  primaryText: { fontFamily: F.sansMed, fontSize: 15.5, color: T.canvas },
+  card: { padding: 14, marginBottom: 10, borderWidth: StyleSheet.hairlineWidth, borderColor: TOILE.line, backgroundColor: T.surface },
+  cardName: { fontFamily: F.sansSemi, fontSize: 15.5, color: T.ink },
+  cardMacro: { fontFamily: F.sansSemi, fontSize: 13, color: T.ink },
+  tag: { fontFamily: F.sansMed, fontSize: 11.5, color: TOILE.navy, backgroundColor: TOILE.creamDeep, paddingHorizontal: 8, paddingVertical: 3 },
 });
 
 /* ---- moving between days ---- */

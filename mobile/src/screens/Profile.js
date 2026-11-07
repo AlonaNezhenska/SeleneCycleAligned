@@ -1,57 +1,26 @@
 import React from "react";
-import { View, Pressable, StyleSheet } from "react-native";
+import { Text, StyleSheet } from "react-native";
+import { Divider } from "react-native-paper";
 import { router } from "expo-router";
-import { Pencil, ChevronRight, ShieldCheck, Moon, User, Activity, Target, Camera } from "lucide-react-native";
-import { resolveCycleLength, resolvePeriodLength, nextPeriodStart, MIN_LENGTH, MAX_LENGTH } from "../shared";
+import { BarChart3, Bell, Camera, Dumbbell, Moon, ShieldCheck, SlidersHorizontal, Target, User } from "lucide-react-native";
+import { resolveCycleLength, resolvePeriodLength } from "../shared";
 import { useApp } from "../state/AppState";
-import { T } from "../ui/theme";
-import { Screen, Card, Serif, Body, SectionLabel, s } from "../ui/kit";
+import { T, F } from "../ui/theme";
+import { Screen, Serif, MenuRow } from "../ui/kit";
 import { shortDate } from "../ui/Calendar";
-import { DEFAULT_TRACKING } from "../ui/TrackChoices";
 import { DEFAULT_GOAL } from "../lib/food";
-import { DIET, AIMS } from "../lib/energy";
-import { weightOf, DEFAULT_STEP_GOAL } from "../lib/activity";
-import { Journey } from "../ui/Journey";
-import { TrainingStats } from "../ui/TrainingStats";
+import { DIET } from "../lib/energy";
 
 /* ---------------------------------------------------------------
-   PROFILE — her journey first, then everything she has told Selena,
-   with a way to change each part. Every goal is edited from here.
+   PROFILE — a short menu.
+
+   Her progress first, then what she has told Selena. Each line opens
+   its own page, so nothing here has to be read past. Every goal is
+   edited from these pages.
    --------------------------------------------------------------- */
 
-const NOT_SURE = "Not sure yet";
+export const NOT_SURE = "Not sure yet";
 const days = (n) => `${n} day${n === 1 ? "" : "s"}`;
-
-const Row = ({ label, value, testID }) => (
-  <View style={styles.row} accessible accessibilityLabel={`${label}: ${value}`} testID={testID}>
-    <Body size={13} style={{ flex: 1 }}>
-      {label}
-    </Body>
-    <Body size={13.5} color={T.ink} weight="medium" style={{ flex: 1.4, textAlign: "right" }}>
-      {value}
-    </Body>
-  </View>
-);
-
-const Section = ({ title, icon: Icon, onEdit, editLabel, children }) => (
-  <View style={{ marginBottom: 20 }}>
-    <View style={[s.row, { justifyContent: "space-between", marginBottom: 2 }]}>
-      <View style={[s.row, { gap: 8 }]}>
-        <Icon size={15} color={T.inkSoft} strokeWidth={1.7} />
-        <SectionLabel>{title}</SectionLabel>
-      </View>
-      {onEdit && (
-        <Pressable onPress={onEdit} accessibilityRole="button" accessibilityLabel={editLabel} style={styles.edit}>
-          <Pencil size={13} color={T.sage} />
-          <Body size={12.5} weight="medium" color={T.sage}>
-            Edit
-          </Body>
-        </Pressable>
-      )}
-    </View>
-    <Card style={{ paddingVertical: 6 }}>{children}</Card>
-  </View>
-);
 
 /** Plain-language summaries of what the engine is working with. */
 export const describeCycle = (p) => {
@@ -79,101 +48,48 @@ export const describeCycle = (p) => {
   return { lastPeriod, periodLength, cycleLength };
 };
 
+const open = (section) => router.push({ pathname: "/me/[section]", params: { section } });
+
 export function Profile() {
-  const { profile: p, ctx, backup, agreement, days, todayKey, hideNumbers, photos, workouts } = useApp();
+  const { profile: p, ctx, backup, hideNumbers, photos } = useApp();
   const goal = { ...DEFAULT_GOAL, ...p.nutritionGoal };
   const hidden = hideNumbers || p.trackingStyle === "Visual plates";
-  const num = (text) => (hidden ? "Hidden" : text);
-  const fmt = (n) => Math.round(n).toLocaleString("en-GB");
-  const { lastPeriod, periodLength, cycleLength } = describeCycle(p);
-  const next = nextPeriodStart(p);
-  const tracking = p.tracking ?? DEFAULT_TRACKING;
+  const style = DIET[p.diet ?? "balanced"]?.label ?? "Balanced";
+  const count = photos.length + (p.baselinePhoto ? 1 : 0);
+  const today = p.onBirthControl ? "Following your Vibe Check" : ctx.calendarKnown ? `Day ${ctx.day} · ${ctx.phaseLabel}` : "Add your last period";
 
   return (
     <Screen>
-      <Serif size={28} accessibilityRole="header" style={{ marginBottom: 4 }}>
+      <Serif size={28} accessibilityRole="header" style={{ marginBottom: 16 }}>
         Your profile
       </Serif>
-      <Body style={{ marginBottom: 22 }}>Your journey, and everything you have told Selena. Change anything, any time.</Body>
 
-      <Journey
-        days={days}
-        todayKey={todayKey}
-        goalKcal={goal.kcal}
-        kg={weightOf(p)}
-        hidden={hidden}
-        photos={photos}
-        baselinePhoto={p.baselinePhoto}
-        profile={p}
-      />
+      <Text style={styles.group}>Your progress</Text>
+      <MenuRow icon={BarChart3} title="Your journey" description="Food, movement and this month" onPress={() => open("journey")} />
+      <Divider />
+      <MenuRow icon={Dumbbell} title="Training" description="Hours, charts and past workouts" onPress={() => open("training")} />
+      <Divider />
+      <MenuRow icon={Camera} title="Progress photos" description={count ? `${count} ${count === 1 ? "photo" : "photos"}` : "None yet"} onPress={() => router.push("/photos")} />
+      <Divider />
 
-      <TrainingStats workouts={workouts} todayKey={todayKey} />
+      <Text style={styles.group}>About you</Text>
+      <MenuRow icon={Target} title="Your goals" description={hidden ? style : `${Math.round(goal.kcal).toLocaleString("en-GB")} kcal · ${style}`} onPress={() => open("goals")} />
+      <Divider />
+      <MenuRow icon={Moon} title="Your cycle" description={today} onPress={() => open("cycle")} />
+      <Divider />
+      <MenuRow icon={User} title="About you" description="Age, birth control and hurdles" onPress={() => open("about")} />
+      <Divider />
 
-      <Section title="Your goals" icon={Target} onEdit={() => router.push("/food/goal")} editLabel="Edit your goals">
-        <Row label="Eating style" value={DIET[p.diet ?? "balanced"]?.label ?? "Balanced"} testID="profile-diet" />
-        <Row label="Aim" value={AIMS.find((a) => a.key === (p.body?.aim ?? "maintain"))?.label ?? "Stay as I am"} />
-        <Row label="Energy" value={num(`${fmt(goal.kcal)} kcal a day`)} testID="profile-energy" />
-        <Row label="Protein · carbs · fat" value={num(`${goal.protein} · ${goal.carbs} · ${goal.fat} g`)} />
-        <Row label="Steps a day" value={num(fmt(p.stepGoal ?? DEFAULT_STEP_GOAL))} />
-        <Row label="Body details" value={p.body?.kg ? "Saved on this phone" : "Not added"} />
-        <Row label="Goal worked out" value={p.goalMode === "body" ? "From your body" : p.goalMode === "own" ? "Your own numbers" : "Everyday guide"} />
-      </Section>
-
-      <Section title="Progress photos" icon={Camera} onEdit={() => router.push("/photos")} editLabel="Edit progress photos">
-        <Row label="Photos" value={`${photos.length + (p.baselinePhoto ? 1 : 0)}`} />
-        <Row label="Reminder after training" value={p.photoReminder ? "On" : "Off"} testID="profile-photo-reminder" />
-      </Section>
-
-      <Section title="Your cycle" icon={Moon} onEdit={() => router.push("/edit-cycle")} editLabel="Edit cycle details">
-        <Row label="Last period" value={lastPeriod} testID="profile-last-period" />
-        <Row label="Period length" value={periodLength} testID="profile-period-length" />
-        <Row label="Cycle length" value={cycleLength} testID="profile-cycle-length" />
-        <Row
-          label="Today"
-          value={p.onBirthControl ? "Following your Vibe Check" : ctx.calendarKnown ? `Day ${ctx.day} · ${ctx.phaseLabel}` : "Add your last period to see this"}
-        />
-        <Row
-          label="Next period"
-          value={p.onBirthControl ? "Not predicted on birth control" : next ? `Around ${shortDate(next)}` : NOT_SURE}
-          testID="profile-next-period"
-        />
-      </Section>
-
-      <Section title="About you" icon={User} onEdit={() => router.push("/edit-about")} editLabel="Edit about you">
-        <Row label="Age group" value={p.ageGroup === "40+" ? "40+" : "20s / 30s"} />
-        <Row label="Hormonal birth control" value={p.onBirthControl ? "Yes" : "No"} />
-        <Row label="Intention" value={p.goal ?? "Not chosen"} />
-        <Row label="Hardest hurdles" value={p.hurdles?.length ? p.hurdles.join(", ") : "None chosen"} testID="profile-hurdles" />
-      </Section>
-
-      <Section title="What Selena follows" icon={Activity} onEdit={() => router.push("/privacy")} editLabel="Edit what Selena follows">
-        <Row label="Cycle" value="Always on" />
-        <Row label="Training" value={tracking.training ? "On" : "Off"} />
-        <Row label="Nutrition" value={tracking.nutrition ? `On · ${p.trackingStyle}` : "Off"} />
-      </Section>
-
-      <Pressable onPress={() => router.push("/privacy")} accessibilityRole="button" accessibilityLabel="You & your data" style={styles.link}>
-        <ShieldCheck size={18} color={T.sage} strokeWidth={1.6} />
-        <View style={{ flex: 1 }}>
-          <Body size={14} weight="medium" color={T.ink}>
-            You & your data
-          </Body>
-          <Body size={12}>
-            {backup.user ? `Backed up as ${backup.user.email}` : "Stored only on this phone"}
-            {agreement?.acceptedAt ? " · agreement accepted" : ""}
-          </Body>
-        </View>
-        <ChevronRight size={18} color={T.inkSoft} />
-      </Pressable>
-      <Body size={11.5} style={{ textAlign: "center", marginTop: 14 }}>
-        {`Cycles between ${MIN_LENGTH} and ${MAX_LENGTH} days are supported.`}
-      </Body>
+      <Text style={styles.group}>Settings</Text>
+      <MenuRow icon={Bell} title="Notifications" description={p.notifications ? "On, in the evening" : "Off"} onPress={() => open("notifications")} />
+      <Divider />
+      <MenuRow icon={SlidersHorizontal} title="What Selena follows" description="Cycle, training and nutrition" onPress={() => open("following")} />
+      <Divider />
+      <MenuRow icon={ShieldCheck} title="You & your data" description={backup.user ? `Backed up as ${backup.user.email}` : "Stored only on this phone"} onPress={() => router.push("/privacy")} />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 44, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: T.hair, paddingVertical: 8 },
-  edit: { flexDirection: "row", alignItems: "center", gap: 5, minHeight: 44, paddingHorizontal: 6 },
-  link: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 60, borderRadius: 18, borderWidth: 1, borderColor: T.hair, backgroundColor: T.surface, paddingHorizontal: 16 },
+  group: { fontFamily: F.sansSemi, fontSize: 13, color: T.inkSoft, marginTop: 18, marginBottom: 2 },
 });

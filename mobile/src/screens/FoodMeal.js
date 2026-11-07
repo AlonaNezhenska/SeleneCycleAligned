@@ -4,7 +4,8 @@ import { router, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, Plus } from "lucide-react-native";
 import { useApp } from "../state/AppState";
 import { MEAL, MACROS, DEFAULT_GOAL, mealEntries, mealTotals, nutrientsOf, amountLabel, newId } from "../lib/food";
-import { FoodRow, AmountSheet, MacroBar, kcalText, OLIVE, diaryDay, dayLabel } from "../ui/food";
+import { FoodRow, MacroBar, kcalText, OLIVE, diaryDay, dayLabel } from "../ui/food";
+import { FoodDetail } from "../ui/FoodDetail";
 import { T, F } from "../ui/theme";
 import { Screen, Body, Serif, Card, IconBtn, s } from "../ui/kit";
 
@@ -113,7 +114,7 @@ export function FoodMeal() {
           </Pressable>
         ))}
 
-      <AmountSheet
+      <FoodDetail
         food={editing ? asFood(editing) : null}
         grams={editing ? gramsOf(editing) : undefined}
         visible={!!editing}
@@ -135,9 +136,9 @@ export function FoodMeal() {
 
 const styles = StyleSheet.create({
   total: { fontFamily: F.serifSemi, fontSize: 24, color: T.ink, textAlign: "center" },
-  primary: { flexDirection: "row", gap: 8, minHeight: 52, borderRadius: 999, backgroundColor: OLIVE, alignItems: "center", justifyContent: "center" },
+  primary: { flexDirection: "row", gap: 8, minHeight: 52, backgroundColor: OLIVE, alignItems: "center", justifyContent: "center" },
   primaryText: { fontFamily: F.sansMed, fontSize: 15.5, color: T.canvas },
-  ghost: { minHeight: 48, borderRadius: 999, borderWidth: 1, borderColor: T.hair, alignItems: "center", justifyContent: "center" },
+  ghost: { minHeight: 48, borderWidth: 1, borderColor: T.hair, alignItems: "center", justifyContent: "center" },
   ghostText: { fontFamily: F.sansMed, fontSize: 14.5, color: T.ink },
-  input: { minHeight: 48, paddingHorizontal: 16, borderRadius: 16, borderWidth: 1, borderColor: T.hair, backgroundColor: T.surface, fontFamily: F.sans, fontSize: 15.5, color: T.ink },
+  input: { minHeight: 48, paddingHorizontal: 16, borderWidth: 1, borderColor: T.hair, backgroundColor: T.surface, fontFamily: F.sans, fontSize: 15.5, color: T.ink },
 });

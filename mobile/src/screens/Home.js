@@ -243,11 +243,11 @@ export function Home() {
 }
 
 const styles = StyleSheet.create({
-  motivation: { width: "100%", aspectRatio: 4 / 5, borderRadius: 24, overflow: "hidden", marginBottom: 24, backgroundColor: T.canvasDeep },
-  todayPill: { position: "absolute", top: 14, left: 14, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, backgroundColor: "rgba(242,239,230,0.88)" },
+  motivation: { width: "100%", aspectRatio: 4 / 5, overflow: "hidden", marginBottom: 24, backgroundColor: T.canvasDeep },
+  todayPill: { position: "absolute", top: 14, left: 14, paddingHorizontal: 10, paddingVertical: 5, backgroundColor: "rgba(242,239,230,0.88)" },
   viewer: { flex: 1, backgroundColor: "rgba(20,24,22,0.92)", alignItems: "center", justifyContent: "center", padding: 16 },
-  closeBtn: { position: "absolute", top: 54, right: 20, width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(242,239,230,0.18)" },
-  vibeRing: { width: 76, height: 76, borderRadius: 38, overflow: "hidden", alignItems: "center", justifyContent: "center", padding: 3 },
-  vibeImg: { width: "100%", height: "100%", borderRadius: 38 },
-  weekPick: { width: 54, height: 54, borderRadius: 27, borderWidth: 1.5, borderColor: "transparent", alignItems: "center", justifyContent: "center" },
+  closeBtn: { position: "absolute", top: 54, right: 20, width: 44, height: 44, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(242,239,230,0.18)" },
+  vibeRing: { width: 76, height: 76, overflow: "hidden", alignItems: "center", justifyContent: "center", padding: 3 },
+  vibeImg: { width: "100%", height: "100%" },
+  weekPick: { width: 54, height: 54, borderWidth: 1.5, borderColor: "transparent", alignItems: "center", justifyContent: "center" },
 });
