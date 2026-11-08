@@ -22,6 +22,7 @@ export const MOMENT_TEXT = {
   "period-prime": "but you're not pregnant, live in primeeee",
   "period-risky": "girllll, it was risky but here it comes",
   "period-survive": "let's survive togetheeer....",
+  "period-day-2": "day 2. stay strong, i believe in you 🫶",
   strength: "wooow good job! now let's take a picture of the most gorgeous girl and eat some proteeein, let's goooo",
   treat: "treat day. today we eat like No-Face.",
 };
@@ -45,7 +46,11 @@ export const upcomingMoments = (profile, todayKey) => {
   const follicular = firstOf("follicular");
   const ovulation = firstOf("ovulation");
   const next = nextPeriodStart(profile);
+  // the second day, while the period is still going
+  const day2 = addDays(profile.lastPeriod, 1);
+  const stillGoing = !profile.lastPeriodEnd || profile.lastPeriodEnd >= day2;
   return [
+    ...(stillGoing ? [{ key: "period-day-2", date: day2 }] : []),
     ...(follicular ? [{ key: "follicular", date: dayOf(follicular) }] : []),
     ...(ovulation ? [0, 1, 2].map((i) => ({ key: `ovulation-${i + 1}`, date: dayOf(ovulation + i) })) : []),
     ...[4, 3, 2, 1].map((n) => ({ key: `before-${n}`, date: addDays(next, -n) })),

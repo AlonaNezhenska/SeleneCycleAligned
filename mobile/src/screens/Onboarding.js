@@ -311,20 +311,14 @@ const Tracking = ({ data, set, next, back }) => (
   </View>
 );
 
-/* ---- 1.9 Baseline photo — Polaroid, private, face softened ---- */
+/* ---- 1.9 Baseline photo — Polaroid, private ---- */
 
-/** The face is softened by blurring the upper band of the frame, where a
- *  face sits in a standard mirror photo. Real face detection would replace
- *  this before launch. */
 const Polaroid = ({ uri }) => (
   <View style={styles.polaroid}>
     <View style={{ height: 250, overflow: "hidden", backgroundColor: T.canvasDeep }}>
       {uri ? (
         <>
-          <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" accessibilityLabel="Your baseline photo, face softened" />
-          <View style={{ position: "absolute", left: 0, right: 0, top: 0, height: "42%", overflow: "hidden" }}>
-            <Image source={{ uri }} blurRadius={28} style={{ width: "100%", height: 250 }} resizeMode="cover" />
-          </View>
+          <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" accessibilityLabel="Your baseline photo" />
         </>
       ) : (
         <Image source={IMG.vault} style={StyleSheet.absoluteFill} resizeMode="cover" accessibilityLabel="Empty baseline photo frame" />
@@ -372,7 +366,7 @@ const Photo = ({ data, set, done, back }) => {
       <Polaroid uri={data.baselinePhoto} />
 
       <Body size={12} color={c.textSoft} style={{ textAlign: "center", marginTop: 18, marginBottom: 18 }}>
-        Stays on this device. Your face is blurred automatically.
+        Stays on this device.
       </Body>
       {data.baselinePhoto && (
         <ToggleRow

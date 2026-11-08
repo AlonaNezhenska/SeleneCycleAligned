@@ -132,7 +132,6 @@ export const Journey = ({ days, todayKey, goalKcal, kg, hidden, photos, baseline
         </View>
       </View>
 
-      <MonthInsight days={days} todayKey={todayKey} profile={profile} goalKcal={goalKcal} hidden={hidden} />
 
       <Card style={{ marginBottom: 12, gap: 8 }} testID="journey-food">
         <Text style={styles.cardTitle}>Food</Text>

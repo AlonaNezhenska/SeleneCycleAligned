@@ -8,7 +8,7 @@
    must go up so every user is asked again.
    --------------------------------------------------------------- */
 
-export const AGREEMENT_VERSION = 3;
+export const AGREEMENT_VERSION = 4;
 
 export const PRIVACY_HEADLINE = "Your data stays yours.";
 
@@ -39,7 +39,7 @@ export const PRIVACY_AGREEMENT = [
   },
   {
     title: "Your photo and body measurements",
-    body: "If you add a photo, or your weight, height and measurements for a food goal, they stay on this device and are never uploaded, even with backup on. Your face is blurred on screen.",
+    body: "If you add a photo, or your weight, height and measurements for a food goal, they stay on this device and are never uploaded, even with backup on.",
   },
   {
     title: "You are in control",

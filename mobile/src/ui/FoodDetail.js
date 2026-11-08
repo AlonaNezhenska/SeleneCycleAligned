@@ -62,7 +62,7 @@ export const FoodDetail = ({ food, grams: initial, visible, onClose, onConfirm, 
   };
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <SafeAreaView style={styles.page} testID="amount-sheet">
         <View style={[s.row, styles.header]}>
           <IconButton icon={() => <ArrowLeft size={20} color={T.ink} />} mode="outlined" onPress={onClose} accessibilityLabel="Close" style={styles.headerBtn} />

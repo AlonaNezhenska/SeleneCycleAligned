@@ -105,10 +105,21 @@ describe("the exercise library", () => {
     const glutes = findExercises({ query: "glute bridge" });
     expect(glutes.some((e) => e.id === "Barbell_Glute_Bridge")).toBe(true);
     // only pictured exercises are offered; her own always are
-    expect(findExercises({ limit: 9999 }).every((e) => e.gv)).toBe(true);
+    expect(findExercises({ limit: 9999 }).every((e) => e.gv || e.own)).toBe(true);
     expect(findExercises({ query: "mine", custom: [{ id: "c1", name: "Mine", p: [] }] })[0].id).toBe("c1");
     expect(findExercises({ equipment: "bands", limit: 999 }).every((e) => e.eq === "bands")).toBe(true);
     expect(findExercises({ muscle: "glutes", limit: 999 }).every((e) => e.p.includes("glutes"))).toBe(true);
+  });
+
+  it("uses the names she knows from Hevy, and has yoga poses", () => {
+    for (const name of ["Shoulder Press (Machine Plates)", "Hip Abduction (Machine)", "Hip Adduction (Machine)", "Lateral Raise (Cable)", "Chin Up (Assisted)", "Chest Press (Machine)", "Leg Press Horizontal (Machine)", "Seated Dip Machine", "Leg Extension (Machine)", "Preacher Curl (Machine)", "Pull Up (Assisted)", "Hip Thrust (Machine)"]) {
+      expect(findExercises({ query: name.replace(/[()]/g, ""), limit: 999 }).map((e) => e.name)).toContain(name);
+    }
+    expect(findExercises({ query: "lever seated hip abduction" })[0].name).toBe("Hip Abduction (Machine)");
+    const yoga = findExercises({ equipment: "yoga", limit: 999 });
+    expect(yoga.map((e) => e.name)).toEqual(expect.arrayContaining(["Crow Pose", "Handstand", "Downward-Facing Dog", "Wheel Pose"]));
+    expect(yoga.every((e) => logType(e) === "duration")).toBe(true);
+    expect(findExercises({ query: "bakasana" })[0].name).toBe("Crow Pose");
   });
 
   it("covers the gym's machines and cables, with a picture where the dataset has one", () => {
@@ -299,6 +310,26 @@ describe("Profile training", () => {
     await cleanup();
     await mount(WorkoutDetail, { params: { id: "w1" }, initial: { workouts: [PAST] } });
     expect(screen.getByText(/70 kg × 8 reps/)).toBeOnTheScreen();
+  });
+
+  it("lets the time of a finished workout be corrected, and the day's movement follows", async () => {
+    const day = { [PAST.date]: { movement: 50, activities: [{ id: "a1", kind: "strength", minutes: 50, workoutId: "w1" }] } };
+    await mount(WorkoutDetail, { params: { id: "w1" }, initial: { workouts: [PAST], days: day } });
+    await fireEvent.press(screen.getByRole("button", { name: "Edit duration" }));
+    await fireEvent.changeText(screen.getByLabelText("Minutes"), "65");
+    await fireEvent.press(screen.getByRole("button", { name: "Save" }));
+    const data = await stored();
+    expect((data.workouts[0].endedAt - data.workouts[0].startedAt) / 60000).toBe(65);
+    expect(data.days[PAST.date]).toMatchObject({ movement: 65, activities: [expect.objectContaining({ minutes: 65 })] });
+  });
+
+  it("lets the time of a workout in progress be changed", async () => {
+    await mount(WorkoutLog, { initial: { activeWorkout: { id: "a", name: "Legs", startedAt: Date.now(), exercises: [] } } });
+    await fireEvent.press(screen.getByRole("button", { name: "Change duration" }));
+    await fireEvent.changeText(screen.getByLabelText("Minutes"), "40");
+    await fireEvent.press(screen.getByRole("button", { name: "Save" }));
+    const started = (await stored()).activeWorkout.startedAt;
+    expect(Math.round((Date.now() - started) / 60000)).toBe(40);
   });
 });
 

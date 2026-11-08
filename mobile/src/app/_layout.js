@@ -31,7 +31,7 @@ const Gate = ({ fontsReady }) => {
   return (
     <>
       <StatusBar style="dark" />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: T.canvas } }}>
+      <Stack screenOptions={{ headerShown: false, fullScreenGestureEnabled: true, contentStyle: { backgroundColor: T.canvas } }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
         <Stack.Screen name="privacy" options={{ presentation: "modal" }} />
@@ -50,7 +50,7 @@ const Gate = ({ fontsReady }) => {
         <Stack.Screen name="workout/start" />
         <Stack.Screen name="workout/today" />
         <Stack.Screen name="workout/log" />
-        <Stack.Screen name="workout/exercises" />
+        <Stack.Screen name="workout/exercises" options={{ presentation: "modal" }} />
         <Stack.Screen name="workout/exercise/[id]" />
         <Stack.Screen name="workout/explore" />
         <Stack.Screen name="workout/place/[key]" />

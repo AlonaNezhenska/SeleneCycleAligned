@@ -5,7 +5,7 @@ import { ChevronDown, Timer, Plus, Check, Trash2, Flame, Dumbbell, Minus } from 
 import { useApp } from "../state/AppState";
 import { exerciseById, muscleLabel } from "../lib/exercises";
 import { blankSet, previousSets, workoutTotals, warmupSets } from "../lib/workout";
-import { useWorkoutActions, useNow, clock } from "../ui/workout";
+import { useWorkoutActions, useNow, clock, MinutesSheet } from "../ui/workout";
 import { BodyThumb } from "../ui/BodyFigure";
 import { OLIVE } from "../ui/food";
 import { T, F } from "../ui/theme";
@@ -194,6 +194,7 @@ export function WorkoutLog() {
   const [rest, setRest] = useState(null);
   const [confirm, setConfirm] = useState(null);
   const [note, setNote] = useState("");
+  const [editingTime, setEditingTime] = useState(false);
   const leaving = useRef(false);
   const close = () => (router.canGoBack?.() ? router.back() : router.replace("/workouts"));
 
@@ -226,13 +227,23 @@ export function WorkoutLog() {
         </Pressable>
       </View>
 
+      <MinutesSheet
+        visible={editingTime}
+        title="How long so far?"
+        minutes={Math.max(1, Math.round((now - w.startedAt) / 60000))}
+        onClose={() => setEditingTime(false)}
+        onSave={(m) => {
+          updateWorkout((cur) => ({ ...cur, startedAt: Date.now() - m * 60000 }));
+          setEditingTime(false);
+        }}
+      />
       <View style={[s.row, styles.stats]}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.statLabel}>Duration</Text>
+        <Pressable onPress={() => setEditingTime(true)} accessibilityRole="button" accessibilityLabel="Change duration" style={{ flex: 1 }}>
+          <Text style={styles.statLabel}>Duration ✎</Text>
           <Text style={[styles.statValue, { color: OLIVE }]} testID="workout-duration">
             {clock(now - w.startedAt)}
           </Text>
-        </View>
+        </Pressable>
         <View style={{ flex: 1 }}>
           <Text style={styles.statLabel}>Volume</Text>
           <Text style={styles.statValue} testID="workout-volume">{`${totals.volume.toLocaleString("en-GB")} kg`}</Text>

@@ -11,6 +11,8 @@ import RAW from "../content/exercises.json";
    equipment and instructions are taken; each exercise is shown on Selena's
    own body figure, with the working muscles lit. `gv` is the exercise's
    picture in that dataset, shown for personal use only (content/exerciseMedia.js).
+   Machines named as Hevy names them, two machines the datasets lack and
+   yoga poses are Selena's own (`own`), written for this app.
    The user's own exercises join the list from her library.
    --------------------------------------------------------------- */
 
@@ -27,6 +29,7 @@ export const EQUIPMENT = {
   "exercise ball": "Exercise ball",
   "e-z curl bar": "EZ bar",
   "foam roll": "Foam roller",
+  yoga: "Yoga",
   other: "Other",
 };
 
@@ -58,16 +61,17 @@ export const MUSCLES = {
  */
 export const logType = (ex) => {
   if (ex.type) return ex.type;
-  if (ex.cat === "cardio" || ex.cat === "stretching" || /plank|bridge hold|wall sit/i.test(ex.name)) return "duration";
+  if (ex.cat === "cardio" || ex.cat === "stretching" || ex.cat === "yoga" || /plank|bridge hold|wall sit/i.test(ex.name)) return "duration";
   if (ex.eq === "body only" || ex.eq === "other" || ex.cat === "plyometrics") return "reps";
   return "weight";
 };
 
 export const LIBRARY = RAW.map((e) => ({ ...e, type: logType(e) }));
 const BY_ID = Object.fromEntries(LIBRARY.map((e) => [e.id, e]));
-// the list to choose from holds only exercises with a picture; the rest stay
+// the list to choose from holds exercises with a picture and Selena's own
+// (machines and yoga poses, shown on the body figure); the rest stay
 // reachable by id, for past workouts and a few classics in the programs
-const PICTURED = LIBRARY.filter((e) => e.gv);
+const PICTURED = LIBRARY.filter((e) => e.gv || e.own);
 
 /** An exercise by id, from the library or the user's own. */
 export const exerciseById = (id, custom = []) => BY_ID[id] ?? custom.find((c) => c.id === id) ?? null;
@@ -83,7 +87,7 @@ export const findExercises = ({ query = "", equipment = null, muscle = null, cus
   const LEVEL = { beginner: 0, intermediate: 1, expert: 2 };
   return [...custom, ...PICTURED]
     .filter((e) => (!equipment || e.eq === equipment) && (!muscle || e.p.includes(muscle)))
-    .filter((e) => words.every((w) => norm(`${e.name} ${equipmentLabel(e.eq)} ${(e.p ?? []).map(muscleLabel).join(" ")}`).includes(w)))
+    .filter((e) => words.every((w) => norm(`${e.name} ${e.aka ?? ""} ${equipmentLabel(e.eq)} ${(e.p ?? []).map(muscleLabel).join(" ")}`).includes(w)))
     .sort((a, b) => (LEVEL[a.lvl] ?? 0) - (LEVEL[b.lvl] ?? 0) || a.name.localeCompare(b.name))
     .slice(0, limit);
 };

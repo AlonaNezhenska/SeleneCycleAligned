@@ -12,7 +12,10 @@ describe("monthly insight", () => {
 
   it("adds the month up and counts a treat day generously", () => {
     const m = monthInsight({ days, todayKey: "2026-11-03", goalKcal: 1850 });
-    expect(m).toMatchObject({ daysSoFar: 3, logged: 3, treats: 1, onRhythm: 2, used: null });
+    expect(m).toMatchObject({ daysSoFar: 3, logged: 3, treats: 1, onRhythm: 2, estimated: true });
+    // the body's own energy counts, not just movement
+    expect(m.usedOwn).toBeGreaterThan(3 * 1500);
+    expect(m.used).toBe(m.usedOwn + m.usedMoving);
     // a treat day adds a large allowance on top of what was logged
     expect(m.eaten).toBe(1800 + 1900 + 1700 + 5000);
     expect(m.moved).toBeGreaterThan(0);
@@ -30,7 +33,11 @@ describe("monthly insight", () => {
     const profile = { body: { kg: 60, cm: 165, age: 30 } };
     const m = monthInsight({ days: { "2026-11-01": day(1200) }, todayKey: "2026-11-01", goalKcal: 1850, profile });
     expect(m.used).toBeGreaterThan(1200);
-    expect(describeMonth(m).lines.join(" ")).toMatch(/kcal a day less than your body used/);
+    expect(m.estimated).toBe(false);
+    const text = describeMonth(m).lines.join(" ");
+    expect(text).toMatch(/kcal a day less than your body used/);
+    expect(text).toMatch(/just keeping you going/);
+    expect(text).not.toMatch(/estimated/);
   });
 
   it("keeps figures out when numbers are hidden", () => {

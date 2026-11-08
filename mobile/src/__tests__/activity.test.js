@@ -255,6 +255,11 @@ describe("Profile", () => {
     expect(screen.getByTestId("journey")).toBeOnTheScreen();
     expect(screen.getByTestId("journey-move")).toHaveTextContent(/Yoga 30 min/);
     expect(screen.queryByTestId("journey-burned")).toBeNull();
+    // the month's insight lives on its own page now
+    expect(screen.queryByTestId("month-insight")).toBeNull();
+    await cleanup();
+    await mount(part("insights"));
+    expect(screen.getByTestId("month-insight")).toBeOnTheScreen();
     await cleanup();
     await mount(part("goals"));
     expect(screen.getByTestId("profile-energy")).toHaveTextContent(/Hidden/);

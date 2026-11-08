@@ -6,8 +6,11 @@
    is eaten. Carbohydrate is "available" carbohydrate, as on UK labels.
    Each food has one everyday portion so a single tap adds something
    sensible. These are estimates; packaged products come from Open Food
-   Facts by barcode or search.
+   Facts by barcode or search. Raw and dry foods, for weighing before
+   cooking, come from the UK's official tables (rawFoods.js).
    --------------------------------------------------------------- */
+
+import { RAW_FOODS } from "./rawFoods";
 
 // key, name, kcal, protein, carbs, fat (per 100 g), portion label, portion grams
 const ROWS = [
@@ -146,7 +149,7 @@ const ALSO = {
   pepper: "bell pepper",
 };
 
-export const EVERYDAY_FOODS = ROWS.map(([key, name, kcal, protein, carbs, fat, label, grams]) => ({
+const COOKED = ROWS.map(([key, name, kcal, protein, carbs, fat, label, grams]) => ({
   id: `uk:${key}`,
   name,
   aka: ALSO[key] ?? null,
@@ -154,5 +157,7 @@ export const EVERYDAY_FOODS = ROWS.map(([key, name, kcal, protein, carbs, fat, l
   per100: { kcal, protein, carbs, fat },
   serving: { label, grams },
 }));
+
+export const EVERYDAY_FOODS = [...COOKED, ...RAW_FOODS];
 
 export const EVERYDAY = Object.fromEntries(EVERYDAY_FOODS.map((f) => [f.id.slice(3), f]));

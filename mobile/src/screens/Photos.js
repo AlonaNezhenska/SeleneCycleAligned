@@ -12,18 +12,14 @@ import { Screen, Body, Serif, Card, IconBtn, ToggleRow, s } from "../ui/kit";
 /* ---------------------------------------------------------------
    PROGRESS PHOTOS — her body over time, with a note for each photo.
 
-   Photos stay on this phone, are never backed up, and the top of each
-   one is softened on screen, where a face usually sits. An optional
+   Photos stay on this phone and are never backed up. An optional
    reminder offers a photo after training; it never insists.
    --------------------------------------------------------------- */
 
-/** A photo with the face area softened, as in the baseline Polaroid. */
+/** A progress photo, shown as it was taken. */
 export const SoftPhoto = ({ uri, height = 220, label }) => (
   <View style={{ height, overflow: "hidden", backgroundColor: T.canvasDeep }}>
     <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" accessibilityLabel={label} />
-    <View style={{ position: "absolute", left: 0, right: 0, top: 0, height: "38%", overflow: "hidden" }}>
-      <Image source={{ uri }} blurRadius={28} style={{ width: "100%", height }} resizeMode="cover" />
-    </View>
   </View>
 );
 
