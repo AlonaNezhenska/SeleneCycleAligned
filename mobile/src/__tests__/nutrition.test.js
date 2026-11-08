@@ -174,9 +174,11 @@ describe("Open Food Facts", () => {
     global.fetch.mockImplementationOnce(() => okJson({ status: 0 }));
     expect(await lookupBarcode("123")).toBeNull();
 
-    global.fetch.mockImplementationOnce(() => okJson({ products: [product, { code: "x", nutriments: {} }] }));
-    expect(await searchProducts("wheat biscuits")).toHaveLength(1);
-    expect(global.fetch.mock.calls[2][0]).toMatch(/world\.openfoodfacts\.org\/cgi\/search\.pl.*cc=uk.*search_terms=wheat%20biscuits/);
+    global.fetch.mockImplementationOnce(() => okJson({ hits: [{ ...product, brands: ["Weetabix"] }, { code: "x", nutriments: {} }] }));
+    const found = await searchProducts("wheat biscuits");
+    expect(found).toHaveLength(1);
+    expect(found[0].brand).toBe("Weetabix");
+    expect(global.fetch.mock.calls[2][0]).toMatch(/search\.openfoodfacts\.org\/search\?.*q=wheat%20biscuits%20countries_tags%3A%22en%3Aunited-kingdom%22/);
   });
 });
 
@@ -210,6 +212,15 @@ describe("finding food", () => {
     const facts = nutritionFacts(tomato, 200);
     expect(facts.find((f) => f.label === "of which Sugars").value).toBe(5.2);
     expect(facts.some((f) => f.label === "Fibre")).toBe(false);
+  });
+
+  it("knows raw and dry foods for weighing before cooking", () => {
+    const names = searchLocal("chicken breast").everyday.map((f) => f.name);
+    expect(names).toEqual(expect.arrayContaining(["Chicken breast, cooked", "Chicken breast, raw"]));
+    expect(searchLocal("uncooked rice").everyday.map((f) => f.name)).toContain("White rice, dry");
+    expect(EVERYDAY["rice-dry"].per100).toEqual({ kcal: 355, protein: 6.7, carbs: 85.1, fat: 1 });
+    expect(EVERYDAY["rice-dry"].more.fibre).toBe(1.1);
+    expect(new Set(Object.keys(EVERYDAY)).size).toBe(Object.keys(EVERYDAY).length);
   });
 
   it("puts names that start with the search first", () => {

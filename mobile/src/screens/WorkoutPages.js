@@ -9,7 +9,8 @@ import { setsPerMuscle, workoutTotals, minutesOf, personalRecords } from "../lib
 import { BodyFigure } from "../ui/BodyFigure";
 import { OLIVE, dayLabel, shiftDay } from "../ui/food";
 import { T, F } from "../ui/theme";
-import { Screen, Body, Card, Chip, IconBtn, s } from "../ui/kit";
+import { Screen, Body, Card, Chip, IconBtn, Button, s } from "../ui/kit";
+import { MinutesSheet } from "../ui/workout";
 
 /* ---------------------------------------------------------------
    TRAINING PAGES — statistics, body measurements, the training
@@ -294,7 +295,8 @@ export function WorkoutCalendar() {
 
 export function WorkoutDetail() {
   const { id } = useLocalSearchParams();
-  const { workouts, removeWorkout, customExercises, todayKey } = useApp();
+  const { workouts, removeWorkout, setWorkoutMinutes, customExercises, todayKey } = useApp();
+  const [editingTime, setEditingTime] = useState(false);
   const w = workouts.find((x) => x.id === id);
   if (!w) {
     return (
@@ -310,6 +312,19 @@ export function WorkoutDetail() {
     <Screen>
       <Header title={w.name} />
       <Body size={13.5}>{`${dayLabel(w.date, todayKey)} · ${minutesOf(w)} min · ${t.volume.toLocaleString("en-GB")} kg · ${t.sets} sets`}</Body>
+      <View style={{ marginTop: 10 }}>
+        <Button tone="outline" size="sm" full={false} label="Edit duration" onPress={() => setEditingTime(true)} />
+      </View>
+      <MinutesSheet
+        visible={editingTime}
+        title="How long did it take?"
+        minutes={minutesOf(w)}
+        onClose={() => setEditingTime(false)}
+        onSave={(m) => {
+          setWorkoutMinutes(w.id, m);
+          setEditingTime(false);
+        }}
+      />
       {!!w.note && (
         <Text style={styles.note} testID="workout-note">
           {w.note}

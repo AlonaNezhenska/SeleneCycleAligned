@@ -43,7 +43,8 @@ export const fromOff = (p) => {
     id: `off:${p.code}`,
     barcode: p.code,
     name,
-    brand: (p.brands ?? "").split(",")[0].trim() || null,
+    // the search service lists brands, the product API joins them with commas
+    brand: (Array.isArray(p.brands) ? p.brands[0] ?? "" : (p.brands ?? "").split(",")[0]).trim() || null,
     source: "off",
     per100: {
       kcal: Math.round(kcal),
@@ -76,13 +77,14 @@ export const lookupBarcode = async (code, fetchImpl = fetch) => {
   return json?.status === 1 ? fromOff(json.product) : null;
 };
 
-/** Products matching the words, British first. */
+/** Products matching the words, sold in the UK. Uses Open Food Facts'
+ *  search service; the old search page now turns apps away. */
 export const searchProducts = async (query, fetchImpl = fetch) => {
-  const q = query.trim();
+  // quotes and colons would be read as search syntax
+  const q = query.trim().replace(/[":]/g, " ");
   if (q.length < 2) return [];
-  const url =
-    "https://world.openfoodfacts.org/cgi/search.pl?action=process&json=1&search_simple=1&page_size=24&cc=uk&lc=en" +
-    `&fields=${FIELDS}&search_terms=${encodeURIComponent(q)}`;
+  const terms = `${q} countries_tags:"en:united-kingdom"`;
+  const url = `https://search.openfoodfacts.org/search?page_size=24&langs=en&fields=${FIELDS}&q=${encodeURIComponent(terms)}`;
   const json = await get(url, fetchImpl);
-  return (json?.products ?? []).map(fromOff).filter(Boolean);
+  return (json?.hits ?? json?.products ?? []).map(fromOff).filter(Boolean);
 };

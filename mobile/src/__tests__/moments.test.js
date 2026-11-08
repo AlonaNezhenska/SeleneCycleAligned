@@ -35,6 +35,11 @@ describe("the calendar", () => {
     expect(dates.follicular < dates["ovulation-1"]).toBe(true);
   });
 
+  it("cheers on the second day while the period is still going", () => {
+    expect(upcomingMoments(profile, "2026-10-15")[0]).toEqual({ key: "period-day-2", date: "2026-10-16" });
+    expect(upcomingMoments({ ...profile, lastPeriodEnd: "2026-10-15" }, "2026-10-15").some((m) => m.key === "period-day-2")).toBe(false);
+  });
+
   it("predicts nothing on birth control or without a period date", () => {
     expect(upcomingMoments({ ...profile, onBirthControl: true }, TODAY)).toEqual([]);
     expect(upcomingMoments({ lastPeriod: null }, TODAY)).toEqual([]);

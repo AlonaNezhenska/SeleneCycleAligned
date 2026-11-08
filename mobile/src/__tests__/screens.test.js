@@ -368,7 +368,7 @@ describe("Onboarding", () => {
     expect(screen.getAllByText(/scales lie/i).length).toBeGreaterThan(0);
     await fireEvent.press(screen.getByRole("button", { name: "Choose from library" }));
     await act(async () => {});
-    expect(screen.getByLabelText("Your baseline photo, face softened")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Your baseline photo")).toBeOnTheScreen();
     await fireEvent.press(screen.getByRole("button", { name: "Enter the sanctuary" }));
     await act(async () => {});
 

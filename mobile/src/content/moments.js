@@ -15,6 +15,7 @@ export const MOMENT_IMAGE = {
   "period-prime": require("../../assets/images/moments/period-2.jpg"),
   "period-risky": require("../../assets/images/moments/period-2.jpg"),
   "period-survive": require("../../assets/images/moments/period-1.jpg"),
+  "period-day-2": require("../../assets/images/moments/period-day-2.jpg"),
   strength: require("../../assets/images/moments/strength.gif"),
   treat: require("../../assets/images/moments/treat.gif"),
 };

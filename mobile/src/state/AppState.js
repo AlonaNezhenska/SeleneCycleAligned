@@ -249,6 +249,28 @@ export const AppProvider = ({ children, now: fixedNow, initial }) => {
       }),
     [todayKey]
   );
+  /** Correct how long a finished workout took; its day's movement follows. */
+  const setWorkoutMinutes = useCallback(
+    (id, minutes) =>
+      setData((d) => {
+        const w = (d.workouts ?? []).find((x) => x.id === id);
+        if (!w || !(minutes > 0)) return d;
+        const before = Math.max(1, Math.round((w.endedAt - w.startedAt) / 60000));
+        const day = d.days[w.date];
+        const days = day
+          ? {
+              ...d.days,
+              [w.date]: {
+                ...day,
+                movement: Math.max(0, (day.movement ?? 0) + minutes - before),
+                activities: (day.activities ?? []).map((a) => (a.workoutId === id ? { ...a, minutes } : a)),
+              },
+            }
+          : d.days;
+        return { ...d, days, workouts: d.workouts.map((x) => (x.id === id ? { ...x, endedAt: x.startedAt + minutes * 60000 } : x)) };
+      }),
+    []
+  );
   const removeWorkout = useCallback((id) => setData((d) => ({ ...d, workouts: (d.workouts ?? []).filter((w) => w.id !== id) })), []);
   const saveRoutine = useCallback((r) => setData((d) => ({ ...d, routines: [r, ...(d.routines ?? []).filter((x) => x.id !== r.id)] })), []);
   const removeRoutine = useCallback((id) => setData((d) => ({ ...d, routines: (d.routines ?? []).filter((x) => x.id !== id) })), []);
@@ -358,6 +380,7 @@ export const AppProvider = ({ children, now: fixedNow, initial }) => {
     discardWorkout,
     finishWorkout,
     removeWorkout,
+    setWorkoutMinutes,
     saveRoutine,
     removeRoutine,
     addCustomExercise,

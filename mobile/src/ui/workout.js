@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { View, Text, Pressable, TextInput, Modal, KeyboardAvoidingView, Platform, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { Play, Dumbbell } from "lucide-react-native";
 import { useApp } from "../state/AppState";
@@ -8,7 +8,7 @@ import { entryFrom } from "../lib/workout";
 import { PROGRAM } from "../content/programs";
 import { OLIVE } from "./food";
 import { T, F } from "./theme";
-import { Body, s } from "./kit";
+import { Body, Button, s } from "./kit";
 
 /* ---------------------------------------------------------------
    WORKOUT PIECES — starting and finishing a workout, the banner for
@@ -57,6 +57,33 @@ export const useWorkoutActions = () => {
     discardWorkout();
   };
   return { begin, finish, discard, active: activeWorkout };
+};
+
+/** A small window to set how many minutes a workout took. */
+export const MinutesSheet = ({ visible, title, minutes, onSave, onClose }) => {
+  const [text, setText] = useState(String(minutes));
+  useEffect(() => {
+    if (visible) setText(String(minutes));
+  }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps
+  const value = parseInt(text, 10) || 0;
+  const nudge = (n) => setText(String(Math.max(1, value + n)));
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.backdrop}>
+        <Pressable style={{ flex: 1 }} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close" />
+        <View style={styles.sheet} testID="minutes-sheet">
+          <Text style={styles.sheetTitle}>{title}</Text>
+          <View style={[s.row, { gap: 10, justifyContent: "center" }]}>
+            <Button tone="outline" size="sm" full={false} label="−5" accessibilityLabel="5 minutes less" onPress={() => nudge(-5)} />
+            <TextInput value={text} onChangeText={(t) => setText(t.replace(/[^0-9]/g, ""))} keyboardType="number-pad" accessibilityLabel="Minutes" style={styles.minutes} />
+            <Text style={styles.unit}>min</Text>
+            <Button tone="outline" size="sm" full={false} label="+5" accessibilityLabel="5 minutes more" onPress={() => nudge(5)} />
+          </View>
+          <Button tone="dark" label="Save" disabled={value < 1} onPress={() => onSave(value)} />
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
 };
 
 /** A routine for today, chosen from the energy and the phase. */
@@ -116,6 +143,11 @@ export const RoutineCard = ({ routine, onStart, onEdit, custom = [] }) => {
 };
 
 const styles = StyleSheet.create({
+  backdrop: { flex: 1, backgroundColor: "rgba(20,24,18,0.35)" },
+  sheet: { gap: 18, padding: 22, paddingBottom: 34, backgroundColor: T.canvas },
+  sheetTitle: { fontFamily: F.serif, fontSize: 21, color: T.ink },
+  minutes: { width: 88, minHeight: 50, textAlign: "center", fontFamily: F.sansSemi, fontSize: 22, color: T.ink, backgroundColor: T.canvasDeep },
+  unit: { fontFamily: F.sans, fontSize: 15, color: T.inkSoft },
   banner: { gap: 8, padding: 14, backgroundColor: OLIVE, marginBottom: 14 },
   bannerTitle: { fontFamily: F.serif, fontSize: 17, color: T.canvas },
   bannerClock: { fontFamily: F.sans, fontSize: 12.5, color: T.canvas, opacity: 0.9, marginTop: 2 },

@@ -1,6 +1,6 @@
 import { dayTotals } from "./food";
 import { dayMovement, DEFAULT_KG } from "./activity";
-import { goalFromBody } from "./energy";
+import { goalFromBody, ageFromGroup } from "./energy";
 
 /* ---------------------------------------------------------------
    SMART INSIGHTS — the month as a whole, so one big day is seen in
@@ -23,18 +23,26 @@ const monthSoFar = (todayKey) => {
   return Array.from({ length: d }, (_, i) => `${y}-${pad(m)}-${pad(i + 1)}`);
 };
 
+/** A woman of typical height and weight, for when no body details are saved. */
+const TYPICAL = { kg: DEFAULT_KG, cm: 165 };
+
 /**
- * The month so far. `used` (energy the body used) is only known when
- * the body details are in the profile; without them only movement is.
+ * The month so far. `used` is all the energy the body used on the logged
+ * days: what it burns on its own (resting × 1.2, for breathing, digesting
+ * and an ordinary day of moving about) plus the movement logged. From her
+ * body details when saved, otherwise estimated (`estimated`).
  */
 export const monthInsight = ({ days = {}, todayKey, profile = {}, goalKcal }) => {
   const kg = profile.body?.kg > 0 ? profile.body.kg : DEFAULT_KG;
-  const body = profile.body?.kg ? goalFromBody({ ...profile.body, kg: profile.body.kg }) : null;
+  const saved = profile.body?.kg ? goalFromBody({ ...profile.body, kg: profile.body.kg }) : null;
+  const body = saved ?? goalFromBody({ ...TYPICAL, age: ageFromGroup(profile.ageGroup) });
   const dates = monthSoFar(todayKey);
 
   let eaten = 0;
   let moved = 0;
   let usedOnLogged = 0;
+  let ownOnLogged = 0;
+  let movedOnLogged = 0;
   let logged = 0;
   let onRhythm = 0;
   let treats = 0;
@@ -49,8 +57,10 @@ export const monthInsight = ({ days = {}, todayKey, profile = {}, goalKcal }) =>
     if (treat) treats += 1;
     else if (food >= goalKcal * ON_RHYTHM.min && food <= goalKcal * ON_RHYTHM.max) onRhythm += 1;
     eaten += food + (treat ? TREAT_DAY_KCAL : 0);
-    // a quiet day's use (resting × 1.2) plus the movement actually logged
-    if (body) usedOnLogged += body.resting * 1.2 + move.kcal;
+    // what the body burns by itself on an ordinary day, plus the movement logged
+    ownOnLogged += body.resting * 1.2;
+    movedOnLogged += move.kcal;
+    usedOnLogged += body.resting * 1.2 + move.kcal;
   }
 
   const avgEaten = logged ? Math.round(eaten / logged) : 0;
@@ -61,7 +71,10 @@ export const monthInsight = ({ days = {}, todayKey, profile = {}, goalKcal }) =>
     onRhythm,
     eaten: Math.round(eaten),
     moved: Math.round(moved),
-    used: body ? Math.round(usedOnLogged) : null,
+    used: Math.round(usedOnLogged),
+    usedOwn: Math.round(ownOnLogged),
+    usedMoving: Math.round(movedOnLogged),
+    estimated: !saved,
     avgEaten,
     // how the average logged day sits against the goal, as a share
     vsGoal: logged && goalKcal ? avgEaten / goalKcal : null,
@@ -82,8 +95,10 @@ export const describeMonth = (m, { hidden = false } = {}) => {
   if (hidden) {
     lines.push(`You logged food on ${m.logged} of ${m.daysSoFar} days and moved on many of them.`);
   } else {
-    lines.push(`You ate about ${fmt(m.eaten)} kcal over ${m.logged} logged days, and burned about ${fmt(m.moved)} kcal through movement and steps.`);
-    if (m.used != null) {
+    lines.push(
+      `You ate about ${fmt(m.eaten)} kcal over ${m.logged} logged days. Your body used about ${fmt(m.used)}: ${fmt(m.usedOwn)} just keeping you going, and ${fmt(m.usedMoving)} through movement and steps.`
+    );
+    {
       const diff = Math.round((m.eaten - m.used) / m.logged);
       lines.push(
         Math.abs(diff) < 100
@@ -92,6 +107,8 @@ export const describeMonth = (m, { hidden = false } = {}) => {
       );
     }
   }
+
+  if (!hidden && m.estimated) lines.push("What your body uses is estimated. Add your height and weight in Your goals for a closer figure.");
 
   if (m.treats) {
     lines.push(

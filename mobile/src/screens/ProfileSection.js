@@ -12,7 +12,7 @@ import { DEFAULT_TRACKING } from "../ui/TrackChoices";
 import { DEFAULT_GOAL } from "../lib/food";
 import { DIET, AIMS } from "../lib/energy";
 import { weightOf, DEFAULT_STEP_GOAL } from "../lib/activity";
-import { Journey } from "../ui/Journey";
+import { Journey, MonthInsight } from "../ui/Journey";
 import { TrainingStats } from "../ui/TrainingStats";
 import { describeCycle, NOT_SURE } from "./Profile";
 
@@ -89,6 +89,15 @@ export function ProfileSection({ section: given }) {
       </IconBtn>
 
       {section === "journey" && <Journey days={days} todayKey={todayKey} goalKcal={goal.kcal} kg={weightOf(p)} hidden={hidden} photos={photos} baselinePhoto={p.baselinePhoto} profile={p} />}
+
+      {section === "insights" && (
+        <>
+          <Serif size={28} accessibilityRole="header" style={{ marginTop: 16, marginBottom: 12 }}>
+            Smart insights
+          </Serif>
+          <MonthInsight days={days} todayKey={todayKey} profile={p} goalKcal={goal.kcal} hidden={hidden} />
+        </>
+      )}
 
       {section === "training" && <TrainingStats workouts={workouts} todayKey={todayKey} />}
 

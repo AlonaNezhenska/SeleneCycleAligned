@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { View, Text, Pressable, TextInput, FlatList, ScrollView, Modal, Image, StyleSheet } from "react-native";
+import { View, Text, Pressable, TextInput, FlatList, ScrollView, Modal, Image, KeyboardAvoidingView, Keyboard, Platform, StyleSheet } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { Search, Check, Info, X } from "lucide-react-native";
 import { useApp } from "../state/AppState";
@@ -53,6 +53,7 @@ export function ExercisePicker() {
   const mode = params.for === "workout" || params.for === "routine" ? params.for : "browse";
   const { workouts, customExercises, updateWorkout, addCustomExercise } = useApp();
   const [query, setQuery] = useState("");
+  const [typing, setTyping] = useState(false);
   const [equipment, setEquipment] = useState(null);
   const [muscle, setMuscle] = useState(null);
   const [picked, setPicked] = useState([]);
@@ -77,6 +78,7 @@ export function ExercisePicker() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: T.canvas }} edges={["top"]}>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
       <View style={[s.row, styles.header]}>
         <Pressable onPress={close} accessibilityRole="button" accessibilityLabel="Cancel" style={styles.headBtn}>
           <Text style={styles.headBtnText}>{mode === "browse" ? "Back" : "Cancel"}</Text>
@@ -98,6 +100,10 @@ export function ExercisePicker() {
           placeholderTextColor={T.inkSoft}
           accessibilityLabel="Search exercise"
           autoCorrect={false}
+          returnKeyType="search"
+          onFocus={() => setTyping(true)}
+          onBlur={() => setTyping(false)}
+          onSubmitEditing={() => Keyboard.dismiss()}
           style={styles.searchInput}
         />
         {!!query && (
@@ -107,6 +113,9 @@ export function ExercisePicker() {
         )}
       </View>
 
+      {/* while typing, the filters step aside so the results have the room */}
+      {!typing && (
+      <>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} style={{ flexGrow: 0 }}>
         <Chip label="All equipment" selected={!equipment} onPress={() => setEquipment(null)} />
         {Object.entries(EQUIPMENT).map(([k, label]) => (
@@ -119,13 +128,16 @@ export function ExercisePicker() {
           <Chip key={k} label={label} selected={muscle === k} onPress={() => setMuscle(muscle === k ? null : k)} />
         ))}
       </ScrollView>
+      </>
+      )}
 
       <FlatList
         data={list}
         keyExtractor={(e) => e.id}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         initialNumToRender={14}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 110 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24 }}
         ListHeaderComponent={!filtering && recent.length ? <Text style={styles.section}>Recent exercises</Text> : null}
         ListEmptyComponent={<Body style={{ paddingVertical: 20 }}>No exercise found. Create it with "Create".</Body>}
         renderItem={({ item }) => (
@@ -141,6 +153,8 @@ export function ExercisePicker() {
           </Pressable>
         </View>
       )}
+
+      </KeyboardAvoidingView>
 
       <Modal visible={!!creating} transparent animationType="slide" onRequestClose={() => setCreating(null)}>
         <View style={styles.backdrop}>
@@ -217,7 +231,7 @@ const styles = StyleSheet.create({
   name: { fontFamily: F.sansMed, fontSize: 15, color: T.ink },
   check: { width: 24, height: 24, backgroundColor: OLIVE, alignItems: "center", justifyContent: "center" },
   info: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
-  footer: { position: "absolute", left: 0, right: 0, bottom: 0, padding: 20, backgroundColor: T.canvas },
+  footer: { padding: 16, paddingBottom: 20, backgroundColor: T.canvas, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: T.hair },
   addBtn: { minHeight: 52, backgroundColor: OLIVE, alignItems: "center", justifyContent: "center" },
   addText: { fontFamily: F.sansMed, fontSize: 15.5, color: T.canvas },
   backdrop: { flex: 1, backgroundColor: "rgba(20,24,18,0.35)" },
