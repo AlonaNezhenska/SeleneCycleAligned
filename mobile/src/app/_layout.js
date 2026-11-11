@@ -38,6 +38,7 @@ const Gate = ({ fontsReady }) => {
         <Stack.Screen name="auth-callback" />
         <Stack.Screen name="edit-cycle" options={{ presentation: "modal" }} />
         <Stack.Screen name="edit-about" options={{ presentation: "modal" }} />
+        <Stack.Screen name="log" />
         <Stack.Screen name="track/[category]" />
         <Stack.Screen name="food/add" options={{ presentation: "modal" }} />
         <Stack.Screen name="food/scan" />
@@ -48,7 +49,6 @@ const Gate = ({ fontsReady }) => {
         <Stack.Screen name="meditate" />
         <Stack.Screen name="photos" />
         <Stack.Screen name="workout/start" />
-        <Stack.Screen name="workout/today" />
         <Stack.Screen name="workout/log" />
         <Stack.Screen name="workout/exercises" options={{ presentation: "modal" }} />
         <Stack.Screen name="workout/exercise/[id]" />

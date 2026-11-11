@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, Pressable, Modal, Image, StyleSheet } from "react-native";
-import { router } from "expo-router";
+import { View, Text, Pressable, Modal, Image, ScrollView, StyleSheet } from "react-native";
+import { router, useLocalSearchParams } from "expo-router";
 import { BlurView } from "expo-blur";
 import Svg, { Path } from "react-native-svg";
-import { ArrowLeft, Check, ChevronDown, LifeBuoy, EyeOff, Salad, Users, Lock } from "lucide-react-native";
+import { ArrowLeft, Check, ChevronDown, LifeBuoy, EyeOff, Salad, Users, Lock, CalendarDays } from "lucide-react-native";
+import { Calendar, shortDate } from "../ui/Calendar";
 import { CategorySheet } from "./TrackCategory";
 import { triadTip, isHighSymptom } from "../shared";
-import { useApp } from "../state/AppState";
+import { useApp, dateKey } from "../state/AppState";
 import { useTracker } from "../state/TrackerSession";
 import { BLOOM_SHEET } from "../content/bloom";
 import { COLLECTIONS, inCollection, countIn, journalSignals } from "../content/journal";
@@ -174,6 +175,72 @@ const Collection = ({ collection, open, onToggle, draft, children }) => {
   );
 };
 
+/* ---- which day is being logged: the last week, or any earlier day ---- */
+
+const back7 = (todayKey) =>
+  Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(`${todayKey}T12:00:00`);
+    d.setDate(d.getDate() - i);
+    return dateKey(d);
+  });
+
+const dayName = (key, todayKey, i) =>
+  i === 0 ? "Today" : i === 1 ? "Yesterday" : new Date(`${key}T12:00:00`).toLocaleDateString("en-GB", { weekday: "short" });
+
+const DayPicker = ({ date, todayKey, onPick }) => {
+  const [calendar, setCalendar] = useState(false);
+  const week = back7(todayKey);
+  const earlier = !week.includes(date);
+  return (
+    <View style={{ marginBottom: 14 }} testID="day-picker">
+      <View style={[s.row, { gap: 6 }]}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flex: 1 }} contentContainerStyle={{ gap: 6, paddingVertical: 2 }}>
+        {week.map((key, i) => {
+          const on = key === date;
+          return (
+            <Pressable
+              key={key}
+              onPress={() => onPick(key)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: on }}
+              accessibilityLabel={i < 2 ? dayName(key, todayKey, i) : shortDate(key)}
+              style={[styles.day, on && styles.dayOn]}
+            >
+              <Text style={[styles.dayName, on && { color: OLIVE }]}>{dayName(key, todayKey, i)}</Text>
+              <Text style={[styles.dayNum, on && { color: OLIVE }]}>{Number(key.slice(8))}</Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+        {/* always in reach, however far the week scrolls */}
+        <Pressable
+          onPress={() => setCalendar((v) => !v)}
+          accessibilityRole="button"
+          accessibilityState={{ selected: earlier, expanded: calendar }}
+          accessibilityLabel="An earlier day"
+          style={[styles.day, earlier && styles.dayOn]}
+        >
+          <CalendarDays size={16} color={earlier ? OLIVE : T.canvas} />
+          <Text style={[styles.dayName, earlier && { color: OLIVE }]}>{earlier ? shortDate(date).split(" ").slice(1).join(" ") : "Earlier"}</Text>
+        </Pressable>
+      </View>
+      {calendar && (
+        <View style={{ marginTop: 10, backgroundColor: T.canvas }}>
+          <Calendar
+            mode="single"
+            value={date}
+            maxDate={todayKey}
+            onChange={(d) => {
+              setCalendar(false);
+              onPick(d);
+            }}
+          />
+        </View>
+      )}
+    </View>
+  );
+};
+
 /* ---- the screen ---- */
 
 export function Triad() {
@@ -192,22 +259,42 @@ export function Triad() {
     if (uri && Image.prefetch) Image.prefetch(uri).catch(() => {});
   }, []);
   const [leaving, setLeaving] = useState(false);
+  // a day picked while choices are unsaved waits for "discard" first
+  const [switchTo, setSwitchTo] = useState(null);
   const c = tone(true);
+  const { date: dateParam } = useLocalSearchParams();
 
-  const signals = readSignals(journalSignals(t.saved), app);
+  // opening the log starts on today (or the day a link asks for), unless a session is still being edited
+  useEffect(() => {
+    if (!t.dirty) t.setDate(typeof dateParam === "string" ? dateParam : app.todayKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateParam, app.todayKey]);
+
+  const pickDay = (key) => {
+    if (key === t.date) return;
+    if (t.dirty) setSwitchTo(key);
+    else {
+      setTip(null);
+      t.setDate(key);
+    }
+  };
+
+  // what a saved journal means is about today, not a day gone by
+  const signals = t.isToday ? readSignals(journalSignals(t.saved), app) : [];
 
   const save = () => {
     const journal = t.save();
-    setTip(triadTip({ signals: journalSignals(journal), phase: ctx.phase }));
+    if (t.isToday) setTip(triadTip({ signals: journalSignals(journal), phase: ctx.phase }));
   };
-  const back = () => (t.dirty ? setLeaving(true) : router.navigate("/"));
+  const leave = () => (router.canGoBack?.() ? router.back() : router.navigate("/cycle"));
+  const back = () => (t.dirty ? setLeaving(true) : leave());
 
   const footer = (
     <View style={styles.footer}>
       {t.savedAt && !t.dirty ? (
         <View style={[styles.saveBtn, styles.saved]} accessibilityLiveRegion="polite" testID="saved-confirmation">
           <Check size={18} color={OLIVE} strokeWidth={2.4} />
-          <Text style={{ fontFamily: F.serif, fontSize: 18, color: OLIVE }}>Saved for today</Text>
+          <Text style={{ fontFamily: F.serif, fontSize: 18, color: OLIVE }}>{t.isToday ? "Saved for today" : `Saved for ${shortDate(t.date)}`}</Text>
         </View>
       ) : (
         <Pressable
@@ -250,11 +337,13 @@ export function Triad() {
         <View style={{ width: 44 }} />
       </View>
 
+      <DayPicker date={t.date} todayKey={app.todayKey} onPick={pickDay} />
+
       <Body size={13} color={c.textSoft} weight="medium" style={{ textAlign: "center" }}>
-        {ctx.calendarKnown ? `Cycle Day ${ctx.day} · ${ctx.phaseLabel} phase` : "Today"}
+        {!t.isToday ? shortDate(t.date) : ctx.calendarKnown ? `Cycle Day ${ctx.day} · ${ctx.phaseLabel} phase` : "Today"}
       </Body>
       <Serif size={27} color={T.canvas} accessibilityRole="header" style={{ textAlign: "center", marginBottom: 4 }}>
-        How are you feeling today?
+        {t.isToday ? "How are you feeling today?" : "How were you feeling that day?"}
       </Serif>
       <Body size={13} color={c.textSoft} style={{ textAlign: "center" }}>
         Tap a category. Everything saves together at the end.
@@ -325,6 +414,42 @@ export function Triad() {
         </View>
       )}
 
+      <Modal visible={!!switchTo} transparent animationType="fade" onRequestClose={() => setSwitchTo(null)}>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modal} accessibilityViewIsModal testID="switch-confirm">
+            <Serif size={21}>Switch day without saving?</Serif>
+            <Body size={13.5} style={{ marginTop: 6, marginBottom: 16 }}>
+              {`What you picked for ${t.isToday ? "today" : shortDate(t.date)} has not been saved yet.`}
+            </Body>
+            <Pressable
+              onPress={() => {
+                t.save();
+                const key = switchTo;
+                setSwitchTo(null);
+                setTip(null);
+                t.setDate(key);
+              }}
+              accessibilityRole="button"
+              style={[styles.modalBtn, { backgroundColor: OLIVE }]}
+            >
+              <Text style={{ fontFamily: F.serif, fontSize: 16, color: T.canvas }}>Save, then switch</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                const key = switchTo;
+                setSwitchTo(null);
+                setTip(null);
+                t.setDate(key);
+              }}
+              accessibilityRole="button"
+              style={[styles.modalBtn, { borderWidth: 1, borderColor: T.hair, marginTop: 8 }]}
+            >
+              <Text style={{ fontFamily: F.serif, fontSize: 16, color: T.ink }}>Discard and switch</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
       <Modal visible={leaving} transparent animationType="fade" onRequestClose={() => setLeaving(false)}>
         <View style={styles.modalBackdrop}>
           <View style={styles.modal} accessibilityViewIsModal testID="leave-confirm">
@@ -339,7 +464,7 @@ export function Triad() {
               onPress={() => {
                 t.discard();
                 setLeaving(false);
-                router.navigate("/");
+                leave();
               }}
               accessibilityRole="button"
               style={[styles.modalBtn, { borderWidth: 1, borderColor: T.hair, marginTop: 8 }]}
@@ -366,8 +491,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 0 },
     elevation: 10,
   },
-  badge: { position: "absolute", top: 4, right: 6, minWidth: 20, height: 20, backgroundColor: GLOW, alignItems: "center", justifyContent: "center", paddingHorizontal: 5 },
-  popup: { position: "absolute", top: 8, bottom: 8, left: 8, right: 8, overflow: "hidden", borderWidth: 1, borderColor: "rgba(242,239,230,0.5)" },
+  badge: { position: "absolute", top: 4, right: 6, minWidth: 20, height: 20, borderRadius: 10, backgroundColor: GLOW, alignItems: "center", justifyContent: "center", paddingHorizontal: 5 },
+  popup: { position: "absolute", top: 8, bottom: 8, left: 8, right: 8, borderRadius: 34, overflow: "hidden", borderWidth: 1, borderColor: "rgba(242,239,230,0.5)" },
   notice: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 20, padding: 14, backgroundColor: "rgba(0,0,0,0.3)", borderWidth: 1, borderColor: "rgba(242,226,166,0.3)" },
   discard: { minHeight: 44, paddingHorizontal: 14, justifyContent: "center", borderWidth: 1, borderColor: "rgba(242,239,230,0.5)" },
   tip: { marginTop: 16, padding: 20, backgroundColor: T.canvas },
@@ -377,6 +502,10 @@ const styles = StyleSheet.create({
   footer: { paddingHorizontal: 24, paddingTop: 10, paddingBottom: 12, backgroundColor: "rgba(10,18,12,0.6)" },
   saveBtn: { minHeight: 54, backgroundColor: "rgba(242,239,230,0.92)", alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 8 },
   saved: { backgroundColor: GLOW },
+  day: { width: 56, minHeight: 56, alignItems: "center", justifyContent: "center", gap: 2, borderRadius: 28, borderWidth: 1, borderColor: "rgba(242,226,166,0.35)", backgroundColor: "rgba(242,239,230,0.1)" },
+  dayOn: { backgroundColor: GLOW, borderColor: GLOW },
+  dayName: { fontFamily: F.sansMed, fontSize: 10.5, color: T.canvas },
+  dayNum: { fontFamily: F.serif, fontSize: 17, color: T.canvas },
   modalBackdrop: { flex: 1, backgroundColor: "rgba(10,18,12,0.6)", justifyContent: "center", padding: 24 },
   modal: { padding: 22, backgroundColor: T.canvas },
   modalBtn: { minHeight: 50, alignItems: "center", justifyContent: "center" },

@@ -4,7 +4,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, Check, Lock, Minus, Plus, Trash2, CalendarDays } from "lucide-react-native";
-import { useApp, dateKey } from "../state/AppState";
+import { useApp } from "../state/AppState";
 import { useTracker } from "../state/TrackerSession";
 import { CATEGORY, tileRows, CONTRACEPTION_METHODS, CONTRACEPTION_SIDE_EFFECTS, CONDITIONS, FREQUENCIES, titleOf } from "../content/journal";
 import { T, F, IMG, DARK_TEXT } from "../ui/theme";
@@ -537,9 +537,10 @@ const HEADING = {
 /** One category, drawn as the pop-up sheet (or a full page from a link). */
 export function CategorySheet({ categoryKey, onClose }) {
   const cat = CATEGORY[categoryKey];
-  const { profile, now } = useApp();
+  const { profile } = useApp();
   const t = useTracker();
-  const today = dateKey(now);
+  // the day being logged, so dates inside a category default to it and never go past it
+  const today = t.date;
 
   if (!cat) {
     return (
@@ -620,7 +621,7 @@ export function CategorySheet({ categoryKey, onClose }) {
 export function TrackCategory({ categoryKey }) {
   const params = useLocalSearchParams();
   const key = categoryKey ?? params.category;
-  const back = () => (router.canGoBack?.() ? router.back() : router.replace("/tracker"));
+  const back = () => (router.canGoBack?.() ? router.back() : router.replace("/log"));
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: T.canvas }}>
       <CategorySheet categoryKey={key} onClose={back} />
@@ -630,17 +631,18 @@ export function TrackCategory({ categoryKey }) {
 
 const styles = StyleSheet.create({
   sheet: { flex: 1, overflow: "hidden" },
-  roundBtn: { width: 52, height: 52, borderWidth: 0, backgroundColor: "rgba(242,239,230,0.82)" },
+  roundBtn: { width: 52, height: 52, borderRadius: 26, borderWidth: 0, backgroundColor: "rgba(242,239,230,0.82)" },
   privatePill: { gap: 6, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: "rgba(242,239,230,0.82)" },
   eyebrow: { fontFamily: F.serif, fontSize: 15, letterSpacing: 4, color: CREAM },
   rule: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: CREAM, opacity: 0.7 },
   heading: { fontFamily: F.serifItalic, fontSize: 28, lineHeight: 34, color: CREAM },
-  glass: { padding: 16, backgroundColor: GLASS, borderWidth: 1, borderColor: "rgba(255,253,248,0.7)" },
+  glass: { borderRadius: 28, padding: 16, backgroundColor: GLASS, borderWidth: 1, borderColor: "rgba(255,253,248,0.7)" },
   groupLabel: { fontFamily: F.serif, fontSize: 16, color: CREAM, marginBottom: 8 },
   tileRow: { flexDirection: "row", justifyContent: "center" },
   tileCell: { padding: 5 },
   tile: {
     minHeight: 104,
+    borderRadius: 34,
     
     alignItems: "center",
     justifyContent: "center",
@@ -654,7 +656,7 @@ const styles = StyleSheet.create({
   tileOn: { backgroundColor: OLIVE, borderColor: OLIVE },
   tileFocused: { borderColor: "#F2E2A6", borderWidth: 2 },
   tileText: { fontFamily: F.sans, fontSize: 13.5, textAlign: "center" },
-  check: { position: "absolute", top: 6, right: 8, width: 24, height: 24, backgroundColor: T.canvas, alignItems: "center", justifyContent: "center" },
+  check: { position: "absolute", top: 6, right: 8, width: 24, height: 24, borderRadius: 12, backgroundColor: T.canvas, alignItems: "center", justifyContent: "center" },
   hint: { textAlign: "center", paddingHorizontal: 12 },
   input: { minHeight: 46, borderWidth: 1, borderColor: "rgba(74,74,43,0.2)", backgroundColor: "rgba(255,253,248,0.65)", paddingHorizontal: 14, paddingVertical: 10, fontFamily: F.sans, fontSize: 14, color: T.ink },
   addBtn: { flexDirection: "row", gap: 8, minHeight: 48, backgroundColor: OLIVE, alignItems: "center", justifyContent: "center", marginTop: 4 },

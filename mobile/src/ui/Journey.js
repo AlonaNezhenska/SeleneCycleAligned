@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import { View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
 import { router } from "expo-router";
-import { ChevronRight, Sparkles } from "lucide-react-native";
+import { ChevronRight } from "lucide-react-native";
 import { journeyDays, journeyWeeks, totals } from "../lib/journey";
-import { monthInsight, describeMonth } from "../lib/insights";
 import { SoftPhoto } from "../screens/Photos";
 import { OLIVE, dayLabel } from "./food";
 import { T, F } from "./theme";
@@ -76,25 +75,6 @@ const MoveChart = ({ rows, weekly }) => {
         ))}
       </View>
     </View>
-  );
-};
-
-/** This month in a few calm sentences: eaten, burned, and why consistency wins. */
-export const MonthInsight = ({ days, todayKey, profile, goalKcal, hidden }) => {
-  const { headline, lines } = describeMonth(monthInsight({ days, todayKey, profile, goalKcal }), { hidden });
-  return (
-    <Card style={[s.row, styles.insight]} testID="month-insight">
-      <Sparkles size={20} color={OLIVE} />
-      <View style={{ flex: 1, gap: 4 }}>
-        <Text style={styles.insightKicker}>THIS MONTH</Text>
-        <Text style={styles.cardTitle}>{headline}</Text>
-        {lines.map((l, i) => (
-          <Body key={i} size={13} color={T.ink}>
-            {l}
-          </Body>
-        ))}
-      </View>
-    </Card>
   );
 };
 
@@ -193,7 +173,5 @@ const styles = StyleSheet.create({
   goalLine: { position: "absolute", left: 0, right: 0, height: 1, borderTopWidth: 1, borderStyle: "dashed", borderColor: T.inkSoft },
   tick: { flex: 1, textAlign: "center", fontFamily: F.sans, fontSize: 11, color: T.inkSoft, marginTop: 4 },
   swatch: { width: 10, height: 10, borderRadius: 5 },
-  insight: { gap: 12, alignItems: "flex-start", marginBottom: 12, backgroundColor: "#EEF0E2", borderColor: "#D6DABF" },
-  insightKicker: { fontFamily: F.sansMed, fontSize: 11, letterSpacing: 1.6, color: T.inkSoft },
   photoDate: { fontFamily: F.sans, fontSize: 11.5, color: T.inkSoft, marginTop: 4, textAlign: "center" },
 });

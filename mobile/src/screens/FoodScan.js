@@ -34,6 +34,13 @@ export function FoodScan() {
   const find = async (code) => {
     if (busy.current) return;
     busy.current = true;
+    // her own foods first: a barcode she added to one finds it straight away, even offline
+    const clean = String(code).replace(/\D/g, "");
+    const mine = foodLibrary.foods.find((x) => x.barcode && x.barcode === clean);
+    if (mine) {
+      setState({ status: "found", code: clean, food: mine });
+      return;
+    }
     setState({ status: "looking", code });
     try {
       const food = await lookupBarcode(code);

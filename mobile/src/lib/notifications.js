@@ -61,10 +61,10 @@ export const planNotifications = async (profile, todayKey, now = new Date()) => 
   }
 };
 
-/** A sample, a few seconds from now, to see how they arrive. */
-export const sendSample = async () => {
+/** A sample, a few seconds from now, to see how one arrives. */
+export const sendSample = async (key = "period-here") => {
   if (!ON_PHONE) return;
-  await send("period-here", { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 3 });
+  await send(key, { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 3 });
 };
 
 /** Tapping a notification opens its picture in the app. */

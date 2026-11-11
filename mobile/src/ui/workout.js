@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Pressable, TextInput, Modal, KeyboardAvoidingView, Platform, StyleSheet } from "react-native";
+import { View, Text, Pressable, Modal, StyleSheet } from "react-native";
+import { TimeWheel } from "./TimeWheel";
 import { router } from "expo-router";
 import { Play, Dumbbell } from "lucide-react-native";
 import { useApp } from "../state/AppState";
@@ -38,9 +39,9 @@ export const useNow = (active = true) => {
 export const useWorkoutActions = () => {
   const { activeWorkout, startWorkout, finishWorkout, discardWorkout, setSession, markDone, customExercises, showMoments, todayKey } = useApp();
   /** Start a workout (or return to the one already going) and open the log. */
-  const begin = ({ name = "Workout", routineId = null, items = [], replace = false } = {}) => {
+  const begin = ({ name = "Workout", routineId = null, items = [], replace = false, kind = "strength" } = {}) => {
     if (!activeWorkout) {
-      startWorkout({ name, routineId, exercises: items.map((i) => entryFrom(i, customExercises)) });
+      startWorkout({ name, routineId, kind, exercises: items.map((i) => entryFrom(i, customExercises)) });
       setSession({ startedAt: Date.now(), endedAt: null, bailoutOffered: false, bailoutVisible: false });
     }
     router[replace ? "replace" : "push"]("/workout/log");
@@ -48,9 +49,13 @@ export const useWorkoutActions = () => {
   /** Keep the workout, open the protein window and earn today's check. */
   const finish = (note = "", kind) => {
     setSession({ endedAt: Date.now(), bailoutVisible: false });
+    const yoga = activeWorkout?.kind === "yoga";
+    const trying = activeWorkout?.exercises?.some((e) => e.trying);
     finishWorkout(note);
     markDone(kind);
-    if (kind !== "rest") showMoments(["strength"], todayKey);
+    // a cheer at the end: for a pose still being learned, or for lifting
+    if (kind !== "rest" && trying) showMoments(["yoga-trying"], todayKey);
+    else if (kind !== "rest" && !yoga) showMoments(["strength"], todayKey);
   };
   const discard = () => {
     setSession({ startedAt: null, endedAt: null, bailoutOffered: false, bailoutVisible: false });
@@ -61,27 +66,20 @@ export const useWorkoutActions = () => {
 
 /** A small window to set how many minutes a workout took. */
 export const MinutesSheet = ({ visible, title, minutes, onSave, onClose }) => {
-  const [text, setText] = useState(String(minutes));
+  const [value, setValue] = useState(minutes);
   useEffect(() => {
-    if (visible) setText(String(minutes));
+    if (visible) setValue(minutes);
   }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps
-  const value = parseInt(text, 10) || 0;
-  const nudge = (n) => setText(String(Math.max(1, value + n)));
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.backdrop}>
+      <View style={styles.backdrop}>
         <Pressable style={{ flex: 1 }} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close" />
         <View style={styles.sheet} testID="minutes-sheet">
           <Text style={styles.sheetTitle}>{title}</Text>
-          <View style={[s.row, { gap: 10, justifyContent: "center" }]}>
-            <Button tone="outline" size="sm" full={false} label="−5" accessibilityLabel="5 minutes less" onPress={() => nudge(-5)} />
-            <TextInput value={text} onChangeText={(t) => setText(t.replace(/[^0-9]/g, ""))} keyboardType="number-pad" accessibilityLabel="Minutes" style={styles.minutes} />
-            <Text style={styles.unit}>min</Text>
-            <Button tone="outline" size="sm" full={false} label="+5" accessibilityLabel="5 minutes more" onPress={() => nudge(5)} />
-          </View>
+          <TimeWheel minutes={value} onChange={setValue} />
           <Button tone="dark" label="Save" disabled={value < 1} onPress={() => onSave(value)} />
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 };

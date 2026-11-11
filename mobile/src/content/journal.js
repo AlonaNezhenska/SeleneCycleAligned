@@ -159,7 +159,7 @@ export const CATEGORIES = [
     type: "choices",
     noteLabel: "Note (optional)",
     title: "Flow & cycle changes",
-    hint: "Period started today sets day 1 of your cycle when you save.",
+    hint: "Period started sets day 1 of your cycle on the day you are logging, when you save.",
     groups: [
       {
         key: "level",
@@ -179,8 +179,8 @@ export const CATEGORIES = [
         label: "Also today",
         rows: [["started", "ended"], ["clots", "flooding"]],
         options: [
-          s("started", "Period started today", CalendarClock),
-          s("ended", "Period ended today", CalendarX),
+          s("started", "Period started", CalendarClock),
+          s("ended", "Period ended", CalendarX),
           s("clots", "Clots", CircleDot, "clots"),
           s("flooding", "Flooding or leaking", Droplets),
         ],

@@ -199,7 +199,17 @@ export const AppProvider = ({ children, now: fixedNow, initial }) => {
   const toggleFavorite = useCallback((food) => updateLibrary((lib) => ({ ...lib, favorites: flipFavorite(lib.favorites, food) })), [updateLibrary]);
 
   const saveToLibrary = useCallback(
-    (kind, item) => updateLibrary((lib) => ({ ...lib, [kind]: [item, ...lib[kind].filter((x) => x.id !== item.id)] })),
+    (kind, item) =>
+      updateLibrary((lib) => {
+        const next = { ...lib, [kind]: [item, ...lib[kind].filter((x) => x.id !== item.id)] };
+        // an edited food is the same food: its copies in recent and favourites follow
+        if (kind === "foods") {
+          const fresh = (x) => (x.id === item.id ? { ...x, ...item } : x);
+          next.recent = (lib.recent ?? []).map(fresh);
+          next.favorites = (lib.favorites ?? []).map(fresh);
+        }
+        return next;
+      }),
     [updateLibrary]
   );
   const removeFromLibrary = useCallback((kind, id) => updateLibrary((lib) => ({ ...lib, [kind]: lib[kind].filter((x) => x.id !== id) })), [updateLibrary]);
@@ -207,6 +217,10 @@ export const AppProvider = ({ children, now: fixedNow, initial }) => {
   /** Movement logged in Workouts: walks, sessions, yoga videos, meditation. */
   const addActivity = useCallback(
     (activity, key = todayKey) => updateDay(key, (day) => ({ ...day, activities: [...(day.activities ?? []), { id: newId(), ...activity }] })),
+    [updateDay, todayKey]
+  );
+  const updateActivity = useCallback(
+    (id, patch, key = todayKey) => updateDay(key, (day) => ({ ...day, activities: (day.activities ?? []).map((a) => (a.id === id ? { ...a, ...patch } : a)) })),
     [updateDay, todayKey]
   );
   const removeActivity = useCallback(
@@ -217,8 +231,8 @@ export const AppProvider = ({ children, now: fixedNow, initial }) => {
 
   /** Begin a workout, empty or from a routine; it survives closing the app. */
   const startWorkout = useCallback(
-    ({ name = "Workout", routineId = null, exercises = [] } = {}) =>
-      setData((d) => ({ ...d, activeWorkout: { id: newId(), name, routineId, startedAt: Date.now(), exercises } })),
+    ({ name = "Workout", routineId = null, exercises = [], kind = "strength" } = {}) =>
+      setData((d) => ({ ...d, activeWorkout: { id: newId(), name, routineId, kind, startedAt: Date.now(), exercises } })),
     []
   );
   const updateWorkout = useCallback((fn) => setData((d) => (d.activeWorkout ? { ...d, activeWorkout: fn(d.activeWorkout) } : d)), []);
@@ -242,13 +256,16 @@ export const AppProvider = ({ children, now: fixedNow, initial }) => {
             [todayKey]: {
               ...day,
               movement: (day.movement ?? 0) + minutes,
-              activities: [...(day.activities ?? []), { id: newId(), kind: "strength", minutes, title: w.name, workoutId: w.id }],
+              activities: [...(day.activities ?? []), { id: newId(), kind: w.kind === "yoga" ? "yoga" : "strength", minutes, title: w.name, workoutId: w.id }],
             },
           },
         };
       }),
     [todayKey]
   );
+  /** Change a finished workout: its exercises, sets or name. */
+  const updateFinishedWorkout = useCallback((id, fn) => setData((d) => ({ ...d, workouts: (d.workouts ?? []).map((w) => (w.id === id ? fn(w) : w)) })), []);
+
   /** Correct how long a finished workout took; its day's movement follows. */
   const setWorkoutMinutes = useCallback(
     (id, minutes) =>
@@ -368,6 +385,7 @@ export const AppProvider = ({ children, now: fixedNow, initial }) => {
     removeFromLibrary,
     addActivity,
     removeActivity,
+    updateActivity,
     setSteps,
     photos: data.photos ?? [],
     routines: data.routines ?? [],
@@ -381,6 +399,7 @@ export const AppProvider = ({ children, now: fixedNow, initial }) => {
     finishWorkout,
     removeWorkout,
     setWorkoutMinutes,
+    updateFinishedWorkout,
     saveRoutine,
     removeRoutine,
     addCustomExercise,

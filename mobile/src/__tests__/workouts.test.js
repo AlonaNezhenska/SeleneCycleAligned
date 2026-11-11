@@ -8,7 +8,6 @@ import { TrackerSessionProvider } from "../state/TrackerSession";
 import { findBlocked, AGREEMENT_VERSION } from "../shared";
 import { Training } from "../screens/Training";
 import { WorkoutStart } from "../screens/WorkoutStart";
-import { WorkoutToday } from "../screens/WorkoutToday";
 
 /** The question and the tab together, as the session stays between them. */
 const StartAndTab = () => (
@@ -30,6 +29,7 @@ import { Fuel } from "../screens/Fuel";
 import { LIBRARY, findExercises, logType, exerciseById } from "../lib/exercises";
 import { exercisePicture } from "../content/exerciseMedia";
 import { entryFrom, warmupSets, oneRepMax, workoutTotals, previousSets, exerciseHistory, weeklyTotals, setsPerMuscle } from "../lib/workout";
+import { useWorkoutActions } from "../ui/workout";
 import { PROGRAMS } from "../content/programs";
 import { sendPicked } from "../state/pickBus";
 
@@ -118,8 +118,8 @@ describe("the exercise library", () => {
     expect(findExercises({ query: "lever seated hip abduction" })[0].name).toBe("Hip Abduction (Machine)");
     const yoga = findExercises({ equipment: "yoga", limit: 999 });
     expect(yoga.map((e) => e.name)).toEqual(expect.arrayContaining(["Crow Pose", "Handstand", "Downward-Facing Dog", "Wheel Pose"]));
-    expect(yoga.every((e) => logType(e) === "duration")).toBe(true);
-    expect(findExercises({ query: "bakasana" })[0].name).toBe("Crow Pose");
+    expect(yoga.every((e) => logType(e) === "breaths")).toBe(true);
+    expect(findExercises({ query: "bakasana" }).map((e) => e.name)).toEqual(expect.arrayContaining(["Crow Pose", "Crane Pose"]));
   });
 
   it("covers the gym's machines and cables, with a picture where the dataset has one", () => {
@@ -134,6 +134,12 @@ describe("the exercise library", () => {
     expect(LIBRARY.filter((e) => e.gv).length).toBeGreaterThan(1300);
     expect(exercisePicture(LIBRARY.find((e) => e.gv)).uri).toMatch(/^https:\/\/raw\.githubusercontent\.com\/.+\.jpg$/);
     expect(exercisePicture({ id: "mine" })).toBeNull();
+    // yoga poses: a small picture for lists, a large one for the pose's page, and its guide
+    const crow = LIBRARY.find((e) => e.id === "selena-crow");
+    expect(exercisePicture(crow).uri).toBe("https://pocketyoga.com/assets/images/thumbnails146/Crow-tn146.png");
+    expect(exercisePicture(crow, { large: true }).uri).toBe("https://pocketyoga.com/assets/images/full/Crow.png");
+    expect(findExercises({ equipment: "yoga", limit: 999 }).length).toBeGreaterThan(160);
+    expect(findExercises({ query: "bakasana" }).map((e) => e.name)).toEqual(expect.arrayContaining(["Crow Pose", "Crane Pose"]));
   });
 });
 
@@ -275,7 +281,7 @@ describe("exercise page", () => {
     expect(screen.getByText("Primary: Glutes")).toBeOnTheScreen();
     expect(screen.getByTestId("personal-records")).toHaveTextContent(/Heaviest weight: 70 kg/);
     await fireEvent.press(screen.getByRole("tab", { name: "How to" }));
-    expect(screen.getByText(/public-domain library/)).toBeOnTheScreen();
+    expect(screen.getByText(/open exercise libraries/)).toBeOnTheScreen();
   });
 });
 
@@ -316,17 +322,70 @@ describe("Profile training", () => {
     const day = { [PAST.date]: { movement: 50, activities: [{ id: "a1", kind: "strength", minutes: 50, workoutId: "w1" }] } };
     await mount(WorkoutDetail, { params: { id: "w1" }, initial: { workouts: [PAST], days: day } });
     await fireEvent.press(screen.getByRole("button", { name: "Edit duration" }));
-    await fireEvent.changeText(screen.getByLabelText("Minutes"), "65");
+    await fireEvent(screen.getByLabelText("Hours"), "valueChange", 1);
+    await fireEvent(screen.getByLabelText("Minutes"), "valueChange", 5);
     await fireEvent.press(screen.getByRole("button", { name: "Save" }));
     const data = await stored();
     expect((data.workouts[0].endedAt - data.workouts[0].startedAt) / 60000).toBe(65);
     expect(data.days[PAST.date]).toMatchObject({ movement: 65, activities: [expect.objectContaining({ minutes: 65 })] });
   });
 
+  it("logs a custom yoga session in breaths, and cheers a pose still being learned", async () => {
+    let actions;
+    const Grab = () => {
+      actions = useWorkoutActions();
+      return null;
+    };
+    const Both = () => (
+      <>
+        <Grab />
+        <WorkoutLog />
+      </>
+    );
+    await mount(Both, { initial: { activeWorkout: { id: "y", name: "Yoga", kind: "yoga", startedAt: Date.now() - 20 * 60000, exercises: [entryFrom({ id: "selena-crow" })] } } });
+    expect(screen.getByText("BREATHS")).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: "Add a pose" })).toBeOnTheScreen();
+    await fireEvent.changeText(screen.getByLabelText("Set 1 breaths"), "5");
+    await fireEvent.press(screen.getByRole("checkbox", { name: "Set 1 done" }));
+    await fireEvent.press(screen.getByRole("checkbox", { name: "Still working towards this pose" }));
+    await act(async () => actions.finish());
+    const data = await stored();
+    expect(data.workouts[0]).toMatchObject({ kind: "yoga", exercises: [expect.objectContaining({ trying: true, sets: [expect.objectContaining({ breaths: "5" })] })] });
+    expect(Object.values(data.days).flatMap((d) => d.activities ?? [])).toEqual([expect.objectContaining({ kind: "yoga" })]);
+    expect(data.seenMoments[0]).toMatch(/^yoga-trying:/);
+  });
+
+  it("opens a finished workout to add or remove exercises", async () => {
+    await mount(WorkoutDetail, { params: { id: "w1" }, initial: { workouts: [PAST] } });
+    await fireEvent.press(screen.getByRole("button", { name: "Edit workout" }));
+    expect(router.push).toHaveBeenCalledWith({ pathname: "/workout/log", params: { id: "w1" } });
+    await cleanup();
+
+    await mount(WorkoutLog, { params: { id: "w1" }, initial: { workouts: [PAST] } });
+    expect(screen.getByRole("button", { name: "Done editing" })).toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: "Discard workout" })).toBeNull();
+    await fireEvent.press(screen.getByRole("button", { name: "Options for Barbell Glute Bridge" }));
+    await fireEvent.press(screen.getByRole("button", { name: "Remove exercise" }));
+    expect((await stored()).workouts[0].exercises).toEqual([]);
+    await cleanup();
+
+    await mount(ExercisePicker, { params: { for: "workout", edit: "w1" }, initial: { workouts: [{ ...PAST, exercises: [] }] } });
+    // while typing, Add sits in the header, out of the keyboard's way
+    await fireEvent(screen.getByLabelText("Search exercise"), "focus");
+    await fireEvent.changeText(screen.getByLabelText("Search exercise"), "barbell glute bridge");
+    await fireEvent.press(screen.getByRole("checkbox", { name: "Barbell Glute Bridge" }));
+    expect(screen.getByTestId("header-add")).toBeOnTheScreen();
+    expect(screen.getAllByRole("button", { name: "Add 1 exercise" })).toHaveLength(1);
+    await fireEvent.press(screen.getByRole("button", { name: "Add 1 exercise" }));
+    const data = await stored();
+    expect(data.workouts[0].exercises.map((e) => e.id)).toEqual(["Barbell_Glute_Bridge"]);
+    expect(data.activeWorkout ?? null).toBeNull();
+  });
+
   it("lets the time of a workout in progress be changed", async () => {
     await mount(WorkoutLog, { initial: { activeWorkout: { id: "a", name: "Legs", startedAt: Date.now(), exercises: [] } } });
     await fireEvent.press(screen.getByRole("button", { name: "Change duration" }));
-    await fireEvent.changeText(screen.getByLabelText("Minutes"), "40");
+    await fireEvent(screen.getByLabelText("Minutes"), "valueChange", 40);
     await fireEvent.press(screen.getByRole("button", { name: "Save" }));
     const started = (await stored()).activeWorkout.startedAt;
     expect(Math.round((Date.now() - started) / 60000)).toBe(40);

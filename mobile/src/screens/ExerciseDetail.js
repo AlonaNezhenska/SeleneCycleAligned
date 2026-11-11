@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, Pressable, Image, StyleSheet } from "react-native";
+import { View, Text, Pressable, Image, StyleSheet, Linking } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import Svg, { Polyline, Circle, Line } from "react-native-svg";
 import { ArrowLeft, Award } from "lucide-react-native";
@@ -7,10 +7,10 @@ import { useApp } from "../state/AppState";
 import { exerciseById, muscleLabel, equipmentLabel } from "../lib/exercises";
 import { exerciseHistory, personalRecords } from "../lib/workout";
 import { BodyFigure } from "../ui/BodyFigure";
-import { exercisePicture, PICTURE_CREDIT } from "../content/exerciseMedia";
+import { exercisePicture, pictureCredit, poseGuide } from "../content/exerciseMedia";
 import { OLIVE, dayLabel } from "../ui/food";
 import { T, F } from "../ui/theme";
-import { Screen, Body, Card, Chip, IconBtn, s } from "../ui/kit";
+import { Screen, Body, Card, Chip, IconBtn, Button, s } from "../ui/kit";
 
 /* ---------------------------------------------------------------
    AN EXERCISE — Summary (the figure, muscles, progress and records),
@@ -25,6 +25,7 @@ const METRICS = {
   ],
   reps: [["reps", "Most reps", (v) => `${v} reps`]],
   duration: [["seconds", "Longest", (v) => `${v} s`]],
+  breaths: [["breaths", "Longest hold", (v) => `${v} breaths`]],
 };
 
 /** A small line chart of one number over time. */
@@ -106,10 +107,10 @@ export function ExerciseDetail() {
       {tab === "summary" && (
         <>
           <Card style={{ alignItems: "center", marginTop: 14, paddingVertical: 18, gap: 14 }}>
-            {exercisePicture(ex) && (
+            {exercisePicture(ex, { large: true }) && (
               <View style={{ alignItems: "center", gap: 4 }}>
-                <Image source={exercisePicture(ex)} style={styles.picture} resizeMode="contain" accessibilityLabel={`${ex.name}, picture`} />
-                <Text style={styles.credit}>{PICTURE_CREDIT}</Text>
+                <Image source={exercisePicture(ex, { large: true })} style={styles.picture} resizeMode="contain" accessibilityLabel={`${ex.name}, picture`} />
+                <Text style={styles.credit}>{pictureCredit(ex)}</Text>
               </View>
             )}
             <BodyFigure primary={ex.p} secondary={ex.s} height={230} />
@@ -143,8 +144,9 @@ export function ExerciseDetail() {
               </View>
               {type === "weight" && <Body size={13.5} color={T.ink}>{`Heaviest weight: ${prs.heaviest} kg`}</Body>}
               {type === "weight" && <Body size={13.5} color={T.ink}>{`Best one rep max (estimated): ${prs.oneRm} kg`}</Body>}
-              {type !== "duration" && <Body size={13.5} color={T.ink}>{`Most reps in a set: ${prs.reps}`}</Body>}
+              {type !== "duration" && type !== "breaths" && <Body size={13.5} color={T.ink}>{`Most reps in a set: ${prs.reps}`}</Body>}
               {type === "duration" && <Body size={13.5} color={T.ink}>{`Longest: ${prs.seconds} s`}</Body>}
+              {type === "breaths" && <Body size={13.5} color={T.ink}>{`Longest hold: ${prs.breaths} breaths`}</Body>}
             </Card>
           )}
         </>
@@ -158,7 +160,7 @@ export function ExerciseDetail() {
                 <Text style={styles.cardTitle}>{dayLabel(h.date, todayKey)}</Text>
                 {h.sets.map((st, k) => (
                   <Body key={k} size={13.5} color={T.ink}>
-                    {type === "duration" ? `Set ${k + 1}: ${st.seconds} s` : `Set ${k + 1}: ${st.kg ? `${st.kg} kg × ` : ""}${st.reps} reps`}
+                    {type === "breaths" ? `Hold ${k + 1}: ${st.breaths} breaths` : type === "duration" ? `Set ${k + 1}: ${st.seconds} s` : `Set ${k + 1}: ${st.kg ? `${st.kg} kg × ` : ""}${st.reps} reps`}
                   </Body>
                 ))}
               </Card>
@@ -180,12 +182,21 @@ export function ExerciseDetail() {
                 </Body>
               </View>
             ))
-          ) : (
+          ) : poseGuide(ex) ? null : (
             <Body>No steps written for this exercise.</Body>
           )}
-          <Body size={11.5} style={{ marginTop: 10 }}>
-            Exercise steps from free-exercise-db, an open, public-domain library.
-          </Body>
+          {poseGuide(ex) && (
+            <Button
+              tone={ex.how?.length ? "outline" : "dark"}
+              label="How to do it, on Pocket Yoga"
+              onPress={() => Linking.openURL(poseGuide(ex))}
+            />
+          )}
+          {!!ex.how?.length && (
+            <Body size={11.5} style={{ marginTop: 10 }}>
+              {ex.own ? "Steps written for Selena." : "Exercise steps from open exercise libraries."}
+            </Body>
+          )}
         </View>
       )}
     </Screen>

@@ -337,6 +337,16 @@ export function FoodAdd() {
           logged={!!picked && foodLibrary.recent.some((r) => r.id === picked.id)}
           favorite={!!picked && foodLibrary.favorites.some((f) => f.id === picked.id)}
           onFavorite={() => toggleFavorite(picked)}
+          // her own foods can be changed: a typo, new values, a barcode to scan later
+          onEdit={
+            picked && foodLibrary.foods.some((x) => x.id === picked.id)
+              ? () => {
+                  const id = picked.id;
+                  setPicked(null);
+                  router.push({ pathname: "/food/new", params: { kind: "food", edit: id, meal, date } });
+                }
+              : undefined
+          }
           confirmLabel={`Add to ${MEAL[meal].label}`}
           onClose={() => setPicked(null)}
           onConfirm={(g) => {

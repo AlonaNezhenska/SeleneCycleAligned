@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { View, Text, Pressable, TextInput, StyleSheet } from "react-native";
+import { View, Text, Pressable, TextInput, Alert, StyleSheet } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, Minus, Plus, X } from "lucide-react-native";
+import { ArrowLeft, Minus, Plus, X, ScanBarcode } from "lucide-react-native";
+import { BarcodeScanner } from "../ui/BarcodeScanner";
 import { useApp } from "../state/AppState";
 import { MEAL, newId, quickEntry, foodEntry, defaultGrams, amountLabel, itemsTotal, perServing } from "../lib/food";
 import { RECIPE_CATEGORIES } from "../content/recipes";
@@ -101,20 +102,23 @@ export function FoodCreate() {
   const params = useLocalSearchParams();
   const kind = TITLES[params.kind] ? params.kind : "food";
   const meal = MEAL[params.meal] ? params.meal : null;
-  const { addFoodEntries, saveToLibrary, hideNumbers, profile, todayKey } = useApp();
+  const { addFoodEntries, saveToLibrary, removeFromLibrary, foodLibrary, hideNumbers, profile, todayKey } = useApp();
+  // editing one of her own foods: the form starts from it and saving keeps its id
+  const editing = kind === "food" && params.edit ? foodLibrary.foods.find((x) => x.id === params.edit) ?? null : null;
+  const [scanning, setScanning] = useState(false);
   const date = diaryDay(params.date, todayKey);
   const hidden = hideNumbers || profile.trackingStyle === "Visual plates";
   const [f, setF] = useState({
-    name: params.name ?? "",
-    brand: "",
-    barcode: params.barcode ?? "",
-    kcal: "",
-    protein: "",
-    carbs: "",
-    fat: "",
+    name: editing?.name ?? params.name ?? "",
+    brand: editing?.brand ?? "",
+    barcode: editing?.barcode ?? params.barcode ?? "",
+    kcal: editing ? String(editing.per100?.kcal ?? "") : "",
+    protein: editing ? String(editing.per100?.protein ?? "") : "",
+    carbs: editing ? String(editing.per100?.carbs ?? "") : "",
+    fat: editing ? String(editing.per100?.fat ?? "") : "",
     per: "100g",
-    portionLabel: "",
-    portionGrams: "",
+    portionLabel: editing?.serving?.label ?? "",
+    portionGrams: editing?.serving?.grams ? String(editing.serving.grams) : "",
     servings: 1,
     minutes: "",
     category: params.meal === "breakfast" ? "breakfast" : params.meal === "snacks" ? "snack" : params.meal ?? "dinner",
@@ -138,7 +142,8 @@ export function FoodCreate() {
   const buildFood = () => {
     const k = perPortion ? 100 / portionGrams : 1;
     return {
-      id: `mine:${newId()}`,
+      ...(editing ?? {}),
+      id: editing?.id ?? `mine:${newId()}`,
       name: f.name.trim(),
       brand: f.brand.trim() || null,
       barcode: f.barcode.trim() || null,
@@ -188,7 +193,7 @@ export function FoodCreate() {
     <Screen
       footer={
         <View style={styles.footer}>
-          {kind === "food" && meal && (
+          {kind === "food" && meal && !editing && (
             <Pressable
               onPress={() => save(true)}
               disabled={!valid}
@@ -206,9 +211,9 @@ export function FoodCreate() {
             accessibilityRole="button"
             accessibilityLabel={kind === "quick" ? `Add to ${MEAL[meal ?? "snacks"].label}` : "Save"}
             accessibilityState={{ disabled: !valid }}
-            style={[kind === "food" && meal ? styles.ghost : styles.primary, !valid && { opacity: 0.45 }]}
+            style={[kind === "food" && meal && !editing ? styles.ghost : styles.primary, !valid && { opacity: 0.45 }]}
           >
-            <Text style={kind === "food" && meal ? styles.ghostText : styles.primaryText}>{kind === "quick" ? `Add to ${MEAL[meal ?? "snacks"].label}` : "Save"}</Text>
+            <Text style={kind === "food" && meal && !editing ? styles.ghostText : styles.primaryText}>{kind === "quick" ? `Add to ${MEAL[meal ?? "snacks"].label}` : "Save"}</Text>
           </Pressable>
         </View>
       }
@@ -218,7 +223,7 @@ export function FoodCreate() {
           <ArrowLeft size={20} color={T.ink} />
         </IconBtn>
         <Serif size={24} accessibilityRole="header">
-          {TITLES[kind]}
+          {editing ? "Edit food" : TITLES[kind]}
         </Serif>
       </View>
 
@@ -247,7 +252,22 @@ export function FoodCreate() {
         <>
           <Field label="Name" value={f.name} onChange={set("name")} placeholder="e.g. Bread roll" />
           <Field label="Brand (optional)" value={f.brand} onChange={set("brand")} />
-          <Field label="Barcode (optional)" value={f.barcode} onChange={(v) => set("barcode")(v.replace(/\D/g, ""))} numeric />
+          <View style={[s.row, { gap: 8, alignItems: "flex-end" }]}>
+            <View style={{ flex: 1 }}>
+              <Field label="Barcode (optional)" value={f.barcode} onChange={(v) => set("barcode")(v.replace(/\D/g, ""))} numeric />
+            </View>
+            <Pressable onPress={() => setScanning(true)} accessibilityRole="button" accessibilityLabel="Scan the barcode" style={styles.scanBtn}>
+              <ScanBarcode size={20} color={OLIVE} />
+            </Pressable>
+          </View>
+          <BarcodeScanner
+            visible={scanning}
+            onClose={() => setScanning(false)}
+            onScanned={(code) => {
+              set("barcode")(code);
+              setScanning(false);
+            }}
+          />
           <Field label="Portion (optional)" value={f.portionLabel} onChange={set("portionLabel")} placeholder="e.g. 1 roll" />
           <Field label="Portion weight" value={f.portionGrams} onChange={set("portionGrams")} numeric unit="g" />
           <Text style={styles.label}>The values on the label are</Text>
@@ -268,6 +288,29 @@ export function FoodCreate() {
             </View>
           </View>
           {perPortion && !(portionGrams > 0) && <Body size={12.5}>Add the portion weight so Selena can work out any amount.</Body>}
+          {editing && (
+            <Pressable
+              onPress={() =>
+                Alert.alert("Delete this food?", "It goes from your foods. Food you already logged stays in your diary.", [
+                  { text: "Keep it", style: "cancel" },
+                  {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: () => {
+                      removeFromLibrary("foods", editing.id);
+                      back();
+                    },
+                  },
+                ])
+              }
+              accessibilityRole="button"
+              accessibilityLabel="Delete this food"
+              style={styles.deleteBtn}
+            >
+              <Text style={styles.deleteText}>Delete this food</Text>
+            </Pressable>
+          )}
+          {editing && <Body size={12}>Changes apply from now on. Food you already logged keeps the values it had.</Body>}
         </>
       )}
 
@@ -320,6 +363,9 @@ export function FoodCreate() {
 const styles = StyleSheet.create({
   label: { fontFamily: F.sansMed, fontSize: 12.5, color: T.inkSoft, marginBottom: 6 },
   input: { flex: 1, minHeight: 48, paddingHorizontal: 16, borderWidth: 1, borderColor: T.hair, backgroundColor: T.surface, fontFamily: F.sans, fontSize: 15.5, color: T.ink },
+  scanBtn: { width: 48, height: 48, marginBottom: 12, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: T.hair, backgroundColor: T.surface },
+  deleteBtn: { minHeight: 44, alignSelf: "flex-start", justifyContent: "center", marginTop: 14 },
+  deleteText: { fontFamily: F.sansMed, fontSize: 14, color: "#9B4A3C", textDecorationLine: "underline" },
   itemRow: { gap: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: T.hair },
   itemName: { fontFamily: F.sansMed, fontSize: 14.5, color: T.ink },
   iconHit: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },

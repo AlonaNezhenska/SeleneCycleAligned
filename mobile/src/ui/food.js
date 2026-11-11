@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
   rowName: { fontFamily: F.sansMed, fontSize: 15.5, color: T.ink },
   rowSub: { fontFamily: F.sans, fontSize: 12.5, color: T.inkSoft, marginTop: 2 },
   rowKcal: { fontFamily: F.sans, fontSize: 14, color: T.inkSoft },
-  plus: { width: 40, height: 40, margin: 0, borderRadius: 0 },
+  plus: { width: 44, height: 44, margin: 0, borderRadius: 0 },
   section: { fontFamily: F.serif, fontSize: 13, letterSpacing: 2.4, color: T.inkSoft, marginTop: 18, marginBottom: 4 },
   card: { padding: 14, marginBottom: 10, borderWidth: StyleSheet.hairlineWidth, borderColor: TOILE.line, backgroundColor: T.surface },
   cardName: { fontFamily: F.sansSemi, fontSize: 15.5, color: T.ink },

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, Pressable, TextInput, StyleSheet } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, Minus, Plus } from "lucide-react-native";
+import { ArrowLeft } from "lucide-react-native";
+import { TimeWheel } from "../ui/TimeWheel";
 import { useApp } from "../state/AppState";
 import { ACTIVITY_KINDS, KIND, caloriesFor, weightOf, youTubeId, fetchVideoTitle } from "../lib/activity";
 import { diaryDay, dayLabel, OLIVE } from "../ui/food";
@@ -14,7 +15,6 @@ import { Screen, Body, Serif, Chip, IconBtn, s } from "../ui/kit";
    link is sent to YouTube to do that.
    --------------------------------------------------------------- */
 
-const QUICK_MINUTES = [10, 20, 30, 45, 60];
 
 export function ActivityAdd() {
   const params = useLocalSearchParams();
@@ -88,19 +88,8 @@ export function ActivityAdd() {
       </View>
 
       <Text style={styles.label}>How long?</Text>
-      <View style={[s.row, { gap: 12, marginBottom: 10 }]}>
-        <IconBtn label="Fewer minutes" onPress={() => setMinutes((m) => Math.max(5, m - 5))}>
-          <Minus size={16} color={T.ink} />
-        </IconBtn>
-        <Text style={styles.minutes} accessibilityLiveRegion="polite" testID="minutes">{`${minutes} min`}</Text>
-        <IconBtn label="More minutes" onPress={() => setMinutes((m) => m + 5)}>
-          <Plus size={16} color={T.ink} />
-        </IconBtn>
-      </View>
-      <View style={[s.row, { flexWrap: "wrap", gap: 8, marginBottom: 18 }]}>
-        {QUICK_MINUTES.map((m) => (
-          <Chip key={m} label={`${m}`} selected={minutes === m} onPress={() => setMinutes(m)} />
-        ))}
+      <View style={{ marginBottom: 18 }}>
+        <TimeWheel minutes={minutes} onChange={setMinutes} />
       </View>
 
       <Text style={styles.label}>From a YouTube video? (optional)</Text>

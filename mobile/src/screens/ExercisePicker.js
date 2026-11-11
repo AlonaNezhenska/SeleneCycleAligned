@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from "react";
-import { View, Text, Pressable, TextInput, FlatList, ScrollView, Modal, Image, KeyboardAvoidingView, Keyboard, Platform, StyleSheet } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import { View, Text, Pressable, TextInput, FlatList, ScrollView, Modal, Image, Keyboard, Platform, StyleSheet } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { Search, Check, Info, X } from "lucide-react-native";
 import { useApp } from "../state/AppState";
@@ -7,8 +7,7 @@ import { findExercises, exerciseById, EQUIPMENT, MUSCLES, muscleLabel, equipment
 import { entryFrom } from "../lib/workout";
 import { newId } from "../lib/food";
 import { sendPicked } from "../state/pickBus";
-import { BodyThumb } from "../ui/BodyFigure";
-import { exercisePicture } from "../content/exerciseMedia";
+import { ExerciseThumb } from "../ui/ExerciseThumb";
 import { OLIVE } from "../ui/food";
 import { T, F } from "../ui/theme";
 import { Body, Chip, s } from "../ui/kit";
@@ -29,7 +28,7 @@ const TYPES = [
 const Row = ({ ex, picked, onPress, onInfo }) => (
   <View style={[s.row, styles.row]}>
     <Pressable onPress={onPress} accessibilityRole={picked == null ? "button" : "checkbox"} accessibilityLabel={ex.name} accessibilityState={picked == null ? undefined : { checked: picked }} style={[s.row, { flex: 1, gap: 12 }]}>
-      {exercisePicture(ex) ? <Image source={exercisePicture(ex)} style={styles.thumb} accessibilityElementsHidden importantForAccessibility="no" /> : <BodyThumb primary={ex.p} secondary={ex.s} size={52} />}
+      <ExerciseThumb ex={ex} size={52} />
       <View style={{ flex: 1 }}>
         <Text style={styles.name} numberOfLines={2}>
           {ex.name}
@@ -51,13 +50,25 @@ const Row = ({ ex, picked, onPress, onInfo }) => (
 export function ExercisePicker() {
   const params = useLocalSearchParams();
   const mode = params.for === "workout" || params.for === "routine" ? params.for : "browse";
-  const { workouts, customExercises, updateWorkout, addCustomExercise } = useApp();
+  const { workouts, customExercises, updateWorkout, updateFinishedWorkout, addCustomExercise } = useApp();
   const [query, setQuery] = useState("");
   const [typing, setTyping] = useState(false);
-  const [equipment, setEquipment] = useState(null);
+  const [equipment, setEquipment] = useState(params.equipment ?? null);
   const [muscle, setMuscle] = useState(null);
   const [picked, setPicked] = useState([]);
   const [creating, setCreating] = useState(null);
+  // the sheet reaches the bottom of the screen, so the keyboard covers exactly its own height:
+  // that much room at the bottom keeps the Add button just above it
+  const [keyboard, setKeyboard] = useState(0);
+  useEffect(() => {
+    if (Platform.OS !== "ios") return undefined;
+    const show = Keyboard.addListener("keyboardWillShow", (e) => setKeyboard(e.endCoordinates?.height ?? 0));
+    const hide = Keyboard.addListener("keyboardWillHide", () => setKeyboard(0));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
   const close = () => (router.canGoBack?.() ? router.back() : router.replace("/workouts"));
 
   const recent = useMemo(() => {
@@ -70,7 +81,8 @@ export function ExercisePicker() {
 
   const toggle = (id) => setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
   const add = () => {
-    if (mode === "workout") updateWorkout((w) => ({ ...w, exercises: [...w.exercises, ...picked.map((id) => entryFrom({ id, sets: 3 }, customExercises))] }));
+    const addTo = (w) => ({ ...w, exercises: [...w.exercises, ...picked.map((id) => entryFrom({ id }, customExercises))] });
+    if (mode === "workout") (params.edit ? updateFinishedWorkout(params.edit, addTo) : updateWorkout(addTo));
     if (mode === "routine") sendPicked(picked);
     close();
   };
@@ -78,7 +90,7 @@ export function ExercisePicker() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: T.canvas }} edges={["top"]}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
+      <View style={{ flex: 1, paddingBottom: keyboard }} testID="picker-body">
       <View style={[s.row, styles.header]}>
         <Pressable onPress={close} accessibilityRole="button" accessibilityLabel="Cancel" style={styles.headBtn}>
           <Text style={styles.headBtnText}>{mode === "browse" ? "Back" : "Cancel"}</Text>
@@ -86,9 +98,16 @@ export function ExercisePicker() {
         <Text style={styles.title} accessibilityRole="header">
           {mode === "browse" ? "Exercises" : "Add exercise"}
         </Text>
-        <Pressable onPress={() => setCreating({ name: query, eq: "other", p: [], type: "weight" })} accessibilityRole="button" accessibilityLabel="Create exercise" style={styles.headBtn}>
-          <Text style={styles.headBtnText}>Create</Text>
-        </Pressable>
+        {/* while the keyboard is up, Add moves up here where it can't be covered */}
+        {typing && mode !== "browse" && picked.length > 0 ? (
+          <Pressable onPress={add} accessibilityRole="button" accessibilityLabel={`Add ${picked.length} exercise${picked.length === 1 ? "" : "s"}`} style={[styles.headBtn, { backgroundColor: OLIVE }]} testID="header-add">
+            <Text style={[styles.headBtnText, { color: T.canvas }]}>{`Add (${picked.length})`}</Text>
+          </Pressable>
+        ) : (
+          <Pressable onPress={() => setCreating({ name: query, eq: "other", p: [], type: "weight" })} accessibilityRole="button" accessibilityLabel="Create exercise" style={styles.headBtn}>
+            <Text style={styles.headBtnText}>Create</Text>
+          </Pressable>
+        )}
       </View>
 
       <View style={[s.row, styles.search]}>
@@ -116,13 +135,13 @@ export function ExercisePicker() {
       {/* while typing, the filters step aside so the results have the room */}
       {!typing && (
       <>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} style={{ flexGrow: 0 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} style={styles.chipRow}>
         <Chip label="All equipment" selected={!equipment} onPress={() => setEquipment(null)} />
         {Object.entries(EQUIPMENT).map(([k, label]) => (
           <Chip key={k} label={label} selected={equipment === k} onPress={() => setEquipment(equipment === k ? null : k)} />
         ))}
       </ScrollView>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} style={{ flexGrow: 0 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} style={styles.chipRow}>
         <Chip label="All muscles" selected={!muscle} onPress={() => setMuscle(null)} />
         {Object.entries(MUSCLES).map(([k, label]) => (
           <Chip key={k} label={label} selected={muscle === k} onPress={() => setMuscle(muscle === k ? null : k)} />
@@ -146,7 +165,7 @@ export function ExercisePicker() {
         testID="exercise-list"
       />
 
-      {mode !== "browse" && picked.length > 0 && (
+      {!typing && mode !== "browse" && picked.length > 0 && (
         <View style={styles.footer}>
           <Pressable onPress={add} accessibilityRole="button" accessibilityLabel={`Add ${picked.length} exercise${picked.length === 1 ? "" : "s"}`} style={styles.addBtn}>
             <Text style={styles.addText}>{`Add ${picked.length} exercise${picked.length === 1 ? "" : "s"}`}</Text>
@@ -154,7 +173,7 @@ export function ExercisePicker() {
         </View>
       )}
 
-      </KeyboardAvoidingView>
+      </View>
 
       <Modal visible={!!creating} transparent animationType="slide" onRequestClose={() => setCreating(null)}>
         <View style={styles.backdrop}>
@@ -218,14 +237,15 @@ export function ExercisePicker() {
 }
 
 const styles = StyleSheet.create({
-  thumb: { width: 52, height: 52, backgroundColor: "#FFFFFF" },
   header: { justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 8 },
   headBtn: { minHeight: 44, minWidth: 64, paddingHorizontal: 12, backgroundColor: T.surface, alignItems: "center", justifyContent: "center" },
   headBtnText: { fontFamily: F.sansMed, fontSize: 14, color: OLIVE },
   title: { fontFamily: F.serif, fontSize: 20, color: T.ink },
   search: { gap: 10, marginHorizontal: 20, minHeight: 48, paddingHorizontal: 14, backgroundColor: T.canvasDeep },
   searchInput: { flex: 1, fontFamily: F.sans, fontSize: 15.5, color: T.ink, paddingVertical: 10 },
-  chips: { gap: 8, paddingHorizontal: 20, paddingVertical: 8 },
+  chips: { gap: 8, paddingHorizontal: 20, paddingVertical: 8, alignItems: "center" },
+  // a fixed height, so a row of chips never shrinks and cuts them off
+  chipRow: { flexGrow: 0, flexShrink: 0, height: 60 },
   section: { fontFamily: F.sansMed, fontSize: 13, color: T.inkSoft, marginTop: 8, marginBottom: 2 },
   row: { gap: 6, paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: T.hair },
   name: { fontFamily: F.sansMed, fontSize: 15, color: T.ink },

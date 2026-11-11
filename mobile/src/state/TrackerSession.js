@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { useApp, dateKey } from "./AppState";
+import { useApp } from "./AppState";
+import { daysBetween } from "../shared";
 import { CONTRACEPTION_METHODS } from "../content/journal";
 import { periodMoments } from "../lib/moments";
 
@@ -32,12 +33,19 @@ const clean = (journal) =>
     })
   );
 
+/** Whether a period start logged on `day` moves the cycle: a newer period,
+ *  or the current one really began a few days earlier. An old cycle stays history. */
+export const movesStart = (lastPeriod, day) => !lastPeriod || day >= lastPeriod || daysBetween(day, lastPeriod) <= 10;
+
 let nextId = 0;
 const newId = () => `${Date.now().toString(36)}-${(nextId++).toString(36)}`;
 
 export const TrackerSessionProvider = ({ children }) => {
-  const { today, setToday, profile, setProfile, now, showMoments } = useApp();
-  const saved = today.journal ?? {};
+  const { todayKey, dayAt, updateDay, profile, setProfile, showMoments } = useApp();
+  // the day being logged: today, or an earlier day she forgot to log
+  const [date, setDateState] = useState(todayKey);
+  const day = date > todayKey ? todayKey : date;
+  const saved = dayAt(day).journal ?? {};
   const savedKey = JSON.stringify(saved);
 
   const [draft, setDraft] = useState(saved);
@@ -105,10 +113,21 @@ export const TrackerSessionProvider = ({ children }) => {
     setDirty(false);
   }, [savedKey]);
 
-  /** The one save: the whole session, for today, in a single write. */
+  /** Switch to another day; whatever was not saved is dropped. */
+  const setDate = useCallback(
+    (key) => {
+      setDateState(key > todayKey ? todayKey : key);
+      setProfileDraft({});
+      setDirty(false);
+      setSavedAt(null);
+    },
+    [todayKey]
+  );
+
+  /** The one save: the whole session, for its day, in a single write. */
   const save = useCallback(() => {
     const journal = clean(draft);
-    setToday({ journal });
+    updateDay(day, (d) => ({ ...d, journal }));
 
     const patch = {};
     if (profileDraft.contraception) {
@@ -120,22 +139,30 @@ export const TrackerSessionProvider = ({ children }) => {
     if (profileDraft.conditions) patch.health = { ...profile.health, ...profileDraft.conditions };
     // logging the first or last day of a period moves the cycle itself
     const flow = journal.flow?.items ?? {};
-    if (flow.started) {
-      // read before the cycle moves: was this one late?
-      if (profile.lastPeriod !== dateKey(now)) showMoments(periodMoments(profile, dateKey(now)), dateKey(now));
-      Object.assign(patch, { lastPeriod: dateKey(now), lastPeriodEnd: null, periodOngoing: true, lastPeriodUnknown: false });
+    // a start logged late counts from the day it really began
+    const last = profile.lastPeriod;
+    let start = last;
+    if (flow.started && movesStart(last, day)) {
+      // read before the cycle moves: was this one late? (only for a new period, not a corrected date)
+      if (!last || day > last) showMoments(periodMoments(profile, day), day);
+      start = day;
+      const endsLater = profile.lastPeriodEnd && profile.lastPeriodEnd > day && last && day <= last;
+      Object.assign(patch, { lastPeriod: day, lastPeriodUnknown: false, ...(endsLater ? {} : { lastPeriodEnd: null, periodOngoing: true }) });
     }
-    if (flow.ended) Object.assign(patch, { lastPeriodEnd: dateKey(now), periodOngoing: false });
+    if (flow.ended && (!start || day >= start)) Object.assign(patch, { lastPeriodEnd: day, periodOngoing: false });
     if (Object.keys(patch).length) setProfile(patch);
 
     setProfileDraft({});
     setDirty(false);
     setSavedAt(Date.now());
     return journal;
-  }, [draft, profileDraft, profile, setToday, setProfile, now, showMoments]);
+  }, [draft, profileDraft, profile, day, updateDay, setProfile, showMoments]);
 
   const value = useMemo(
     () => ({
+      date: day,
+      isToday: day === todayKey,
+      setDate,
       draft,
       saved,
       profileDraft,
@@ -152,7 +179,7 @@ export const TrackerSessionProvider = ({ children }) => {
       save,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [draft, savedKey, profileDraft, dirty, savedAt, toggleItem, setItem, setChoice, setNote, addEntry, removeEntry, setProfileChange, discard, save]
+    [day, todayKey, setDate, draft, savedKey, profileDraft, dirty, savedAt, toggleItem, setItem, setChoice, setNote, addEntry, removeEntry, setProfileChange, discard, save]
   );
 
   return <Session.Provider value={value}>{children}</Session.Provider>;

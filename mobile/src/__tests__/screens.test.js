@@ -17,7 +17,6 @@ import { Triad } from "../screens/Triad";
 import { Cycle } from "../screens/Cycle";
 import { Training } from "../screens/Training";
 import { WorkoutStart } from "../screens/WorkoutStart";
-import { WorkoutToday } from "../screens/WorkoutToday";
 
 /** The question and the tab together, as the session stays between them. */
 const StartAndTab = () => (
@@ -200,18 +199,19 @@ describe("Training Protocol", () => {
   });
 
   it("shows the 15g Pre-Flight nudge before 11:00", async () => {
-    await mount(WorkoutToday, { now: new Date(2026, 9, 29, 7, 0) });
+    await mount(Training, { now: new Date(2026, 9, 29, 7, 0) });
     expect(screen.getByTestId("preflight")).toHaveTextContent(/15g/);
   });
 
-  it("swaps spin to SIT on an Outward day", async () => {
-    await mount(WorkoutToday, { profile: { lastPeriod: periodDaysAgo(8) } });
-    await fireEvent.press(screen.getByRole("button", { name: "Spin class" }));
-    expect(screen.getByText(/Spin class swaps to SIT/)).toBeOnTheScreen();
+  it("keeps the plan on Home only", async () => {
+    await mount(Training);
+    expect(screen.queryByTestId("today-plan")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Spin class" })).toBeNull();
+    expect(screen.getByTestId("today-activity")).toBeOnTheScreen();
   });
 
   it("40+ on an Inward day gets rest with no plyometrics", async () => {
-    await mount(WorkoutToday, { profile: { ageGroup: "40+", lastPeriod: periodDaysAgo(1) } });
+    await mount(Home, { profile: { ageGroup: "40+", lastPeriod: periodDaysAgo(1) } });
     expect(screen.getByText("Recovery Day")).toBeOnTheScreen();
     expect(screen.queryByText(/plyometrics/i)).toBeNull();
     await fireEvent.press(screen.getByRole("button", { name: "Rest taken" }));
@@ -221,7 +221,8 @@ describe("Training Protocol", () => {
   it("the Workouts tab is one button, and that button asks what she wants to do", async () => {
     await mount(Training);
     expect(screen.queryByTestId("today-plan")).toBeNull();
-    expect(screen.queryByTestId("today-activity")).toBeNull();
+    // steps and today's activity sit on the tab, below the one button
+    expect(screen.getByTestId("today-activity")).toBeOnTheScreen();
     await fireEvent.press(screen.getByRole("button", { name: "Start workout" }));
     expect(router.push).toHaveBeenCalledWith("/workout/start");
   });

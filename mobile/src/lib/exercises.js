@@ -58,10 +58,12 @@ export const MUSCLES = {
  *   weight    kg × reps
  *   reps      reps only (bodyweight; weight can still be added)
  *   duration  time held or moved (stretches, cardio, planks)
+ *   breaths   yoga poses, held for a number of breaths
  */
 export const logType = (ex) => {
   if (ex.type) return ex.type;
-  if (ex.cat === "cardio" || ex.cat === "stretching" || ex.cat === "yoga" || /plank|bridge hold|wall sit/i.test(ex.name)) return "duration";
+  if (ex.cat === "yoga") return "breaths";
+  if (ex.cat === "cardio" || ex.cat === "stretching" || /plank|bridge hold|wall sit/i.test(ex.name)) return "duration";
   if (ex.eq === "body only" || ex.eq === "other" || ex.cat === "plyometrics") return "reps";
   return "weight";
 };
