@@ -98,6 +98,9 @@ export const quickEntry = (meal, { name, kcal, protein = 0, carbs = 0, fat = 0 }
   portions: 1,
 });
 
+/** Copies of diary entries for another day or meal: fresh ids, same food and amount. */
+export const copiedEntries = (entries, meal) => entries.map((e) => ({ ...e, id: newId(), meal: meal ?? e.meal }));
+
 /* ---- recipes and saved meals ---- */
 
 /** Everything a list of { food, grams } adds up to. */
