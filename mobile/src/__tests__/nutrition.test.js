@@ -449,6 +449,58 @@ describe("moving between days", () => {
     expect((await stored()).days[YESTERDAY].food.entries).toEqual([]);
   });
 
+  const logTwo = async (meal, date) => {
+    await mount(FoodAdd, { params: { meal, date } });
+    for (const [q, name] of [["salmon", "Salmon fillet, baked"], ["pasta", "Pasta, boiled"]]) {
+      await fireEvent.changeText(screen.getByLabelText("Search foods"), q);
+      await fireEvent.press(screen.getByRole("button", { name: `Add ${name}` }));
+    }
+    await cleanup();
+  };
+
+  it("copies chosen foods to another day and meal", async () => {
+    await logTwo("dinner");
+    await mount(FoodMeal, { params: { meal: "dinner" } });
+    await fireEvent.press(screen.getByRole("button", { name: "Select foods" }));
+    await fireEvent.press(screen.getByRole("checkbox", { name: "Salmon fillet, baked" }));
+    await fireEvent.press(screen.getByRole("button", { name: "Copy 1 food to another day" }));
+    // from today, tomorrow is offered first
+    expect(screen.getByTestId("copy-day")).toHaveTextContent("Tomorrow");
+    await fireEvent.press(screen.getByLabelText("Lunch"));
+    await fireEvent.press(screen.getByRole("button", { name: "Copy to Lunch, Tomorrow" }));
+    const data = await stored();
+    expect(data.days[TOMORROW].food.entries).toEqual([expect.objectContaining({ name: "Salmon fillet, baked", meal: "lunch", grams: 120 })]);
+    expect(data.days[TOMORROW].food.entries[0].id).not.toBe(data.days[TODAY].food.entries[0].id);
+    expect(data.days[TODAY].food.entries).toHaveLength(2);
+    expect(screen.getByTestId("meal-notice")).toHaveTextContent("Copied 1 food to Lunch, Tomorrow.");
+  });
+
+  it("copies a whole meal from yesterday to today", async () => {
+    await logTwo("breakfast", YESTERDAY);
+    await mount(FoodMeal, { params: { meal: "breakfast", date: YESTERDAY } });
+    await fireEvent.press(screen.getByRole("button", { name: "Select foods" }));
+    await fireEvent.press(screen.getByRole("button", { name: "Select all" }));
+    await fireEvent.press(screen.getByRole("button", { name: "Copy 2 foods to another day" }));
+    expect(screen.getByTestId("copy-day")).toHaveTextContent("Today");
+    await fireEvent.press(screen.getByRole("button", { name: "Copy to Breakfast, Today" }));
+    expect((await entries()).map((e) => [e.name, e.meal])).toEqual([
+      ["Salmon fillet, baked", "breakfast"],
+      ["Pasta, boiled", "breakfast"],
+    ]);
+  });
+
+  it("deletes chosen foods, and can undo it", async () => {
+    await logTwo("dinner");
+    await mount(FoodMeal, { params: { meal: "dinner" } });
+    await fireEvent.press(screen.getByRole("button", { name: "Select foods" }));
+    await fireEvent.press(screen.getByRole("button", { name: "Select all" }));
+    await fireEvent.press(screen.getByRole("button", { name: "Delete 2 foods" }));
+    expect(await entries()).toEqual([]);
+    expect(screen.getByText("Nothing here yet.")).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole("button", { name: "Undo delete" }));
+    expect((await entries()).map((e) => e.name)).toEqual(["Salmon fillet, baked", "Pasta, boiled"]);
+  });
+
   it("adds a recipe to the day it was opened for", async () => {
     await mount(RecipeDetail, { params: { id: "selena:hummus-plate", date: TOMORROW, meal: "snacks" } });
     expect(screen.getByText("Add to Tomorrow")).toBeOnTheScreen();

@@ -174,9 +174,9 @@ export const AppProvider = ({ children, now: fixedNow, initial }) => {
 
   /** Add diary entries to a day (today unless given) and remember the foods for next time. */
   const addFoodEntries = useCallback(
-    (entries, key = todayKey) => {
+    (entries, key = todayKey, { recall = true } = {}) => {
       editEntries(key, (list) => [...list, ...entries]);
-      updateLibrary((lib) => entries.reduce((l, e) => (e.food ? { ...l, recent: remember(l.recent, e.food, e.grams) } : l), lib));
+      if (recall) updateLibrary((lib) => entries.reduce((l, e) => (e.food ? { ...l, recent: remember(l.recent, e.food, e.grams) } : l), lib));
     },
     [editEntries, updateLibrary, todayKey]
   );
@@ -185,6 +185,10 @@ export const AppProvider = ({ children, now: fixedNow, initial }) => {
     [editEntries, todayKey]
   );
   const removeFoodEntry = useCallback((id, key = todayKey) => editEntries(key, (list) => list.filter((e) => e.id !== id)), [editEntries, todayKey]);
+  const removeFoodEntries = useCallback(
+    (ids, key = todayKey) => editEntries(key, (list) => list.filter((e) => !ids.includes(e.id))),
+    [editEntries, todayKey]
+  );
 
   /** Save or replace one of the user's own foods, meals or recipes. */
   // pictures waiting to be shown: in memory only, one at a time
@@ -358,6 +362,7 @@ export const AppProvider = ({ children, now: fixedNow, initial }) => {
     addFoodEntries,
     updateFoodEntry,
     removeFoodEntry,
+    removeFoodEntries,
     saveToLibrary,
     moments,
     showMoments,
