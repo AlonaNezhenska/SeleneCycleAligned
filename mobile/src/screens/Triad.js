@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, Pressable, Modal, Image, ScrollView, StyleSheet } from "react-native";
+import { View, Text, Pressable, Modal, Image, FlatList, StyleSheet } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { BlurView } from "expo-blur";
 import Svg, { Path } from "react-native-svg";
@@ -175,27 +175,45 @@ const Collection = ({ collection, open, onToggle, draft, children }) => {
   );
 };
 
-/* ---- which day is being logged: the last week, or any earlier day ---- */
+/* ---- which day is being logged: a strip of the last two months that
+   scrolls sideways (today on the right, the past to the left), or any
+   earlier day from the calendar ---- */
 
-const back7 = (todayKey) =>
-  Array.from({ length: 7 }, (_, i) => {
+const STRIP_DAYS = 60;
+const backDays = (todayKey) =>
+  Array.from({ length: STRIP_DAYS }, (_, i) => {
     const d = new Date(`${todayKey}T12:00:00`);
     d.setDate(d.getDate() - i);
     return dateKey(d);
   });
 
-const dayName = (key, todayKey, i) =>
-  i === 0 ? "Today" : i === 1 ? "Yesterday" : new Date(`${key}T12:00:00`).toLocaleDateString("en-GB", { weekday: "short" });
+const dayName = (key, todayKey, i) => {
+  if (i === 0) return "Today";
+  if (i === 1) return "Yesterday";
+  const d = new Date(`${key}T12:00:00`);
+  // the first of a month says which month, so scrolling back stays easy to follow
+  return d.getDate() === 1 ? d.toLocaleDateString("en-GB", { month: "short" }) : d.toLocaleDateString("en-GB", { weekday: "short" });
+};
 
 const DayPicker = ({ date, todayKey, onPick }) => {
   const [calendar, setCalendar] = useState(false);
-  const week = back7(todayKey);
+  const week = backDays(todayKey);
   const earlier = !week.includes(date);
   return (
     <View style={{ marginBottom: 14 }} testID="day-picker">
       <View style={[s.row, { gap: 6 }]}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flex: 1 }} contentContainerStyle={{ gap: 6, paddingVertical: 2 }}>
-        {week.map((key, i) => {
+      <FlatList
+        horizontal
+        inverted
+        data={week}
+        keyExtractor={(k) => k}
+        showsHorizontalScrollIndicator={false}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingVertical: 2 }}
+        ItemSeparatorComponent={() => <View style={{ width: 6 }} />}
+        initialNumToRender={10}
+        testID="day-strip"
+        renderItem={({ item: key, index: i }) => {
           const on = key === date;
           return (
             <Pressable
@@ -210,8 +228,8 @@ const DayPicker = ({ date, todayKey, onPick }) => {
               <Text style={[styles.dayNum, on && { color: OLIVE }]}>{Number(key.slice(8))}</Text>
             </Pressable>
           );
-        })}
-      </ScrollView>
+        }}
+      />
         {/* always in reach, however far the week scrolls */}
         <Pressable
           onPress={() => setCalendar((v) => !v)}

@@ -44,6 +44,14 @@ export const TrackerSessionProvider = ({ children }) => {
   const { todayKey, dayAt, updateDay, profile, setProfile, showMoments } = useApp();
   // the day being logged: today, or an earlier day she forgot to log
   const [date, setDateState] = useState(todayKey);
+  // a log left on "today" moves on with the clock at midnight
+  const shownToday = React.useRef(todayKey);
+  useEffect(() => {
+    if (shownToday.current !== todayKey) {
+      setDateState((d) => (d === shownToday.current ? todayKey : d));
+      shownToday.current = todayKey;
+    }
+  }, [todayKey]);
   const day = date > todayKey ? todayKey : date;
   const saved = dayAt(day).journal ?? {};
   const savedKey = JSON.stringify(saved);

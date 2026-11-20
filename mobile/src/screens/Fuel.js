@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { View, Text, Pressable, Image, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { Eye, EyeOff, Salad, Check, Plus, RotateCcw, Coffee, UtensilsCrossed, Apple, ChevronRight, ChevronLeft, CakeSlice } from "lucide-react-native";
@@ -177,6 +177,14 @@ export function Fuel() {
   const { ctx, today, setToday, hideNumbers, setHideNumbers, profile, todayKey, dayAt, updateDay, showMoments } = useApp();
   const [mode, setMode] = useState("diary");
   const [date, setDate] = useState(todayKey);
+  // when midnight passes, a diary left on "today" moves on to the new today
+  const shownToday = useRef(todayKey);
+  useEffect(() => {
+    if (shownToday.current !== todayKey) {
+      setDate((d) => (d === shownToday.current ? todayKey : d));
+      shownToday.current = todayKey;
+    }
+  }, [todayKey]);
   const isToday = date === todayKey;
   const day = dayAt(date);
   const editGoal = () => router.push("/food/goal");

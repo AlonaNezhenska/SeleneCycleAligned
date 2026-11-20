@@ -402,6 +402,33 @@ describe("the diary", () => {
     expect(e).toMatchObject({ meal: "breakfast", name: "Berry overnight oats", recipeId: "selena:overnight-oats", portions: 1 });
   });
 
+  it("selects foods to copy to another meal and day, or delete them", async () => {
+    const { Alert } = require("react-native");
+    const alert = jest.spyOn(Alert, "alert").mockImplementation((title, msg, buttons) => buttons.find((b) => b.style === "destructive").onPress());
+    const egg = { id: "e1", meal: "breakfast", name: "Egg", fixed: { kcal: 80, protein: 7, carbs: 0, fat: 5 }, portions: 1 };
+    const toast = { id: "e2", meal: "breakfast", name: "Toast", fixed: { kcal: 90, protein: 3, carbs: 17, fat: 1 }, portions: 1 };
+    await mount(FoodMeal, { params: { meal: "breakfast" }, initial: { days: { [TODAY]: { food: { entries: [egg, toast] } } } } });
+    await fireEvent.press(screen.getByRole("button", { name: "Select foods" }));
+    await fireEvent.press(screen.getByRole("checkbox", { name: "Egg" }));
+    await fireEvent.press(screen.getByRole("button", { name: "Copy to another meal or day" }));
+    expect(screen.getByTestId("copy-sheet")).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole("button", { name: "Lunch" }));
+    await fireEvent.press(screen.getByRole("button", { name: "Tomorrow" }));
+    await fireEvent.press(screen.getByRole("button", { name: "Copy here" }));
+    let data = await stored();
+    expect(data.days["2026-10-30"].food.entries).toEqual([expect.objectContaining({ name: "Egg", meal: "lunch" })]);
+    expect(data.days["2026-10-30"].food.entries[0].id).not.toBe("e1");
+    expect(data.days[TODAY].food.entries).toHaveLength(2);
+    expect(screen.getByTestId("meal-notice")).toHaveTextContent("Copied 1 food to Lunch, Tomorrow.");
+
+    await fireEvent.press(screen.getByRole("button", { name: "Select foods" }));
+    await fireEvent.press(screen.getByRole("button", { name: "Select all" }));
+    await fireEvent.press(screen.getByRole("button", { name: "Delete selected" }));
+    data = await stored();
+    expect(data.days[TODAY].food.entries).toEqual([]);
+    alert.mockRestore();
+  });
+
   it("changes and removes what was logged", async () => {
     await mount(FoodAdd, { params: { meal: "dinner" } });
     await fireEvent.changeText(screen.getByLabelText("Search foods"), "salmon");

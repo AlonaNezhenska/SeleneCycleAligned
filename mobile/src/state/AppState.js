@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { AppState as Lifecycle } from "react-native";
 import { deriveToday, sunset, resumeOnOpen, AGREEMENT_VERSION } from "../shared";
 import { DEFAULT_BACKUP } from "../lib/backup";
 import { emptyLibrary, remember, rememberSearch, toggleFavorite as flipFavorite, newId } from "../lib/food";
@@ -80,7 +81,22 @@ export const useApp = () => {
  * `initial` is merged over what is stored, so a test can start mid-cycle.
  */
 export const AppProvider = ({ children, now: fixedNow, initial }) => {
-  const now = useMemo(() => fixedNow ?? new Date(), [fixedNow]);
+  // "today" follows the phone's clock: the app can sit paused in the background
+  // overnight, so the date is checked again on coming back and at midnight
+  const [clock, setClock] = useState(() => new Date());
+  const now = fixedNow ?? clock;
+  useEffect(() => {
+    if (fixedNow) return undefined;
+    const refresh = () => setClock((c) => (dateKey(c) === dateKey(new Date()) ? c : new Date()));
+    const sub = Lifecycle.addEventListener?.("change", (s) => s === "active" && refresh());
+    const midnight = new Date();
+    midnight.setHours(24, 0, 1, 0);
+    const timer = setTimeout(refresh, midnight - Date.now());
+    return () => {
+      sub?.remove?.();
+      clearTimeout(timer);
+    };
+  }, [fixedNow, clock]);
   const todayKey = dateKey(now);
   const [ready, setReady] = useState(false);
   const fresh = () => ({

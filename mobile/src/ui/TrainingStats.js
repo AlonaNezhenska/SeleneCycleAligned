@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { router } from "expo-router";
-import { BarChart3, Dumbbell, Ruler, CalendarDays, ChevronRight } from "lucide-react-native";
+import { BarChart3, Ruler, CalendarDays, ChevronRight } from "lucide-react-native";
 import { weeklyTotals, workoutTotals, minutesOf } from "../lib/workout";
 import { OLIVE, dayLabel } from "./food";
 import { T, F } from "./theme";
@@ -22,6 +22,20 @@ const METRICS = [
 const tick = (iso) => {
   const [y, m, d] = iso.split("-").map(Number);
   return new Date(y, m - 1, d, 12).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+};
+
+/** One workout in a line: only what means something for it (no "0 kg" for yoga). */
+const workoutLine = (w, t, todayKey) => {
+  const min = minutesOf(w);
+  const yoga = w.kind === "yoga";
+  return [
+    dayLabel(w.date, todayKey),
+    min < 1 ? "under a minute" : `${min} min`,
+    !yoga && t.volume > 0 ? `${t.volume.toLocaleString("en-GB")} kg` : null,
+    t.sets > 0 ? (yoga ? `${t.sets} ${t.sets === 1 ? "pose" : "poses"}` : `${t.sets} ${t.sets === 1 ? "set" : "sets"}`) : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 };
 
 const Tile = ({ icon: Icon, label, onPress }) => (
@@ -73,7 +87,6 @@ export const TrainingStats = ({ workouts, todayKey }) => {
 
       <View style={styles.grid}>
         <Tile icon={BarChart3} label="Statistics" onPress={() => router.push("/workout/stats")} />
-        <Tile icon={Dumbbell} label="Exercises" onPress={() => router.push("/workout/exercises")} />
         <Tile icon={Ruler} label="Measures" onPress={() => router.push("/measures")} />
         <Tile icon={CalendarDays} label="Calendar" onPress={() => router.push("/workout/calendar")} />
       </View>
@@ -90,7 +103,7 @@ export const TrainingStats = ({ workouts, todayKey }) => {
           >
             <View style={{ flex: 1 }}>
               <Text style={styles.workoutName}>{w.name}</Text>
-              <Body size={12.5}>{`${dayLabel(w.date, todayKey)} · ${minutesOf(w)} min · ${t.volume.toLocaleString("en-GB")} kg · ${t.sets} sets`}</Body>
+              <Body size={12.5}>{workoutLine(w, t, todayKey)}</Body>
             </View>
             <ChevronRight size={18} color={T.inkSoft} />
           </Pressable>
@@ -108,7 +121,7 @@ const styles = StyleSheet.create({
   bar: { width: "100%", backgroundColor: OLIVE },
   tick: { flex: 1, fontFamily: F.sans, fontSize: 10.5, color: T.inkSoft },
   grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: 10, marginTop: 12, marginBottom: 6 },
-  tile: { width: "48.5%", gap: 10, minHeight: 56, paddingHorizontal: 16, backgroundColor: T.canvasDeep },
+  tile: { width: "32%", flexDirection: "column", justifyContent: "center", alignItems: "center", gap: 6, minHeight: 72, paddingVertical: 12, paddingHorizontal: 8, backgroundColor: T.canvasDeep },
   tileText: { fontFamily: F.sansMed, fontSize: 14.5, color: T.ink },
   workout: { gap: 10, minHeight: 60, paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: T.hair },
   workoutName: { fontFamily: F.serif, fontSize: 16.5, color: T.ink },

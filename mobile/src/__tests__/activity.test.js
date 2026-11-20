@@ -239,6 +239,28 @@ describe("the Workouts tab", () => {
   });
 });
 
+describe("Your journey, day by day", () => {
+  it("opens what was eaten and done on a tapped day", async () => {
+    await mount(ProfileSection, {
+      params: { section: "journey" },
+      days: {
+        [daysAgo(1)]: {
+          food: { entries: [{ id: "f", meal: "lunch", name: "Lentil soup", fixed: { kcal: 300 }, portions: 1 }] },
+          activities: [{ id: "a", kind: "yoga", minutes: 20, title: "Yin yoga" }],
+          steps: 6400,
+        },
+      },
+    });
+    const label = new Date(`${daysAgo(1)}T12:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+    await fireEvent.press(screen.getByRole("button", { name: `See ${label}` }));
+    expect(screen.getByTestId("day-sheet")).toBeOnTheScreen();
+    expect(screen.getByText("Yesterday")).toBeOnTheScreen();
+    expect(screen.getByText("Lentil soup")).toBeOnTheScreen();
+    expect(screen.getByText("Yin yoga · 20 min")).toBeOnTheScreen();
+    expect(screen.getByText(/6,400 steps|Steps logged/)).toBeOnTheScreen();
+  });
+});
+
 describe("progress photos", () => {
   it("keeps a photo with a note, and the reminder choice", async () => {
     await mount(Photos);
