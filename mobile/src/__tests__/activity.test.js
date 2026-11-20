@@ -7,7 +7,6 @@ import { AppProvider, useApp, dateKey, STATE_KEY } from "../state/AppState";
 import { TrackerSessionProvider } from "../state/TrackerSession";
 import { findBlocked, AGREEMENT_VERSION } from "../shared";
 import { Training } from "../screens/Training";
-import { WorkoutToday } from "../screens/WorkoutToday";
 import { ActivityAdd } from "../screens/ActivityAdd";
 import { Meditate } from "../screens/Meditate";
 import { Photos } from "../screens/Photos";
@@ -172,7 +171,7 @@ describe("journey numbers", () => {
 describe("the Workouts tab", () => {
   it("shows today's activity, reads steps from the iPhone and encourages luteal training", async () => {
     await showNumbers();
-    await mount(WorkoutToday);
+    await mount(Training);
     await fireEvent.press(screen.getByRole("button", { name: "Get steps from iPhone" }));
     await act(async () => {});
     expect(screen.getByTestId("steps-value")).toHaveTextContent("6,400 / 8,000");
@@ -196,6 +195,18 @@ describe("the Workouts tab", () => {
     expect(screen.queryByTestId("photo-nudge")).toBeNull();
   });
 
+  it("lets an activity's time be changed, and opens a workout to edit it", async () => {
+    await mount(Training, {
+      days: { [TODAY]: { activities: [{ id: "x", kind: "yoga", minutes: 25, title: "Yin yoga" }, { id: "w", kind: "strength", minutes: 50, title: "Legs", workoutId: "w1" }] } },
+    });
+    await fireEvent.press(screen.getByRole("button", { name: "Edit Yin yoga" }));
+    await fireEvent(screen.getByLabelText("Minutes"), "valueChange", 40);
+    await fireEvent.press(screen.getByRole("button", { name: "Save" }));
+    expect((await stored()).days[TODAY].activities[0].minutes).toBe(40);
+    await fireEvent.press(screen.getByRole("button", { name: "Edit Legs" }));
+    expect(router.push).toHaveBeenCalledWith({ pathname: "/workout/history/[id]", params: { id: "w1" } });
+  });
+
   it("praises rest when the tracker shows cravings and nothing was done", async () => {
     await mount(Home, { days: { [TODAY]: { journal: { cravings: { items: { chocolate: { intensity: 4 } } } } } } });
     expect(screen.getByTestId("encouragement")).toHaveTextContent(/Rest is exactly right today/);
@@ -205,7 +216,7 @@ describe("the Workouts tab", () => {
     global.fetch.mockImplementation(() => Promise.resolve({ ok: true, json: () => Promise.resolve({ title: "Yoga for cramps" }) }));
     await mount(ActivityAdd, { params: { kind: "yoga" } });
     expect(screen.getByRole("button", { name: "Yoga" })).toHaveProp("accessibilityState", expect.objectContaining({ selected: true }));
-    await fireEvent.press(screen.getByRole("button", { name: "20" }));
+    await fireEvent(screen.getByLabelText("Minutes"), "valueChange", 20);
     await fireEvent.changeText(screen.getByLabelText("YouTube link"), "https://youtu.be/abcdefghijk");
     await act(async () => {});
     expect(screen.getByLabelText("Activity name").props.value).toBe("Yoga for cramps");
@@ -225,6 +236,28 @@ describe("the Workouts tab", () => {
     await fireEvent.press(screen.getByRole("button", { name: "Begin" }));
     await fireEvent.press(screen.getByRole("button", { name: "Finish now" }));
     expect((await stored()).days[TODAY].activities[0]).toMatchObject({ kind: "meditation", minutes: 1 });
+  });
+});
+
+describe("Your journey, day by day", () => {
+  it("opens what was eaten and done on a tapped day", async () => {
+    await mount(ProfileSection, {
+      params: { section: "journey" },
+      days: {
+        [daysAgo(1)]: {
+          food: { entries: [{ id: "f", meal: "lunch", name: "Lentil soup", fixed: { kcal: 300 }, portions: 1 }] },
+          activities: [{ id: "a", kind: "yoga", minutes: 20, title: "Yin yoga" }],
+          steps: 6400,
+        },
+      },
+    });
+    const label = new Date(`${daysAgo(1)}T12:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+    await fireEvent.press(screen.getByRole("button", { name: `See ${label}` }));
+    expect(screen.getByTestId("day-sheet")).toBeOnTheScreen();
+    expect(screen.getByText("Yesterday")).toBeOnTheScreen();
+    expect(screen.getByText("Lentil soup")).toBeOnTheScreen();
+    expect(screen.getByText("Yin yoga · 20 min")).toBeOnTheScreen();
+    expect(screen.getByText(/6,400 steps|Steps logged/)).toBeOnTheScreen();
   });
 });
 

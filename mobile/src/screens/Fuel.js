@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { View, Text, Pressable, Image, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { Eye, EyeOff, Salad, Check, Plus, RotateCcw, Coffee, UtensilsCrossed, Apple, ChevronRight, ChevronLeft, CakeSlice } from "lucide-react-native";
@@ -177,6 +177,14 @@ export function Fuel() {
   const { ctx, today, setToday, hideNumbers, setHideNumbers, profile, todayKey, dayAt, updateDay, showMoments } = useApp();
   const [mode, setMode] = useState("diary");
   const [date, setDate] = useState(todayKey);
+  // when midnight passes, a diary left on "today" moves on to the new today
+  const shownToday = useRef(todayKey);
+  useEffect(() => {
+    if (shownToday.current !== todayKey) {
+      setDate((d) => (d === shownToday.current ? todayKey : d));
+      shownToday.current = todayKey;
+    }
+  }, [todayKey]);
   const isToday = date === todayKey;
   const day = dayAt(date);
   const editGoal = () => router.push("/food/goal");
@@ -308,9 +316,6 @@ export function Fuel() {
               Eating more on a hungry day is your body doing its job. Your goal only moves if you choose the buffer.
             </Body>
           </View>
-          <View style={styles.lace} accessibilityElementsHidden importantForAccessibility="no">
-            <Image source={IMG.nutrition.lace} style={{ width: "100%", height: "100%" }} resizeMode="cover" />
-          </View>
         </>
       )}
     </Screen>
@@ -322,7 +327,6 @@ const styles = StyleSheet.create({
   paper: { backgroundColor: TOILE.cream, borderColor: TOILE.line },
   eyebrow: { fontFamily: F.serif, fontSize: 13, letterSpacing: 3.5, textTransform: "uppercase", color: TOILE.ink },
   bow: { position: "absolute", top: -16, right: -12, width: 74, height: 72, zIndex: 1 },
-  lace: { marginHorizontal: -24, marginTop: 22, marginBottom: -32, height: 44, overflow: "hidden" },
   dayBar: { gap: 6, marginBottom: 14 },
   treat: { gap: 12, minHeight: 52, paddingHorizontal: 16, paddingVertical: 10, marginBottom: 14, borderWidth: 1, borderColor: TOILE.line, backgroundColor: TOILE.cream },
   treatOn: { backgroundColor: TOILE.navy, borderColor: TOILE.navy },

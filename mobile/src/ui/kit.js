@@ -17,7 +17,7 @@ const BACKGROUNDS = { canvas: T.canvas, aegean: T.aegean, forest: T.forest };
 /** A full screen: background (a colour, or a photo that stays still while
  *  the content scrolls), paper grain, safe area and scrolling. A scrim over
  *  the photo keeps text on it readable. */
-export const Screen = ({ bg = "canvas", image, blur = 0, scrim, children, scroll = true, footer, overlay, blurTarget, testID }) => {
+export const Screen = ({ bg = "canvas", image, blur = 0, scrim, children, scroll = true, footer, overlay, blurTarget, testID, onScroll }) => {
   const Body = scroll ? ScrollView : View;
   // when a pop-up can blur this screen, everything below it must sit in the blur target
   const Content = blurTarget ? BlurTargetView : View;
@@ -48,6 +48,8 @@ export const Screen = ({ bg = "canvas", image, blur = 0, scrim, children, scroll
             contentContainerStyle={scroll ? s.scrollBody : undefined}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps={scroll ? "handled" : undefined}
+            onScroll={onScroll}
+            scrollEventThrottle={onScroll ? 32 : undefined}
           >
             {children}
           </Body>

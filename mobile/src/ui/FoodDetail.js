@@ -3,7 +3,7 @@ import { View, Text, TextInput, Modal, Pressable, ScrollView, KeyboardAvoidingVi
 import { Button, Divider, IconButton } from "react-native-paper";
 import { Picker } from "@react-native-picker/picker";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, ChevronDown, History, Star } from "lucide-react-native";
+import { ArrowLeft, ChevronDown, History, Star, Pencil } from "lucide-react-native";
 import { nutritionFacts, scale, unitsFor } from "../lib/food";
 import { T, F, TOILE } from "./theme";
 import { s } from "./kit";
@@ -32,7 +32,7 @@ const nearestFraction = (f) => FRACTIONS.reduce((best, x) => (Math.abs(x[1] - f)
 /** The unit a saved amount reads best in: portions when it is a tidy number of them. */
 const startingUnit = (units, grams) => units.find((u) => Number.isInteger((grams / u.grams) * 8)) ?? units[units.length - 1];
 
-export const FoodDetail = ({ food, grams: initial, visible, onClose, onConfirm, confirmLabel, onRemove, hidden, title, favorite, onFavorite, logged }) => {
+export const FoodDetail = ({ food, grams: initial, visible, onClose, onConfirm, confirmLabel, onRemove, hidden, title, favorite, onFavorite, onEdit, logged }) => {
   const units = unitsFor(food);
   const [unitKey, setUnitKey] = useState(units[0].key);
   const [text, setText] = useState("1");
@@ -69,17 +69,22 @@ export const FoodDetail = ({ food, grams: initial, visible, onClose, onConfirm, 
           <Text style={styles.headerTitle} numberOfLines={1}>
             {title ?? ""}
           </Text>
-          {onFavorite ? (
-            <IconButton
-              icon={() => <Star size={20} color={TOILE.navy} fill={favorite ? TOILE.navy : "none"} />}
-              mode="outlined"
-              onPress={onFavorite}
-              accessibilityLabel={favorite ? "Remove from favourites" : "Add to favourites"}
-              style={styles.headerBtn}
-            />
-          ) : (
-            <View style={styles.headerBtn} />
-          )}
+          <View style={[s.row, { gap: 6 }]}>
+            {onEdit && (
+              <IconButton icon={() => <Pencil size={19} color={TOILE.navy} />} mode="outlined" onPress={onEdit} accessibilityLabel="Edit this food" style={styles.headerBtn} />
+            )}
+            {onFavorite ? (
+              <IconButton
+                icon={() => <Star size={20} color={TOILE.navy} fill={favorite ? TOILE.navy : "none"} />}
+                mode="outlined"
+                onPress={onFavorite}
+                accessibilityLabel={favorite ? "Remove from favourites" : "Add to favourites"}
+                style={styles.headerBtn}
+              />
+            ) : (
+              !onEdit && <View style={styles.headerBtn} />
+            )}
+          </View>
         </View>
 
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 18 }} style={{ flex: 1 }}>

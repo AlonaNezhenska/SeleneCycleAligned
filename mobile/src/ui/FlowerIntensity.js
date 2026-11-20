@@ -181,10 +181,10 @@ export const FlowerIntensity = ({ label, value = 3, onChange, direction = "close
 const styles = StyleSheet.create({
   word: { fontFamily: F.serifItalic, fontSize: 20, color: T.ink, marginTop: 6 },
   trackArea: { width: "100%", height: 60, justifyContent: "center", marginTop: 2 },
-  track: { height: 6, backgroundColor: "rgba(74,74,43,0.18)", marginHorizontal: 15, overflow: "hidden" },
+  track: { height: 6, borderRadius: 3, backgroundColor: "rgba(74,74,43,0.18)", marginHorizontal: 15, overflow: "hidden" },
   fill: { height: 6, backgroundColor: OLIVE },
   rail: { position: "absolute", left: 0, right: 30, top: 15, height: 30 },
-  thumb: { position: "absolute", top: 0, width: 30, height: 30, backgroundColor: T.canvas, borderWidth: 2.5, borderColor: OLIVE },
+  thumb: { position: "absolute", top: 0, width: 30, height: 30, borderRadius: 15, backgroundColor: T.canvas, borderWidth: 2.5, borderColor: OLIVE },
   ends: { flexDirection: "row", justifyContent: "space-between", width: "100%", paddingHorizontal: 2 },
   end: { fontFamily: F.serif, fontSize: 12.5, color: T.inkSoft },
 });

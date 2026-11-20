@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
 import { router } from "expo-router";
-import { ChevronRight, Sparkles } from "lucide-react-native";
+import { ChevronRight } from "lucide-react-native";
 import { journeyDays, journeyWeeks, totals } from "../lib/journey";
-import { monthInsight, describeMonth } from "../lib/insights";
 import { SoftPhoto } from "../screens/Photos";
+import { DaySheet } from "./DaySheet";
 import { OLIVE, dayLabel } from "./food";
 import { T, F } from "./theme";
 import { Card, Body, s } from "./kit";
@@ -23,6 +23,11 @@ const LEGEND = [
 ];
 const CHART = 96;
 const fmt = (n) => Math.round(n).toLocaleString("en-GB");
+const shiftDay = (iso, n) => {
+  const d = new Date(`${iso}T12:00:00`);
+  d.setDate(d.getDate() + n);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
 
 const tick = (iso, weekly) => {
   const [y, m, d] = iso.split("-").map(Number);
@@ -31,16 +36,16 @@ const tick = (iso, weekly) => {
 };
 
 /** Food eaten per day (or weekly average) against the goal line. */
-const FoodChart = ({ rows, goal, weekly }) => {
+const FoodChart = ({ rows, goal, weekly, onPick }) => {
   const top = goal * 1.25;
   return (
     <View>
       <View style={styles.chart}>
         <View style={[styles.goalLine, { bottom: (goal / top) * CHART }]} />
         {rows.map((r) => (
-          <View key={r.date} style={styles.col}>
+          <Pressable key={r.date} onPress={() => onPick(r.date)} accessibilityRole="button" accessibilityLabel={`See ${weekly ? "the week of " : ""}${tick(r.date, true)}`} style={styles.col}>
             <View style={[styles.bar, { height: Math.max(r.logged ? 4 : 0, Math.min(1, r.eaten / top) * CHART), backgroundColor: "#D9A86C" }]} />
-          </View>
+          </Pressable>
         ))}
       </View>
       <View style={s.row}>
@@ -55,17 +60,17 @@ const FoodChart = ({ rows, goal, weekly }) => {
 };
 
 /** Minutes of exercise, yoga and meditation, stacked. */
-const MoveChart = ({ rows, weekly }) => {
+const MoveChart = ({ rows, weekly, onPick }) => {
   const top = Math.max(weekly ? 180 : 60, ...rows.map((r) => r.exercise + r.yoga + r.meditation));
   return (
     <View>
       <View style={styles.chart}>
         {rows.map((r) => (
-          <View key={r.date} style={styles.col}>
+          <Pressable key={r.date} onPress={() => onPick(r.date)} accessibilityRole="button" accessibilityLabel={`See movement ${weekly ? "the week of" : "on"} ${tick(r.date, true)}`} style={styles.col}>
             {["meditation", "yoga", "exercise"].map((k) =>
               r[k] > 0 ? <View key={k} style={[styles.bar, { height: (r[k] / top) * CHART, backgroundColor: COLORS[k] }]} /> : null
             )}
-          </View>
+          </Pressable>
         ))}
       </View>
       <View style={s.row}>
@@ -79,36 +84,21 @@ const MoveChart = ({ rows, weekly }) => {
   );
 };
 
-/** This month in a few calm sentences: eaten, burned, and why consistency wins. */
-export const MonthInsight = ({ days, todayKey, profile, goalKcal, hidden }) => {
-  const { headline, lines } = describeMonth(monthInsight({ days, todayKey, profile, goalKcal }), { hidden });
-  return (
-    <Card style={[s.row, styles.insight]} testID="month-insight">
-      <Sparkles size={20} color={OLIVE} />
-      <View style={{ flex: 1, gap: 4 }}>
-        <Text style={styles.insightKicker}>THIS MONTH</Text>
-        <Text style={styles.cardTitle}>{headline}</Text>
-        {lines.map((l, i) => (
-          <Body key={i} size={13} color={T.ink}>
-            {l}
-          </Body>
-        ))}
-      </View>
-    </Card>
-  );
-};
-
 export const Journey = ({ days, todayKey, goalKcal, kg, hidden, photos, baselinePhoto, profile = {} }) => {
   const [range, setRange] = useState("week");
+  // a tapped bar opens that day (or each day of that week)
+  const [picked, setPicked] = useState(null);
   const weekly = range === "month";
   const rows = weekly ? journeyWeeks(days, todayKey, 4, kg) : journeyDays(days, todayKey, 7, kg);
   const t = totals(weekly ? journeyDays(days, todayKey, 28, kg) : rows);
   const loggedFood = rows.filter((r) => r.logged);
   const avgEaten = loggedFood.length ? Math.round(loggedFood.reduce((a, r) => a + r.eaten, 0) / loggedFood.length) : 0;
+  const pick = (date) => setPicked(weekly ? Array.from({ length: 7 }, (_, i) => shiftDay(date, i)).filter((d) => d <= todayKey).reverse() : [date]);
   const strip = [...photos.map((p) => ({ uri: p.uri, label: dayLabel(p.date, todayKey), id: p.id })), ...(baselinePhoto ? [{ uri: baselinePhoto, label: "Where you started", id: "baseline" }] : [])];
 
   return (
     <View testID="journey">
+      <DaySheet dates={picked} hidden={hidden} onClose={() => setPicked(null)} />
       <View style={[s.row, { justifyContent: "space-between", marginBottom: 10 }]}>
         <Text style={styles.title} accessibilityRole="header">
           Your journey
@@ -133,9 +123,11 @@ export const Journey = ({ days, todayKey, goalKcal, kg, hidden, photos, baseline
       </View>
 
 
+      <Body size={12.5} style={{ marginBottom: 10 }}>{weekly ? "Tap a week to see each day in it." : "Tap a day to see what you ate and did."}</Body>
+
       <Card style={{ marginBottom: 12, gap: 8 }} testID="journey-food">
         <Text style={styles.cardTitle}>Food</Text>
-        <FoodChart rows={rows} goal={goalKcal} weekly={weekly} />
+        <FoodChart rows={rows} goal={goalKcal} weekly={weekly} onPick={pick} />
         <Body size={12.5} testID="journey-food-text">
           {!loggedFood.length
             ? "Nothing logged yet in this time."
@@ -147,7 +139,7 @@ export const Journey = ({ days, todayKey, goalKcal, kg, hidden, photos, baseline
 
       <Card style={{ marginBottom: 12, gap: 8 }} testID="journey-move">
         <Text style={styles.cardTitle}>Movement & calm</Text>
-        <MoveChart rows={rows} weekly={weekly} />
+        <MoveChart rows={rows} weekly={weekly} onPick={pick} />
         <View style={[s.row, { gap: 12, flexWrap: "wrap" }]}>
           {LEGEND.map(([k, label]) => (
             <View key={k} style={[s.row, { gap: 5 }]}>
@@ -193,7 +185,5 @@ const styles = StyleSheet.create({
   goalLine: { position: "absolute", left: 0, right: 0, height: 1, borderTopWidth: 1, borderStyle: "dashed", borderColor: T.inkSoft },
   tick: { flex: 1, textAlign: "center", fontFamily: F.sans, fontSize: 11, color: T.inkSoft, marginTop: 4 },
   swatch: { width: 10, height: 10, borderRadius: 5 },
-  insight: { gap: 12, alignItems: "flex-start", marginBottom: 12, backgroundColor: "#EEF0E2", borderColor: "#D6DABF" },
-  insightKicker: { fontFamily: F.sansMed, fontSize: 11, letterSpacing: 1.6, color: T.inkSoft },
   photoDate: { fontFamily: F.sans, fontSize: 11.5, color: T.inkSoft, marginTop: 4, textAlign: "center" },
 });

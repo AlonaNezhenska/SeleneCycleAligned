@@ -10,7 +10,7 @@ import { RoutineCard, useWorkoutActions } from "../ui/workout";
 import { YogaMeditation } from "../ui/activity";
 import { OLIVE } from "../ui/food";
 import { T, F } from "../ui/theme";
-import { Screen, Body, Card, Chip, IconBtn, s } from "../ui/kit";
+import { Screen, Body, Card, Chip, IconBtn, Button, s } from "../ui/kit";
 
 /* ---------------------------------------------------------------
    EXPLORE — ready programs, filtered by level, goal and equipment;
@@ -120,13 +120,22 @@ export function Explore() {
 export function Place() {
   const { key } = useLocalSearchParams();
   const { ctx } = useApp();
+  const { begin } = useWorkoutActions();
   const phase = ctx.calendarKnown ? groupForPhase(getPhase(ctx.day, ctx.length)).key : null;
   const place = PLACES.find((p) => p.key === key);
   const list = key === "yoga" ? [PROGRAM.stretch] : PROGRAMS.filter((p) => p.places.includes(key));
   return (
     <Screen>
       <Header title={key === "yoga" ? "Yoga & meditation" : (place?.label ?? "Routines")} />
-      {key === "yoga" && <YogaMeditation phase={phase} />}
+      {key === "yoga" && (
+        <>
+          <Button tone="dark" label="Start custom yoga" onPress={() => begin({ name: "Yoga", kind: "yoga", replace: true })} />
+          <Body size={12.5} style={{ marginTop: 8, marginBottom: 18 }}>
+            Pick the poses you do and how many breaths you hold each. Still learning one? Mark it, and it counts too.
+          </Body>
+          <YogaMeditation phase={phase} />
+        </>
+      )}
       <View style={{ gap: 10 }}>
         {list.map((p) => (
           <ProgramCard key={p.id} p={p} />

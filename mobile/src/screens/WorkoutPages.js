@@ -313,7 +313,10 @@ export function WorkoutDetail() {
       <Header title={w.name} />
       <Body size={13.5}>{`${dayLabel(w.date, todayKey)} · ${minutesOf(w)} min · ${t.volume.toLocaleString("en-GB")} kg · ${t.sets} sets`}</Body>
       <View style={{ marginTop: 10 }}>
-        <Button tone="outline" size="sm" full={false} label="Edit duration" onPress={() => setEditingTime(true)} />
+        <View style={[s.row, { gap: 8, flexWrap: "wrap" }]}>
+          <Button tone="dark" size="sm" full={false} label="Edit workout" onPress={() => router.push({ pathname: "/workout/log", params: { id: w.id } })} />
+          <Button tone="outline" size="sm" full={false} label="Edit duration" onPress={() => setEditingTime(true)} />
+        </View>
       </View>
       <MinutesSheet
         visible={editingTime}
@@ -341,7 +344,7 @@ export function WorkoutDetail() {
               <Text style={styles.entryDate}>{ex?.name ?? e.id}</Text>
               {e.sets.map((st, k) => (
                 <Body key={k} size={13.5} color={T.ink}>
-                  {`${st.warmup ? "Warm-up" : `Set ${k + 1}`}: ${e.type === "duration" ? `${st.seconds} s` : `${st.kg ? `${st.kg} kg × ` : ""}${st.reps} reps`}`}
+                  {`${st.warmup ? "Warm-up" : `Set ${k + 1}`}: ${e.type === "breaths" ? `${st.breaths} breaths` : e.type === "duration" ? `${st.seconds} s` : `${st.kg ? `${st.kg} kg × ` : ""}${st.reps} reps`}`}
                 </Body>
               ))}
             </Card>

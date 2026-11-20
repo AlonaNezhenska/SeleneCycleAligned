@@ -7,6 +7,7 @@ import { KIND, dayMovement, weightOf, caloriesFor, PHASE_PRACTICE, youTubeSearch
 import { Bar, OLIVE } from "./food";
 import { T, F } from "./theme";
 import { Card, Body, SectionLabel, s } from "./kit";
+import { MinutesSheet } from "./workout";
 
 /* ---------------------------------------------------------------
    ACTIVITY PIECES — today's movement, the yoga and meditation area,
@@ -46,11 +47,12 @@ export const useIphoneSteps = (onSteps) => {
 };
 
 /** Today's movement: steps, energy burned, and what was logged. */
-export const TodayActivity = ({ day, profile, hidden, onSteps, onRemove, date }) => {
+export const TodayActivity = ({ day, profile, hidden, onSteps, onRemove, onEdit, date }) => {
   const kg = weightOf(profile);
   const m = dayMovement(day, kg);
   const goal = profile.stepGoal ?? DEFAULT_STEP_GOAL;
   const [editing, setEditing] = useState(false);
+  const [changing, setChanging] = useState(null);
   const [typed, setTyped] = useState("");
   const phone = useIphoneSteps(onSteps);
 
@@ -128,7 +130,13 @@ export const TodayActivity = ({ day, profile, hidden, onSteps, onRemove, date })
 
       {m.list.map((a) => (
         <View key={a.id} style={[s.row, styles.item]}>
-          <View style={{ flex: 1 }}>
+          <Pressable
+            onPress={() => (a.workoutId ? router.push({ pathname: "/workout/history/[id]", params: { id: a.workoutId } }) : onEdit && a.source === "activity" ? setChanging(a) : null)}
+            disabled={!a.workoutId && !(onEdit && a.source === "activity")}
+            accessibilityRole="button"
+            accessibilityLabel={`Edit ${a.title || KIND[a.kind]?.label}`}
+            style={{ flex: 1, minHeight: 44, justifyContent: "center" }}
+          >
             <Text style={styles.itemName} numberOfLines={1}>
               {a.title || KIND[a.kind]?.label}
             </Text>
@@ -137,7 +145,7 @@ export const TodayActivity = ({ day, profile, hidden, onSteps, onRemove, date })
                 .filter(Boolean)
                 .join(" · ")}
             </Body>
-          </View>
+          </Pressable>
           {a.url && (
             <Pressable onPress={() => Linking.openURL(a.url)} accessibilityRole="button" accessibilityLabel={`Open video: ${a.title || "video"}`} hitSlop={6} style={styles.iconBtn}>
               <Play size={16} color={T.ink} />
@@ -150,16 +158,19 @@ export const TodayActivity = ({ day, profile, hidden, onSteps, onRemove, date })
           )}
         </View>
       ))}
+      <Body size={12.5}>Did something else? Add it from Start workout, under "Log something you did".</Body>
 
-      <Pressable
-        onPress={() => router.push({ pathname: "/activity/add", params: { date } })}
-        accessibilityRole="button"
-        accessibilityLabel="Add an activity"
-        style={styles.add}
-      >
-        <Plus size={18} color={T.canvas} />
-        <Text style={styles.addText}>Add an activity</Text>
-      </Pressable>
+      <MinutesSheet
+        visible={!!changing}
+        title={changing ? `How long was ${(changing.title || KIND[changing.kind]?.label || "it").toLowerCase()}?` : ""}
+        minutes={changing?.minutes ?? 30}
+        onClose={() => setChanging(null)}
+        onSave={(minutes) => {
+          onEdit(changing.id, { minutes });
+          setChanging(null);
+        }}
+      />
+
     </Card>
   );
 };

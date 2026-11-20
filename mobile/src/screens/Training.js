@@ -2,12 +2,12 @@ import React, { useEffect } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Button as PaperButton } from "react-native-paper";
 import { router } from "expo-router";
-import { Check, LifeBuoy, Timer } from "lucide-react-native";
-import { shouldOfferBailout, postWorkoutWindow, windowRemaining, UI_COPY, getPhase, groupForPhase } from "../shared";
+import { Check, Egg, LifeBuoy, Timer } from "lucide-react-native";
+import { preFlightNudge, shouldOfferBailout, postWorkoutWindow, windowRemaining, UI_COPY, getPhase, groupForPhase } from "../shared";
 import { journalSignals } from "../content/journal";
 import { dayMovement, weightOf } from "../lib/activity";
 import { encouragement } from "../lib/encourage";
-import { Encouragement, PhotoNudge } from "../ui/activity";
+import { Encouragement, PhotoNudge, TodayActivity } from "../ui/activity";
 import { ActiveBanner, useWorkoutActions, useNow } from "../ui/workout";
 import { useApp } from "../state/AppState";
 import { T, F, TOILE } from "../ui/theme";
@@ -16,8 +16,9 @@ import { Screen, Card, Button, Serif, Body, Instruction, s } from "../ui/kit";
 /* ---------------------------------------------------------------
    5. WORKOUT — one button.
 
-   Start workout asks what she wants to do, and nothing else is here
-   until it matters: the workout in progress, the Bailout at ten minutes,
+   Start workout asks what she wants to do; today's steps and activity
+   sit right below it, each editable. Everything else waits until it
+   matters: the workout in progress, the Bailout at ten minutes,
    and the protein window and a kind word afterwards. The session the
    engine watches starts with the workout.
    --------------------------------------------------------------- */
@@ -61,7 +62,8 @@ const ProteinWindow = ({ win, now }) => {
 };
 
 export function Training() {
-  const { ctx, today, setToday, session, setSession, profile, todayKey, photos } = useApp();
+  const { ctx, now: appNow, today, setToday, session, setSession, profile, todayKey, photos, hideNumbers, setSteps, removeActivity, updateActivity } = useApp();
+  const preFlight = preFlightNudge(session.startedAt ?? appNow);
   const { finish, active } = useWorkoutActions();
   const phase = ctx.calendarKnown ? groupForPhase(getPhase(ctx.day, ctx.length)).key : null;
   const movement = dayMovement(today, weightOf(profile));
@@ -125,6 +127,33 @@ export function Training() {
           <Check size={16} color={T.inkSoft} />
           <Text style={styles.doneText}>Done for today</Text>
         </View>
+      )}
+
+      <View style={{ height: 22 }} />
+      <TodayActivity
+        day={today}
+        profile={profile}
+        hidden={hideNumbers}
+        date={todayKey}
+        onSteps={(n) => setSteps(n)}
+        onRemove={(id) => removeActivity(id)}
+        onEdit={(id, patch) => updateActivity(id, patch)}
+      />
+
+      {preFlight && !session.startedAt && (
+        <Card style={{ marginBottom: 14 }} accessibilityLabel="Pre-Flight" testID="preflight">
+          <View style={[s.row, { alignItems: "flex-start", gap: 14 }]}>
+            <View style={[styles.disc, { backgroundColor: T.sage }]}>
+              <Egg size={17} color={T.canvas} strokeWidth={1.7} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Body size={13.5} weight="medium" color={T.ink}>
+                {`Pre-Flight: ${preFlight.proteinGrams}g protein first`}
+              </Body>
+              <Instruction topic="preFlight" />
+            </View>
+          </View>
+        </Card>
       )}
     </Screen>
   );

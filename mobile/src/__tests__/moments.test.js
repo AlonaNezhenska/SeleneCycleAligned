@@ -4,7 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
 import { AppProvider, useApp } from "../state/AppState";
 import { AGREEMENT_VERSION, findBlocked, EVENING } from "../shared";
-import { MOMENT_TEXT, notificationTimes, periodMoments, upcomingMoments } from "../lib/moments";
+import { MOMENT_TEXT, notificationTimes, periodMoments, upcomingMoments, sampleMoments } from "../lib/moments";
 import { MOMENT_IMAGE } from "../content/moments";
 import { planNotifications } from "../lib/notifications";
 import { MomentCard } from "../ui/MomentCard";
@@ -38,6 +38,12 @@ describe("the calendar", () => {
   it("cheers on the second day while the period is still going", () => {
     expect(upcomingMoments(profile, "2026-10-15")[0]).toEqual({ key: "period-day-2", date: "2026-10-16" });
     expect(upcomingMoments({ ...profile, lastPeriodEnd: "2026-10-15" }, "2026-10-15").some((m) => m.key === "period-day-2")).toBe(false);
+  });
+
+  it("samples today's moment, or the latest one before today", () => {
+    expect(sampleMoments(profile, "2026-11-10")).toEqual(["before-2"]);
+    expect(sampleMoments(profile, "2026-11-20")).toEqual(["before-1"]);
+    expect(sampleMoments({ lastPeriod: null }, "2026-11-20")).toEqual(["period-here"]);
   });
 
   it("predicts nothing on birth control or without a period date", () => {

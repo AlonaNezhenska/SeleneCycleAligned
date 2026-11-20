@@ -186,17 +186,17 @@ describe("one tracking session, one save", () => {
     await press("button", "Back");
     expect(screen.getByTestId("leave-confirm")).toBeOnTheScreen();
     await press("button", "Keep editing");
-    expect(router.navigate).not.toHaveBeenCalled();
+    expect(router.back).not.toHaveBeenCalled();
     await press("button", "Back");
     await press("button", "Discard and leave");
-    expect(router.navigate).toHaveBeenCalledWith("/");
+    expect(router.back).toHaveBeenCalled();
     expect((await stored()).days?.[TODAY]?.journal ?? {}).toEqual({});
   });
 
   it("leaves straight away when nothing is unsaved", async () => {
     await mount();
     await press("button", "Back");
-    expect(router.navigate).toHaveBeenCalledWith("/");
+    expect(router.back).toHaveBeenCalled();
   });
 });
 
@@ -294,8 +294,8 @@ describe("Flow", () => {
     await mount();
     await press("button", "Flow");
     await press("button", "Heavy");
-    await press("checkbox", "Period started today");
-    expect(screen.getByText(/sets day 1 of your cycle when you save/)).toBeOnTheScreen();
+    await press("checkbox", "Period started");
+    expect(screen.getByText(/sets day 1 of your cycle/)).toBeOnTheScreen();
     await press("button", "Continue");
     expect((await stored()).profile.lastPeriod).toBe("2026-10-14");
     await press("button", "Save symptoms");
@@ -304,6 +304,67 @@ describe("Flow", () => {
     expect(data.days[TODAY].journal.flow).toMatchObject({ choices: { level: "heavy" }, items: { started: {} } });
     expect(data.profile).toMatchObject({ lastPeriod: TODAY, periodOngoing: true });
     expect(screen.getByText("Today asks for less.")).toBeOnTheScreen();
+  });
+});
+
+describe("logging an earlier day", () => {
+  const YESTERDAY = "2026-10-28";
+
+  it("saves to the picked day and leaves today alone", async () => {
+    await mount();
+    await press("button", "Yesterday");
+    expect(screen.getByText("How were you feeling that day?")).toBeOnTheScreen();
+    await press("button", "Flow");
+    await press("button", "Light");
+    await press("button", "Continue");
+    await press("button", "Save symptoms");
+    await act(async () => {});
+    const data = await stored();
+    expect(data.days[YESTERDAY].journal.flow).toMatchObject({ choices: { level: "light" } });
+    expect(data.days[TODAY]?.journal ?? {}).toEqual({});
+    expect(screen.getByText("Saved for Wed 28 Oct")).toBeOnTheScreen();
+  });
+
+  it("starts the cycle on the day the period really began", async () => {
+    await mount();
+    await press("button", "Yesterday");
+    await press("button", "Flow");
+    await press("checkbox", "Period started");
+    await press("button", "Continue");
+    await press("button", "Save symptoms");
+    await act(async () => {});
+    expect((await stored()).profile).toMatchObject({ lastPeriod: YESTERDAY, periodOngoing: true });
+  });
+
+  it("moves a start a few days earlier, but leaves an old cycle as history", async () => {
+    // she logged the start today, then remembers it was really two days ago
+    await mount(undefined, { lastPeriod: TODAY, periodOngoing: true });
+    await press("button", "An earlier day");
+    await fireEvent.press(screen.getAllByRole("button", { name: /27/ }).pop());
+    await layoutAll();
+    await press("button", "Flow");
+    await press("checkbox", "Period started");
+    await press("button", "Continue");
+    await press("button", "Save symptoms");
+    await act(async () => {});
+    expect((await stored()).profile.lastPeriod).toBe("2026-10-27");
+
+    const { movesStart } = require("../state/TrackerSession");
+    expect(movesStart("2026-10-14", "2026-09-16")).toBe(false);
+    expect(movesStart("2026-10-14", "2026-10-28")).toBe(true);
+  });
+
+  it("asks before switching day with unsaved choices", async () => {
+    await mount();
+    await press("button", "Flow");
+    await press("button", "Light");
+    await press("button", "Continue");
+    await press("button", "Yesterday");
+    expect(screen.getByTestId("switch-confirm")).toBeOnTheScreen();
+    await press("button", "Save, then switch");
+    await act(async () => {});
+    expect((await stored()).days[TODAY].journal.flow).toMatchObject({ choices: { level: "light" } });
+    expect(screen.getByText("How were you feeling that day?")).toBeOnTheScreen();
   });
 });
 

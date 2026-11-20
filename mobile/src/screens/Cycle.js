@@ -186,6 +186,10 @@ export function Cycle() {
         )}
       </View>
 
+      <View style={{ marginBottom: 16 }}>
+        <Button label="Log today's reality" onPress={() => router.push("/log")} />
+      </View>
+
       <ViewSwitch value={mode} onChange={setMode} />
 
       {calendar ? (
@@ -210,9 +214,6 @@ export function Cycle() {
         </>
       )}
 
-      <View style={{ marginTop: 24 }}>
-        <Button label="Log today's reality" onPress={() => router.push("/tracker")} />
-      </View>
     </Screen>
   );
 }

@@ -1,20 +1,33 @@
 /* ---------------------------------------------------------------
    EXERCISE PICTURES — for Selena's private, personal use only.
 
-   Still 180×180 pictures, loaded from the exercises-dataset repository
-   on GitHub (github.com/hasaneyldrm/exercises-dataset), where they are
-   published with Gym visual's permission. They are © Gym visual —
-   https://gymvisual.com/ — and are NOT licensed to Selena: nothing is
-   copied into this project, and they must be removed, or licensed from
-   Gym visual, before the app is ever shared or released.
+   Gym exercises: still 180×180 pictures from the exercises-dataset
+   repository on GitHub (github.com/hasaneyldrm/exercises-dataset),
+   published there with Gym visual's permission; © Gym visual,
+   https://gymvisual.com/. `gv` is the picture's file name.
 
-   `gv` on an exercise is the picture's file name, e.g. "0001-2gPfomN".
-   Without a picture an exercise shows the body figure alone.
+   Yoga poses: pictures from Pocket Yoga (pocketyoga.com). `py` names the
+   pose and its picture file. Only names, levels and Sanskrit names are
+   kept in Selena; how to do a pose is read on Pocket Yoga's own page.
+
+   None of these pictures are licensed to Selena: nothing is copied into
+   this project, and they must be removed, or licensed, before the app is
+   ever shared or released. Without a picture an exercise shows the body
+   figure alone.
    --------------------------------------------------------------- */
 
-const BASE = "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/";
+const GYM = "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/images/";
+const YOGA = "https://pocketyoga.com/assets/images/";
 
-export const PICTURE_CREDIT = "© Gym visual — gymvisual.com";
+/** The picture for an exercise, or null: small for lists, large for its page. */
+export const exercisePicture = (ex, { large = false } = {}) => {
+  if (ex?.py) return { uri: large ? `${YOGA}full/${ex.py.file}.png` : `${YOGA}thumbnails146/${ex.py.file}-tn146.png` };
+  if (ex?.gv) return { uri: `${GYM}${ex.gv}.jpg` };
+  return null;
+};
 
-/** The picture for an exercise, or null. */
-export const exercisePicture = (ex) => (ex?.gv ? { uri: `${BASE}${ex.gv}.jpg` } : null);
+/** Who the picture belongs to, shown under it. */
+export const pictureCredit = (ex) => (ex?.py ? "Picture: Pocket Yoga — pocketyoga.com" : "© Gym visual — gymvisual.com");
+
+/** Where to read how to do a pose, or null. */
+export const poseGuide = (ex) => (ex?.py ? `https://www.pocketyoga.com/pose/${ex.py.name}` : null);

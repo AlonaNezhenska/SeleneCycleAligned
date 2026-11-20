@@ -57,9 +57,19 @@ export const IMG = {
     cycle: require("../../assets/images/backgrounds/cycle-water.jpg"),
     nutrition: require("../../assets/images/nutrition/nutrition-toile.jpg"),
   },
+  // Smart insights: the misty forest and its keepsakes
+  insights: {
+    forest: require("../../assets/images/insights/forest.jpg"),
+    bow: require("../../assets/images/insights/bow-ribbon.png"),
+    bowSmall: require("../../assets/images/insights/bow-small.png"),
+    lily: require("../../assets/images/insights/lily.png"),
+    watch: require("../../assets/images/insights/watch.png"),
+    teacup: require("../../assets/images/insights/teacup.png"),
+    flower: require("../../assets/images/insights/flower-blue.png"),
+    flowerHead: require("../../assets/images/insights/flower-head.png"),
+  },
   nutrition: {
     bow: require("../../assets/images/nutrition/bow.png"),
-    lace: require("../../assets/images/nutrition/lace-trim.png"),
     flower: require("../../assets/images/nutrition/toile-flower.jpg"),
   },
   vibes: {

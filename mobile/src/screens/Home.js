@@ -170,7 +170,9 @@ const ForkCheckIn = ({ fork, checkIn, onChange }) => {
 };
 
 const PrescriptionCard = ({ ctx }) => {
+  const { today, markDone } = useApp();
   const p = ctx.prescription;
+  const done = today.entry?.completed === true;
   return (
     <Card style={{ marginBottom: 26 }} accessibilityLabel="Today's prescription" testID="prescription">
       <View style={[s.row, { gap: 8, marginBottom: 6 }]}>
@@ -182,7 +184,13 @@ const PrescriptionCard = ({ ctx }) => {
         {p.summary}
       </Body>
       <Instruction topic="prescription" />
-      <View style={{ marginTop: 10 }}>
+      <View style={[s.row, { marginTop: 10, gap: 8, flexWrap: "wrap" }]}>
+        {p.kind === "rest" && !done && <Button size="sm" full={false} label="Rest taken" onPress={() => markDone("rest")} />}
+        {done && (
+          <Body size={13} color={T.ink} accessibilityLabel="Done today">
+            Done for today
+          </Body>
+        )}
         <Button tone="outline" size="sm" full={false} label="Open the plan" icon={ArrowRight} onPress={() => router.push("/workouts")} />
       </View>
     </Card>
@@ -246,8 +254,8 @@ const styles = StyleSheet.create({
   motivation: { width: "100%", aspectRatio: 4 / 5, overflow: "hidden", marginBottom: 24, backgroundColor: T.canvasDeep },
   todayPill: { position: "absolute", top: 14, left: 14, paddingHorizontal: 10, paddingVertical: 5, backgroundColor: "rgba(242,239,230,0.88)" },
   viewer: { flex: 1, backgroundColor: "rgba(20,24,22,0.92)", alignItems: "center", justifyContent: "center", padding: 16 },
-  closeBtn: { position: "absolute", top: 54, right: 20, width: 44, height: 44, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(242,239,230,0.18)" },
-  vibeRing: { width: 76, height: 76, overflow: "hidden", alignItems: "center", justifyContent: "center", padding: 3 },
-  vibeImg: { width: "100%", height: "100%" },
-  weekPick: { width: 54, height: 54, borderWidth: 1.5, borderColor: "transparent", alignItems: "center", justifyContent: "center" },
+  closeBtn: { position: "absolute", top: 54, right: 20, width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(242,239,230,0.18)" },
+  vibeRing: { width: 76, height: 76, borderRadius: 38, overflow: "hidden", alignItems: "center", justifyContent: "center", padding: 3 },
+  vibeImg: { width: "100%", height: "100%", borderRadius: 38 },
+  weekPick: { width: 54, height: 54, borderRadius: 27, borderWidth: 1.5, borderColor: "transparent", alignItems: "center", justifyContent: "center" },
 });

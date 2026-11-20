@@ -17,12 +17,15 @@ export const entryType = (ex, item = {}) => {
   return t === "duration" && item.reps ? "reps" : t;
 };
 
-export const blankSet = (item = {}) => ({ kg: "", reps: item.reps ? String(item.reps) : "", seconds: item.seconds ? String(item.seconds) : "", done: false, warmup: false });
+export const blankSet = (item = {}) => ({ kg: "", reps: item.reps ? String(item.reps) : "", seconds: item.seconds ? String(item.seconds) : "", breaths: "", done: false, warmup: false });
 
 /** A workout entry from a routine item (or a freshly picked exercise). */
 export const entryFrom = (item, custom = []) => {
   const ex = exerciseById(item.id, custom);
-  return { id: item.id, type: entryType(ex, item), rest: item.rest ?? 90, sets: Array.from({ length: item.sets ?? 3 }, () => blankSet(item)) };
+  const type = entryType(ex, item);
+  // a pose is usually held once; strength work has sets
+  const count = item.sets ?? (type === "breaths" ? 1 : 3);
+  return { id: item.id, type, rest: item.rest ?? (type === "breaths" ? 30 : 90), sets: Array.from({ length: count }, () => blankSet(item)) };
 };
 
 /** The sets from the last time this exercise was done, for the "Previous" column. */
@@ -83,6 +86,7 @@ export const exerciseHistory = (workouts = [], id) =>
         bestSet: `${num(best.kg)} kg × ${num(best.reps)}`,
         reps: Math.max(...sets.map((s) => num(s.reps))),
         seconds: Math.max(...sets.map((s) => num(s.seconds))),
+        breaths: Math.max(...sets.map((s) => num(s.breaths))),
         sets,
       };
     })
@@ -98,6 +102,7 @@ export const personalRecords = (workouts, id) => {
     oneRm: Math.max(...h.map((x) => x.oneRm)),
     reps: Math.max(...h.map((x) => x.reps)),
     seconds: Math.max(...h.map((x) => x.seconds)),
+    breaths: Math.max(...h.map((x) => x.breaths ?? 0)),
   };
 };
 

@@ -43,7 +43,7 @@ const lastPeriod = (() => {
 
 const Ready = ({ children }) => (useApp().ready ? <View testID="ready" style={{ flex: 1 }}>{children}</View> : null);
 
-const mount = async (Screen, { params = {}, profile = {} } = {}) => {
+const mount = async (Screen, { params = {}, profile = {}, initial = {} } = {}) => {
   useLocalSearchParams.mockReturnValue(params);
   await render(
     <AppProvider
@@ -52,6 +52,7 @@ const mount = async (Screen, { params = {}, profile = {} } = {}) => {
         onboarded: true,
         agreement: { version: AGREEMENT_VERSION, acceptedAt: "2026-10-01T09:00:00.000Z" },
         profile: { lastPeriod, ...profile },
+        ...initial,
       }}
     >
       <TrackerSessionProvider>
@@ -345,6 +346,26 @@ describe("the diary", () => {
     expect(await entries()).toEqual([expect.objectContaining({ name: "Bread roll", grams: 60 })]);
   });
 
+  it("edits her own food, scanning a barcode onto it, and keeps the same food", async () => {
+    const mine = { id: "mine:roll", name: "Bred roll", source: "mine", barcode: null, per100: { kcal: 250, protein: 8, carbs: 48, fat: 3 }, serving: { label: "1 roll", grams: 60 } };
+    await mount(FoodCreate, { params: { kind: "food", edit: "mine:roll", meal: "snacks" }, initial: { foodLibrary: { foods: [mine], recent: [{ ...mine, lastGrams: 60, uses: 3 }], favorites: [mine] } } });
+    expect(screen.getByText("Edit food")).toBeOnTheScreen();
+    expect(screen.getByLabelText("Name").props.value).toBe("Bred roll");
+    expect(screen.getByLabelText("Energy").props.value).toBe("250");
+    expect(screen.queryByRole("button", { name: "Save and add to Snacks" })).toBeNull();
+    await fireEvent.changeText(screen.getByLabelText("Name"), "Bread roll");
+    await fireEvent.press(screen.getByRole("button", { name: "Scan the barcode" }));
+    await fireEvent(screen.getByTestId("camera"), "barcodeScanned", { data: "5012345678900", type: "ean13" });
+    expect(screen.getByLabelText("Barcode (optional)").props.value).toBe("5012345678900");
+    await fireEvent.press(screen.getByRole("button", { name: "Save" }));
+    const lib = (await stored()).foodLibrary;
+    expect(lib.foods).toHaveLength(1);
+    expect(lib.foods[0]).toMatchObject({ id: "mine:roll", name: "Bread roll", barcode: "5012345678900", per100: { kcal: 250 } });
+    // the copies in recent and favourites follow, keeping how often it was eaten
+    expect(lib.recent[0]).toMatchObject({ name: "Bread roll", uses: 3 });
+    expect(lib.favorites[0].name).toBe("Bread roll");
+  });
+
   it("saves a meal of several foods and adds it in one tap", async () => {
     await mount(FoodCreate, { params: { kind: "meal" } });
     await fireEvent.changeText(screen.getByLabelText("Name"), "Cereal with milk");
@@ -379,6 +400,33 @@ describe("the diary", () => {
     await fireEvent.press(screen.getByRole("button", { name: "Add to Breakfast" }));
     const [e] = await entries();
     expect(e).toMatchObject({ meal: "breakfast", name: "Berry overnight oats", recipeId: "selena:overnight-oats", portions: 1 });
+  });
+
+  it("selects foods to copy to another meal and day, or delete them", async () => {
+    const { Alert } = require("react-native");
+    const alert = jest.spyOn(Alert, "alert").mockImplementation((title, msg, buttons) => buttons.find((b) => b.style === "destructive").onPress());
+    const egg = { id: "e1", meal: "breakfast", name: "Egg", fixed: { kcal: 80, protein: 7, carbs: 0, fat: 5 }, portions: 1 };
+    const toast = { id: "e2", meal: "breakfast", name: "Toast", fixed: { kcal: 90, protein: 3, carbs: 17, fat: 1 }, portions: 1 };
+    await mount(FoodMeal, { params: { meal: "breakfast" }, initial: { days: { [TODAY]: { food: { entries: [egg, toast] } } } } });
+    await fireEvent.press(screen.getByRole("button", { name: "Select foods" }));
+    await fireEvent.press(screen.getByRole("checkbox", { name: "Egg" }));
+    await fireEvent.press(screen.getByRole("button", { name: "Copy to another meal or day" }));
+    expect(screen.getByTestId("copy-sheet")).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole("button", { name: "Lunch" }));
+    await fireEvent.press(screen.getByRole("button", { name: "Tomorrow" }));
+    await fireEvent.press(screen.getByRole("button", { name: "Copy here" }));
+    let data = await stored();
+    expect(data.days["2026-10-30"].food.entries).toEqual([expect.objectContaining({ name: "Egg", meal: "lunch" })]);
+    expect(data.days["2026-10-30"].food.entries[0].id).not.toBe("e1");
+    expect(data.days[TODAY].food.entries).toHaveLength(2);
+    expect(screen.getByTestId("meal-notice")).toHaveTextContent("Copied 1 food to Lunch, Tomorrow.");
+
+    await fireEvent.press(screen.getByRole("button", { name: "Select foods" }));
+    await fireEvent.press(screen.getByRole("button", { name: "Select all" }));
+    await fireEvent.press(screen.getByRole("button", { name: "Delete selected" }));
+    data = await stored();
+    expect(data.days[TODAY].food.entries).toEqual([]);
+    alert.mockRestore();
   });
 
   it("changes and removes what was logged", async () => {
@@ -468,6 +516,16 @@ describe("barcodes", () => {
     await act(async () => {});
     await fireEvent.press(screen.getByRole("button", { name: "Add to Breakfast" }));
     expect(await entries()).toEqual([expect.objectContaining({ name: "Wheat biscuits", grams: 38 })]);
+  });
+
+  it("finds her own food by the barcode she added, without asking the database", async () => {
+    const mine = { id: "mine:roll", name: "Bakery roll", source: "mine", barcode: "5012345678900", per100: { kcal: 250, protein: 8, carbs: 48, fat: 3 }, serving: { label: "1 roll", grams: 60 } };
+    await mount(FoodScan, { params: { meal: "snacks" }, initial: { foodLibrary: { foods: [mine] } } });
+    await fireEvent(screen.getByTestId("camera"), "barcodeScanned", { data: "5012345678900", type: "ean13" });
+    await act(async () => {});
+    expect(global.fetch).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByRole("button", { name: "Add to Snacks" }));
+    expect(await entries()).toEqual([expect.objectContaining({ name: "Bakery roll", grams: 60 })]);
   });
 
   it("offers to create a product that isn't known yet", async () => {

@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, Pressable, TextInput, Modal, StyleSheet } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { ChevronDown, Timer, Plus, Check, Trash2, Flame, Dumbbell, Minus } from "lucide-react-native";
 import { useApp } from "../state/AppState";
 import { exerciseById, muscleLabel } from "../lib/exercises";
 import { blankSet, previousSets, workoutTotals, warmupSets } from "../lib/workout";
 import { useWorkoutActions, useNow, clock, MinutesSheet } from "../ui/workout";
 import { BodyThumb } from "../ui/BodyFigure";
+import { ExerciseThumb } from "../ui/ExerciseThumb";
 import { OLIVE } from "../ui/food";
 import { T, F } from "../ui/theme";
 import { Screen, Body, IconBtn, Chip, s } from "../ui/kit";
@@ -25,6 +26,7 @@ const REST_CHOICES = [30, 60, 90, 120, 180];
 const prevText = (p, type) => {
   if (!p) return "–";
   if (type === "duration") return p.seconds ? `${p.seconds}s` : "–";
+  if (type === "breaths") return p.breaths ? `${p.breaths} breaths` : "–";
   if (type === "reps") return p.reps ? `${p.kg ? `${p.kg} kg × ` : ""}${p.reps}` : "–";
   return p.kg || p.reps ? `${p.kg || 0} kg × ${p.reps || 0}` : "–";
 };
@@ -51,7 +53,7 @@ const ExerciseBlock = ({ entry, index, prev, onChange, onRemove, onDone, custom 
   return (
     <View style={styles.block} testID={`exercise-${index}`}>
       <View style={[s.row, { gap: 12 }]}>
-        <BodyThumb primary={ex?.p ?? []} secondary={ex?.s ?? []} size={52} />
+        <ExerciseThumb ex={ex} size={52} />
         <Pressable
           onPress={() => router.push({ pathname: "/workout/exercise/[id]", params: { id: entry.id } })}
           accessibilityRole="button"
@@ -89,8 +91,8 @@ const ExerciseBlock = ({ entry, index, prev, onChange, onRemove, onDone, custom 
       <View style={[s.row, styles.headRow]}>
         <Text style={[styles.head, { width: 34 }]}>SET</Text>
         <Text style={[styles.head, { flex: 1 }]}>PREVIOUS</Text>
-        {entry.type !== "duration" && <Text style={[styles.head, { width: 56, textAlign: "center" }]}>{entry.type === "weight" ? "KG" : "+KG"}</Text>}
-        <Text style={[styles.head, { width: 56, textAlign: "center" }]}>{entry.type === "duration" ? "SEC" : "REPS"}</Text>
+        {entry.type !== "duration" && entry.type !== "breaths" && <Text style={[styles.head, { width: 56, textAlign: "center" }]}>{entry.type === "weight" ? "KG" : "+KG"}</Text>}
+        <Text style={[styles.head, { width: entry.type === "breaths" ? 76 : 56, textAlign: "center" }]}>{{ duration: "SEC", breaths: "BREATHS" }[entry.type] ?? "REPS"}</Text>
         <View style={{ width: 40 }} />
       </View>
       {entry.sets.map((st, i) => {
@@ -102,10 +104,12 @@ const ExerciseBlock = ({ entry, index, prev, onChange, onRemove, onDone, custom 
             <Text style={styles.prev} numberOfLines={1}>
               {prevText(p, entry.type)}
             </Text>
-            {entry.type !== "duration" && (
+            {entry.type !== "duration" && entry.type !== "breaths" && (
               <Cell value={st.kg} onChange={(kg) => setAt(i, { kg })} label={`Set ${label} kilograms`} done={st.done} />
             )}
-            {entry.type === "duration" ? (
+            {entry.type === "breaths" ? (
+              <Cell value={st.breaths} onChange={(breaths) => setAt(i, { breaths })} label={`Set ${label} breaths`} done={st.done} width={76} />
+            ) : entry.type === "duration" ? (
               <Cell value={st.seconds} onChange={(seconds) => setAt(i, { seconds })} label={`Set ${label} seconds`} done={st.done} />
             ) : (
               <Cell value={st.reps} onChange={(reps) => setAt(i, { reps })} label={`Set ${label} reps`} done={st.done} />
@@ -113,7 +117,7 @@ const ExerciseBlock = ({ entry, index, prev, onChange, onRemove, onDone, custom 
             <Pressable
               onPress={() => {
                 // an empty set takes last time's numbers when ticked
-                const fill = !st.done && p ? { kg: st.kg || p.kg || "", reps: st.reps || p.reps || "", seconds: st.seconds || p.seconds || "" } : {};
+                const fill = !st.done && p ? { kg: st.kg || p.kg || "", reps: st.reps || p.reps || "", seconds: st.seconds || p.seconds || "", breaths: st.breaths || p.breaths || "" } : {};
                 setAt(i, { ...fill, done: !st.done });
                 if (!st.done) onDone(entry.rest);
               }}
@@ -131,14 +135,14 @@ const ExerciseBlock = ({ entry, index, prev, onChange, onRemove, onDone, custom 
         <Pressable
           onPress={() => {
             const last = entry.sets[entry.sets.length - 1];
-            onChange({ ...entry, sets: [...entry.sets, { ...blankSet(), kg: last?.kg ?? "", reps: last?.reps ?? "", seconds: last?.seconds ?? "" }] });
+            onChange({ ...entry, sets: [...entry.sets, { ...blankSet(), kg: last?.kg ?? "", reps: last?.reps ?? "", seconds: last?.seconds ?? "", breaths: last?.breaths ?? "" }] });
           }}
           accessibilityRole="button"
           accessibilityLabel={`Add a set to ${ex?.name}`}
           style={[styles.addSet, { flex: 1 }]}
         >
           <Plus size={15} color={T.ink} />
-          <Text style={styles.addSetText}>Add set</Text>
+          <Text style={styles.addSetText}>{entry.type === "breaths" ? "Hold again" : "Add set"}</Text>
         </Pressable>
         {entry.sets.length > 1 && (
           <Pressable
@@ -151,6 +155,19 @@ const ExerciseBlock = ({ entry, index, prev, onChange, onRemove, onDone, custom 
           </Pressable>
         )}
       </View>
+      {/* a pose still being learned counts too, and earns a cheer at the end */}
+      {entry.type === "breaths" && (
+        <Pressable
+          onPress={() => onChange({ ...entry, trying: !entry.trying })}
+          accessibilityRole="checkbox"
+          accessibilityLabel="Still working towards this pose"
+          accessibilityState={{ checked: !!entry.trying }}
+          style={[s.row, styles.trying]}
+        >
+          <View style={[styles.tick, entry.trying && styles.tickOn]}>{entry.trying && <Check size={16} color={T.canvas} strokeWidth={2.4} />}</View>
+          <Text style={styles.addSetText}>Still working towards this pose</Text>
+        </Pressable>
+      )}
     </View>
   );
 };
@@ -188,9 +205,14 @@ const RestBar = ({ rest, onChange, onSkip }) => {
 };
 
 export function WorkoutLog() {
-  const { activeWorkout: w, updateWorkout, workouts, customExercises } = useApp();
+  const { id: editId } = useLocalSearchParams();
+  const { activeWorkout, updateWorkout: updateActive, workouts, customExercises, updateFinishedWorkout, setWorkoutMinutes } = useApp();
   const { finish, discard } = useWorkoutActions();
-  const now = useNow(!!w);
+  // a finished workout opened to edit, or the one in progress
+  const editing = editId ? workouts.find((x) => x.id === editId) ?? null : null;
+  const w = editId ? editing : activeWorkout;
+  const updateWorkout = editId ? (fn) => updateFinishedWorkout(editId, fn) : updateActive;
+  const now = useNow(!!w && !editId);
   const [rest, setRest] = useState(null);
   const [confirm, setConfirm] = useState(null);
   const [note, setNote] = useState("");
@@ -222,18 +244,25 @@ export function WorkoutLog() {
           accessibilityLabel="Workout name"
           style={styles.title}
         />
-        <Pressable onPress={() => setConfirm("finish")} accessibilityRole="button" accessibilityLabel="Finish" style={styles.finish}>
-          <Text style={styles.finishText}>Finish</Text>
-        </Pressable>
+        {editId ? (
+          <Pressable onPress={close} accessibilityRole="button" accessibilityLabel="Done editing" style={styles.finish}>
+            <Text style={styles.finishText}>Done</Text>
+          </Pressable>
+        ) : (
+          <Pressable onPress={() => setConfirm("finish")} accessibilityRole="button" accessibilityLabel="Finish" style={styles.finish}>
+            <Text style={styles.finishText}>Finish</Text>
+          </Pressable>
+        )}
       </View>
 
       <MinutesSheet
         visible={editingTime}
-        title="How long so far?"
-        minutes={Math.max(1, Math.round((now - w.startedAt) / 60000))}
+        title={editId ? "How long did it take?" : "How long so far?"}
+        minutes={Math.max(1, Math.round(((editId ? w.endedAt : now) - w.startedAt) / 60000))}
         onClose={() => setEditingTime(false)}
         onSave={(m) => {
-          updateWorkout((cur) => ({ ...cur, startedAt: Date.now() - m * 60000 }));
+          if (editId) setWorkoutMinutes(editId, m);
+          else updateWorkout((cur) => ({ ...cur, startedAt: Date.now() - m * 60000 }));
           setEditingTime(false);
         }}
       />
@@ -241,7 +270,7 @@ export function WorkoutLog() {
         <Pressable onPress={() => setEditingTime(true)} accessibilityRole="button" accessibilityLabel="Change duration" style={{ flex: 1 }}>
           <Text style={styles.statLabel}>Duration ✎</Text>
           <Text style={[styles.statValue, { color: OLIVE }]} testID="workout-duration">
-            {clock(now - w.startedAt)}
+            {clock((editId ? w.endedAt : now) - w.startedAt)}
           </Text>
         </Pressable>
         <View style={{ flex: 1 }}>
@@ -275,26 +304,28 @@ export function WorkoutLog() {
             prev={previousSets(workouts, e.id)}
             onChange={(entry) => setEntry(i, entry)}
             onRemove={() => updateWorkout((cur) => ({ ...cur, exercises: cur.exercises.filter((_, k) => k !== i) }))}
-            onDone={(sec) => setRest({ until: Date.now() + (sec ?? 90) * 1000 })}
+            onDone={(sec) => !editId && setRest({ until: Date.now() + (sec ?? 90) * 1000 })}
           />
         ))}
       </View>
 
       <Pressable
-        onPress={() => router.push({ pathname: "/workout/exercises", params: { for: "workout" } })}
+        onPress={() => router.push({ pathname: "/workout/exercises", params: { for: "workout", ...(editId ? { edit: editId } : {}), ...(w.kind === "yoga" ? { equipment: "yoga" } : {}) } })}
         accessibilityRole="button"
-        accessibilityLabel="Add exercise"
+        accessibilityLabel={w.kind === "yoga" ? "Add a pose" : "Add exercise"}
         style={[styles.addEx, { marginTop: 18 }]}
       >
         <Plus size={18} color={T.canvas} />
-        <Text style={styles.addExText}>Add exercise</Text>
+        <Text style={styles.addExText}>{w.kind === "yoga" ? "Add a pose" : "Add exercise"}</Text>
       </Pressable>
+      {!editId && (
       <View style={[s.row, { gap: 10, marginTop: 10 }]}>
         <Pressable onPress={() => setConfirm("discard")} accessibilityRole="button" accessibilityLabel="Discard workout" style={[styles.ghost, { flex: 1 }]}>
           <Trash2 size={15} color={T.terracotta} />
           <Text style={[styles.ghostText, { color: T.terracotta }]}>Discard workout</Text>
         </Pressable>
       </View>
+      )}
 
       <Modal visible={!!confirm} transparent animationType="fade" onRequestClose={() => setConfirm(null)}>
         <View style={styles.backdrop}>
@@ -359,8 +390,9 @@ export function WorkoutLog() {
 }
 
 const styles = StyleSheet.create({
+  trying: { gap: 10, minHeight: 44, marginTop: 4 },
   title: { flex: 1, fontFamily: F.serif, fontSize: 20, color: T.ink, paddingVertical: 6 },
-  finish: { minHeight: 42, paddingHorizontal: 18, backgroundColor: OLIVE, alignItems: "center", justifyContent: "center" },
+  finish: { minHeight: 44, paddingHorizontal: 18, backgroundColor: OLIVE, alignItems: "center", justifyContent: "center" },
   finishText: { fontFamily: F.sansSemi, fontSize: 14.5, color: T.canvas },
   stats: { gap: 8, paddingVertical: 14, marginVertical: 12, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: T.hair },
   statLabel: { fontFamily: F.sans, fontSize: 12, color: T.inkSoft },
@@ -368,18 +400,18 @@ const styles = StyleSheet.create({
   emptyTitle: { fontFamily: F.serif, fontSize: 20, color: T.ink },
   block: { gap: 8, padding: 14, backgroundColor: T.surface, borderWidth: 1, borderColor: T.hair },
   exName: { fontFamily: F.sansMed, fontSize: 15.5, color: OLIVE },
-  iconBtn: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
+  iconBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
   headRow: { gap: 6, marginTop: 4 },
   head: { fontFamily: F.sansMed, fontSize: 11, letterSpacing: 0.8, color: T.inkSoft },
   setRow: { gap: 6, minHeight: 44, paddingHorizontal: 2 },
   setDone: { backgroundColor: "rgba(91,107,74,0.12)" },
   setNum: { width: 34, fontFamily: F.sansSemi, fontSize: 14, color: T.ink, textAlign: "center" },
   prev: { flex: 1, fontFamily: F.sans, fontSize: 12.5, color: T.inkSoft },
-  cell: { minHeight: 38, backgroundColor: T.canvasDeep, textAlign: "center", fontFamily: F.sansMed, fontSize: 15, color: T.ink },
+  cell: { minHeight: 44, backgroundColor: T.canvasDeep, textAlign: "center", fontFamily: F.sansMed, fontSize: 15, color: T.ink },
   cellDone: { backgroundColor: "transparent" },
-  tick: { width: 40, height: 38, backgroundColor: T.canvasDeep, alignItems: "center", justifyContent: "center" },
+  tick: { width: 44, height: 44, backgroundColor: T.canvasDeep, alignItems: "center", justifyContent: "center" },
   tickOn: { backgroundColor: OLIVE },
-  addSet: { flexDirection: "row", gap: 6, minHeight: 42, backgroundColor: T.canvasDeep, alignItems: "center", justifyContent: "center" },
+  addSet: { flexDirection: "row", gap: 6, minHeight: 44, backgroundColor: T.canvasDeep, alignItems: "center", justifyContent: "center" },
   addSetText: { fontFamily: F.sansMed, fontSize: 13.5, color: T.ink },
   addEx: { flexDirection: "row", gap: 8, minHeight: 52, backgroundColor: OLIVE, alignItems: "center", justifyContent: "center" },
   addExText: { fontFamily: F.sansMed, fontSize: 15.5, color: T.canvas },

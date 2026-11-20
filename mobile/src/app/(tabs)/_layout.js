@@ -1,6 +1,6 @@
 import React from "react";
 import { Redirect, Tabs } from "expo-router";
-import { Home, ClipboardList, Moon, Activity, UtensilsCrossed, User } from "lucide-react-native";
+import { Home, Moon, Activity, UtensilsCrossed, User } from "lucide-react-native";
 import { useApp } from "../../state/AppState";
 import { T, F } from "../../ui/theme";
 
@@ -26,7 +26,6 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen name="index" options={{ title: "Home", tabBarIcon: icon(Home) }} />
-      <Tabs.Screen name="tracker" options={{ title: "Tracker", tabBarIcon: icon(ClipboardList) }} />
       <Tabs.Screen name="cycle" options={{ title: "Cycle", tabBarIcon: icon(Moon) }} />
       <Tabs.Screen name="workouts" options={{ title: "Workouts", tabBarIcon: icon(Activity), href: tracking.training ? undefined : null }} />
       <Tabs.Screen name="nutrition" options={{ title: "Nutrition", tabBarIcon: icon(UtensilsCrossed), href: tracking.nutrition ? undefined : null }} />

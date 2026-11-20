@@ -4,15 +4,17 @@ import { router, useLocalSearchParams } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 import { nextPeriodStart, MIN_LENGTH, MAX_LENGTH } from "../shared";
 import { useApp } from "../state/AppState";
-import { T } from "../ui/theme";
+import { T, IMG } from "../ui/theme";
 import { Screen, Serif, Body, Button, IconBtn, ToggleRow } from "../ui/kit";
 import { askPermission, sendSample } from "../lib/notifications";
+import { sampleMoments } from "../lib/moments";
 import { shortDate } from "../ui/Calendar";
 import { DEFAULT_TRACKING } from "../ui/TrackChoices";
 import { DEFAULT_GOAL } from "../lib/food";
 import { DIET, AIMS } from "../lib/energy";
 import { weightOf, DEFAULT_STEP_GOAL } from "../lib/activity";
-import { Journey, MonthInsight } from "../ui/Journey";
+import { Journey } from "../ui/Journey";
+import { CycleInsight } from "../ui/CycleInsight";
 import { TrainingStats } from "../ui/TrainingStats";
 import { describeCycle, NOT_SURE } from "./Profile";
 
@@ -49,8 +51,14 @@ const Details = ({ title, editLabel, onEdit, note, children }) => (
 );
 
 const NotificationSettings = () => {
-  const { profile, setProfile } = useApp();
+  const { profile, setProfile, todayKey, showMoments } = useApp();
   const [blocked, setBlocked] = useState(false);
+  // the one meant for today, or the latest before it
+  const sample = () => {
+    const keys = sampleMoments(profile, todayKey);
+    showMoments(keys, `sample-${Date.now()}`);
+    if (profile.notifications) sendSample(keys[0]);
+  };
   const choose = async (on) => {
     const allowed = on ? await askPermission() : false;
     setBlocked(on && !allowed);
@@ -64,7 +72,8 @@ const NotificationSettings = () => {
       <Body style={{ marginBottom: 16 }}>A picture and one silly line, in the evening. They stop by themselves if you are away for three days.</Body>
       <ToggleRow label="Evening notifications" value={!!profile.notifications} onChange={choose} leftLabel="Off" rightLabel="On" />
       {blocked && <Body testID="notifications-blocked">Your iPhone has these turned off for Expo Go. You can allow them in iPhone Settings.</Body>}
-      {!!profile.notifications && <Button tone="outline" label="Send me a sample" onPress={() => sendSample()} />}
+      <Button tone="outline" label="Show today's notification" onPress={sample} />
+      <Body size={12} style={{ marginTop: 8 }}>{profile.notifications ? "It also arrives on your phone a few seconds later." : "Turn notifications on to get it on your phone too."}</Body>
     </>
   );
 };
@@ -83,19 +92,26 @@ export function ProfileSection({ section: given }) {
   const next = nextPeriodStart(p);
 
   return (
-    <Screen>
-      <IconBtn label="Back" onPress={close} style={{ marginBottom: section === "journey" || section === "training" ? 16 : 0 }}>
-        <ArrowLeft size={20} color={T.ink} />
-      </IconBtn>
+    <Screen image={section === "insights" ? IMG.insights.forest : undefined}>
+      {section === "insights" ? (
+        // over the forest: a round, see-through back button in cream
+        <IconBtn label="Back" onPress={close} dark style={{ borderRadius: 24, width: 48, height: 48, borderColor: "rgba(247,241,229,0.75)", backgroundColor: "rgba(27,35,64,0.25)" }}>
+          <ArrowLeft size={22} color="#F7F1E5" />
+        </IconBtn>
+      ) : (
+        <IconBtn label="Back" onPress={close} style={{ marginBottom: section === "journey" || section === "training" ? 16 : 0 }}>
+          <ArrowLeft size={20} color={T.ink} />
+        </IconBtn>
+      )}
 
       {section === "journey" && <Journey days={days} todayKey={todayKey} goalKcal={goal.kcal} kg={weightOf(p)} hidden={hidden} photos={photos} baselinePhoto={p.baselinePhoto} profile={p} />}
 
       {section === "insights" && (
         <>
-          <Serif size={28} accessibilityRole="header" style={{ marginTop: 16, marginBottom: 12 }}>
+          <Serif size={40} color="#F7F1E5" accessibilityRole="header" style={{ marginTop: 18, marginBottom: 14, textShadowColor: "rgba(0,0,0,0.35)", textShadowRadius: 8, textShadowOffset: { width: 0, height: 1 } }}>
             Smart insights
           </Serif>
-          <MonthInsight days={days} todayKey={todayKey} profile={p} goalKcal={goal.kcal} hidden={hidden} />
+          <CycleInsight days={days} todayKey={todayKey} profile={p} goalKcal={goal.kcal} proteinGoal={goal.protein} workouts={workouts} hidden={hidden} />
         </>
       )}
 

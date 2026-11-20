@@ -72,7 +72,7 @@ export function WorkoutStart() {
       <Divider />
       <MenuRow icon={Flower2} title="Yoga or meditation" description="A gentle session" onPress={() => router.push("/workout/place/yoga")} />
       <Divider />
-      <MenuRow icon={Footprints} title="Steps, cardio and today's plan" description="Log what you did and see the details" onPress={() => router.push("/workout/today")} />
+      <MenuRow icon={Footprints} title="Log something you did" description="A walk, class, swim or yoga video" onPress={() => router.push("/activity/add")} />
     </Screen>
   );
 }
