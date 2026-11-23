@@ -15,7 +15,7 @@ import { ProfileSection } from "../screens/ProfileSection";
 const part = (section) => () => <ProfileSection section={section} />;
 import { FoodGoal } from "../screens/FoodGoal";
 import { Home } from "../screens/Home";
-import { caloriesFor, stepCalories, activitiesOf, dayMovement, youTubeId, fetchVideoTitle, youTubeSearch } from "../lib/activity";
+import { caloriesFor, stepCalories, activitiesOf, dayMovement, youTubeId, fetchVideoTitle, youTubeSearch, readVideo } from "../lib/activity";
 import { encouragement } from "../lib/encourage";
 import { macrosFor, goalFromBody } from "../lib/energy";
 import { journeyDays, journeyWeeks } from "../lib/journey";
@@ -77,7 +77,7 @@ beforeEach(async () => {
 describe("energy burned", () => {
   it("uses MET values and body weight", () => {
     expect(caloriesFor({ kind: "yoga", minutes: 30 }, 65)).toBe(81);
-    expect(caloriesFor({ kind: "run", minutes: 30 }, 60)).toBe(240);
+    expect(caloriesFor({ kind: "run", minutes: 30 }, 60)).toBe(270);
     expect(caloriesFor({ kind: "meditation", minutes: 20 }, 65)).toBe(0);
     expect(stepCalories(8000, 70)).toBe(320);
     expect(stepCalories(8000, 65)).toBe(297);
@@ -236,6 +236,24 @@ describe("the Workouts tab", () => {
     await fireEvent.press(screen.getByRole("button", { name: "Begin" }));
     await fireEvent.press(screen.getByRole("button", { name: "Finish now" }));
     expect((await stored()).days[TODAY].activities[0]).toMatchObject({ kind: "meditation", minutes: 1 });
+  });
+});
+
+describe("each activity burns its own way", () => {
+  it("knows a stair climber from a swim, and how hard it was", () => {
+    const stairs = caloriesFor({ kind: "stairs", minutes: 30 }, 60);
+    const swim = caloriesFor({ kind: "swim", minutes: 30 }, 60);
+    expect(stairs).toBeGreaterThan(swim);
+    expect(caloriesFor({ kind: "swim", minutes: 30, intensity: "hard" }, 60)).toBeGreaterThan(swim);
+    expect(caloriesFor({ kind: "swim", minutes: 30, intensity: "easy" }, 60)).toBeLessThan(swim);
+  });
+
+  it("reads the kind, length and effort from a video's title", () => {
+    expect(readVideo("30 MIN STAIRMASTER WORKOUT | Fat burning")).toEqual({ kind: "stairs", minutes: 30, intensity: "hard" });
+    expect(readVideo("Gentle 20 minute yoga for beginners")).toEqual({ kind: "yoga", minutes: 20, intensity: "easy" });
+    expect(readVideo("12-3-30 treadmill walk")).toMatchObject({ kind: "incline" });
+    expect(readVideo("1 hour pilates reformer")).toMatchObject({ kind: "pilates", minutes: 60 });
+    expect(readVideo("My morning")).toEqual({ kind: null, minutes: null, intensity: null });
   });
 });
 

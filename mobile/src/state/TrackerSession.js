@@ -154,6 +154,11 @@ export const TrackerSessionProvider = ({ children }) => {
       // read before the cycle moves: was this one late? (only for a new period, not a corrected date)
       if (!last || day > last) showMoments(periodMoments(profile, day), day);
       start = day;
+      // the period before this one teaches Selena how long hers usually lasts
+      if (last && profile.lastPeriodEnd && day > last) {
+        const was = daysBetween(last, profile.lastPeriodEnd) + 1;
+        if (was >= 2 && was <= 10) patch.periodLength = was;
+      }
       const endsLater = profile.lastPeriodEnd && profile.lastPeriodEnd > day && last && day <= last;
       Object.assign(patch, { lastPeriod: day, lastPeriodUnknown: false, ...(endsLater ? {} : { lastPeriodEnd: null, periodOngoing: true }) });
     }

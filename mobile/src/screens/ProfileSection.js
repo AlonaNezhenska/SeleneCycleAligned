@@ -88,7 +88,7 @@ export function ProfileSection({ section: given }) {
   const fmt = (n) => Math.round(n).toLocaleString("en-GB");
   const close = () => (router.canGoBack?.() ? router.back() : router.replace("/profile"));
   const tracking = p.tracking ?? DEFAULT_TRACKING;
-  const { lastPeriod, periodLength, cycleLength } = describeCycle(p);
+  const { lastPeriod, periodLength, cycleLength } = describeCycle(p, days, todayKey);
   const next = nextPeriodStart(p);
 
   return (

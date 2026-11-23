@@ -189,6 +189,15 @@ describe("logging a workout", () => {
     // an empty set takes last time's numbers when ticked
     await fireEvent.press(screen.getByRole("checkbox", { name: "Set 2 done" }));
     expect(screen.getByTestId("workout-sets")).toHaveTextContent("2");
+    // the body picture opens which muscles were worked, and how many sets each
+    await fireEvent.press(screen.getByRole("button", { name: "Muscle distribution" }));
+    expect(screen.getByTestId("muscle-sheet")).toBeOnTheScreen();
+    expect(screen.getAllByText("Glutes").length).toBeGreaterThan(0);
+    await fireEvent.press(screen.getAllByRole("button", { name: "Close" })[0]);
+    // a set's number opens its type: here the second becomes a drop set
+    await fireEvent.press(screen.getByRole("button", { name: /^Set 2, Normal set/ }));
+    await fireEvent.press(screen.getByRole("button", { name: "Drop set" }));
+    expect(screen.getByRole("button", { name: /^Set D, Drop set/ })).toBeOnTheScreen();
     await fireEvent.press(screen.getByRole("button", { name: "Finish" }));
     await fireEvent.changeText(screen.getByLabelText("Workout note"), "Felt strong");
     await fireEvent.press(screen.getByRole("button", { name: "Save workout" }));

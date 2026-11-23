@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, Pressable, TextInput, Modal, StyleSheet } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { ChevronDown, Timer, Plus, Check, Trash2, Flame, Dumbbell, Minus } from "lucide-react-native";
+import { ChevronDown, Timer, Plus, Check, Trash2, Flame, Dumbbell, Minus, X } from "lucide-react-native";
 import { useApp } from "../state/AppState";
 import { exerciseById, muscleLabel } from "../lib/exercises";
 import { blankSet, previousSets, workoutTotals, warmupSets } from "../lib/workout";
 import { useWorkoutActions, useNow, clock, MinutesSheet } from "../ui/workout";
-import { BodyThumb } from "../ui/BodyFigure";
+import { BodyThumb, BodyFigure } from "../ui/BodyFigure";
 import { ExerciseThumb } from "../ui/ExerciseThumb";
 import { OLIVE } from "../ui/food";
 import { T, F } from "../ui/theme";
@@ -22,6 +22,98 @@ import { Screen, Body, IconBtn, Chip, s } from "../ui/kit";
    --------------------------------------------------------------- */
 
 const REST_CHOICES = [30, 60, 90, 120, 180];
+
+/* A set can be a warm-up, a normal set, a set to failure, or a drop set.
+   Warm-ups are left out of volume and records; the others all count. */
+const SET_KINDS = [
+  { key: "warmup", mark: "W", label: "Warm-up set", help: "Lighter, to get ready. Not counted in volume or records.", color: "#C08A2E" },
+  { key: "normal", mark: "1", label: "Normal set", help: "A working set.", color: T.ink },
+  { key: "failure", mark: "F", label: "Failure set", help: "Taken until no more reps were possible.", color: "#B5473A" },
+  { key: "drop", mark: "D", label: "Drop set", help: "Straight after a set, with less weight.", color: "#3E78B2" },
+];
+const KIND_OF = Object.fromEntries(SET_KINDS.map((k) => [k.key, k]));
+const kindOf = (st) => st.kind ?? (st.warmup ? "warmup" : "normal");
+
+/** A sheet from the bottom of the screen. */
+const BottomSheet = ({ visible, title, onClose, children, testID }) => (
+  <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <View style={styles.sheetBackdrop}>
+      <Pressable style={{ flex: 1 }} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close" />
+      <View style={styles.sheet} testID={testID}>
+        <View style={styles.grabber} />
+        <Text style={styles.sheetTitle}>{title}</Text>
+        {children}
+      </View>
+    </View>
+  </Modal>
+);
+
+/** Choose what kind of set this is, or remove it. */
+const SetKindSheet = ({ visible, onPick, onRemove, onClose }) => (
+  <BottomSheet visible={visible} title="Select set type" onClose={onClose} testID="set-kind-sheet">
+    {SET_KINDS.map((k) => (
+      <Pressable key={k.key} onPress={() => onPick(k.key)} accessibilityRole="button" accessibilityLabel={k.label} style={[s.row, styles.sheetRow]}>
+        <Text style={[styles.sheetMark, { color: k.color }]}>{k.mark}</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.sheetLabel}>{k.label}</Text>
+          <Body size={12}>{k.help}</Body>
+        </View>
+      </Pressable>
+    ))}
+    <Pressable onPress={onRemove} accessibilityRole="button" accessibilityLabel="Remove set" style={[s.row, styles.sheetRow]}>
+      <X size={20} color="#B5473A" style={{ width: 28 }} />
+      <Text style={styles.sheetLabel}>Remove set</Text>
+    </Pressable>
+  </BottomSheet>
+);
+
+/** Completed working sets for each muscle, main muscles first. */
+export const muscleSets = (exercises, custom = []) => {
+  const count = {};
+  const order = [];
+  const add = (m, n) => {
+    if (!(m in count)) {
+      count[m] = 0;
+      order.push(m);
+    }
+    count[m] += n;
+  };
+  for (const e of exercises) {
+    const ex = exerciseById(e.id, custom);
+    const done = (e.sets ?? []).filter((st) => st.done && kindOf(st) !== "warmup").length;
+    (ex?.p ?? []).forEach((m) => add(m, done));
+    (ex?.s ?? []).forEach((m) => add(m, done));
+  }
+  return order.map((m) => ({ muscle: m, sets: count[m] }));
+};
+
+/** The muscles this workout works, and how many sets each has had. */
+const MuscleSheet = ({ visible, exercises, custom, onClose }) => {
+  const rows = muscleSets(exercises, custom);
+  const primary = [...new Set(exercises.flatMap((e) => exerciseById(e.id, custom)?.p ?? []))];
+  const secondary = [...new Set(exercises.flatMap((e) => exerciseById(e.id, custom)?.s ?? []))].filter((m) => !primary.includes(m));
+  return (
+    <BottomSheet visible={visible} title="Muscle distribution" onClose={onClose} testID="muscle-sheet">
+      <View style={{ alignItems: "center", paddingVertical: 8 }}>
+        <BodyFigure primary={primary} secondary={secondary} height={220} still />
+      </View>
+      <View style={[s.row, styles.muscleHead]}>
+        <Text style={styles.muscleHeadText}>Muscle</Text>
+        <Text style={styles.muscleHeadText}>Completed sets</Text>
+      </View>
+      {rows.length ? (
+        rows.map((r) => (
+          <View key={r.muscle} style={[s.row, styles.muscleRow]}>
+            <Text style={styles.sheetLabel}>{muscleLabel(r.muscle)}</Text>
+            <Text style={styles.sheetLabel}>{r.sets}</Text>
+          </View>
+        ))
+      ) : (
+        <Body size={13} style={{ paddingVertical: 12 }}>Add an exercise to see which muscles it works.</Body>
+      )}
+    </BottomSheet>
+  );
+};
 
 const prevText = (p, type) => {
   if (!p) return "–";
@@ -45,6 +137,8 @@ const Cell = ({ value, onChange, label, done, width = 56 }) => (
 const ExerciseBlock = ({ entry, index, prev, onChange, onRemove, onDone, custom }) => {
   const ex = exerciseById(entry.id, custom);
   const [menu, setMenu] = useState(false);
+  // the set whose type is being chosen
+  const [kindFor, setKindFor] = useState(null);
   const setAt = (i, patch) => onChange({ ...entry, sets: entry.sets.map((st, k) => (k === i ? { ...st, ...patch } : st)) });
   const working = entry.sets.filter((st) => !st.warmup);
   const firstKg = working.find((st) => st.kg)?.kg ?? prev[0]?.kg;
@@ -96,11 +190,15 @@ const ExerciseBlock = ({ entry, index, prev, onChange, onRemove, onDone, custom 
         <View style={{ width: 40 }} />
       </View>
       {entry.sets.map((st, i) => {
-        const label = st.warmup ? "W" : String((n += 1));
-        const p = st.warmup ? null : prev[n - 1];
+        const k = KIND_OF[kindOf(st)];
+        // normal sets are numbered; warm-up, failure and drop sets show their letter
+        const label = k.key === "normal" ? String((n += 1)) : k.mark;
+        const p = k.key === "normal" ? prev[n - 1] : null;
         return (
           <View key={i} style={[s.row, styles.setRow, st.done && styles.setDone]}>
-            <Text style={[styles.setNum, st.warmup && { color: "#C08A2E" }]}>{label}</Text>
+            <Pressable onPress={() => setKindFor(i)} accessibilityRole="button" accessibilityLabel={`Set ${label}, ${k.label}. Change set type`} style={styles.setNumBtn}>
+              <Text style={[styles.setNum, { color: k.color }]}>{label}</Text>
+            </Pressable>
             <Text style={styles.prev} numberOfLines={1}>
               {prevText(p, entry.type)}
             </Text>
@@ -131,6 +229,18 @@ const ExerciseBlock = ({ entry, index, prev, onChange, onRemove, onDone, custom 
           </View>
         );
       })}
+      <SetKindSheet
+        visible={kindFor != null}
+        onClose={() => setKindFor(null)}
+        onPick={(key) => {
+          setAt(kindFor, { kind: key, warmup: key === "warmup" });
+          setKindFor(null);
+        }}
+        onRemove={() => {
+          onChange({ ...entry, sets: entry.sets.filter((_, k) => k !== kindFor) });
+          setKindFor(null);
+        }}
+      />
       <View style={[s.row, { gap: 8 }]}>
         <Pressable
           onPress={() => {
@@ -217,6 +327,7 @@ export function WorkoutLog() {
   const [confirm, setConfirm] = useState(null);
   const [note, setNote] = useState("");
   const [editingTime, setEditingTime] = useState(false);
+  const [musclesOpen, setMusclesOpen] = useState(false);
   const leaving = useRef(false);
   const close = () => (router.canGoBack?.() ? router.back() : router.replace("/workouts"));
 
@@ -283,8 +394,11 @@ export function WorkoutLog() {
             {totals.sets}
           </Text>
         </View>
-        <BodyThumb primary={muscles} size={52} />
+        <Pressable onPress={() => setMusclesOpen(true)} accessibilityRole="button" accessibilityLabel="Muscle distribution">
+          <BodyThumb primary={muscles} size={52} />
+        </Pressable>
       </View>
+      <MuscleSheet visible={musclesOpen} exercises={w.exercises} custom={customExercises} onClose={() => setMusclesOpen(false)} />
 
       {!w.exercises.length && (
         <View style={{ alignItems: "center", paddingVertical: 30, gap: 6 }}>
@@ -405,6 +519,17 @@ const styles = StyleSheet.create({
   head: { fontFamily: F.sansMed, fontSize: 11, letterSpacing: 0.8, color: T.inkSoft },
   setRow: { gap: 6, minHeight: 44, paddingHorizontal: 2 },
   setDone: { backgroundColor: "rgba(91,107,74,0.12)" },
+  setNumBtn: { width: 34, minHeight: 44, alignItems: "center", justifyContent: "center", backgroundColor: T.canvasDeep },
+  sheetBackdrop: { flex: 1, backgroundColor: "rgba(20,20,20,0.35)" },
+  sheet: { backgroundColor: T.canvas, paddingHorizontal: 20, paddingBottom: 34, borderTopLeftRadius: 22, borderTopRightRadius: 22 },
+  grabber: { alignSelf: "center", width: 40, height: 4, borderRadius: 2, backgroundColor: T.hair, marginTop: 8, marginBottom: 12 },
+  sheetTitle: { fontFamily: F.serif, fontSize: 20, color: T.ink, textAlign: "center", marginBottom: 8 },
+  sheetRow: { gap: 12, minHeight: 60, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: T.hair },
+  sheetMark: { width: 28, textAlign: "center", fontFamily: F.sansSemi, fontSize: 20 },
+  sheetLabel: { fontFamily: F.sans, fontSize: 16, color: T.ink },
+  muscleHead: { justifyContent: "space-between", paddingVertical: 10, marginTop: 6, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: T.hair },
+  muscleHeadText: { fontFamily: F.sans, fontSize: 14, color: T.inkSoft },
+  muscleRow: { justifyContent: "space-between", minHeight: 44 },
   setNum: { width: 34, fontFamily: F.sansSemi, fontSize: 14, color: T.ink, textAlign: "center" },
   prev: { flex: 1, fontFamily: F.sans, fontSize: 12.5, color: T.inkSoft },
   cell: { minHeight: 44, backgroundColor: T.canvasDeep, textAlign: "center", fontFamily: F.sansMed, fontSize: 15, color: T.ink },
