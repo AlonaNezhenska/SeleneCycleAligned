@@ -45,10 +45,43 @@ export const projectedDay = (lastPeriod, iso, length) => {
 /** Ovulation is usually about 14 days before the next period. */
 export const ovulationDay = (length) => Math.max(10, normalizeLength(length) - 14);
 
+/** How long her period usually lasts: what she told Selena, or learned from her last one. */
+export const usualPeriodLength = (profile = {}) => {
+  const n =
+    profile.periodVaries && profile.periodLengthMin && profile.periodLengthMax
+      ? Math.round((profile.periodLengthMin + profile.periodLengthMax) / 2)
+      : profile.periodLength ?? 5;
+  return Math.max(2, Math.min(10, n));
+};
+
+/**
+ * The last day of the most recent period. Nobody logs every bleeding day,
+ * and few remember to log the end, so it ends by itself after her usual
+ * length; flow logged on later days stretches it, and a logged end wins.
+ */
+export const periodEnd = (profile = {}, days = {}, todayIso) => {
+  if (!profile.lastPeriod) return null;
+  if (profile.lastPeriodEnd) return profile.lastPeriodEnd;
+  let end = addDays(profile.lastPeriod, usualPeriodLength(profile) - 1);
+  // flow logged straight after (a day's gap allowed) carries it on; spotting a week later doesn't
+  for (let guard = 0; guard < 9; guard++) {
+    const next = [addDays(end, 1), addDays(end, 2)].find((d) => loggedFlow(days[d]));
+    if (!next) break;
+    end = next;
+  }
+  return end;
+};
+
+/** Whether the period is still going today. */
+export const periodOngoingOn = (profile = {}, days = {}, todayIso) => {
+  const end = periodEnd(profile, days, todayIso);
+  return Boolean(end && profile.lastPeriod <= todayIso && todayIso <= end && !profile.lastPeriodEnd);
+};
+
 /** The days of the most recent period on record, as dates. */
-const recordedPeriod = (profile, todayIso) => {
+const recordedPeriod = (profile, todayIso, days) => {
   if (!profile.lastPeriod) return new Set();
-  const end = profile.lastPeriodEnd ?? (profile.periodOngoing ? todayIso : addDays(profile.lastPeriod, (profile.periodLength ?? 5) - 1));
+  const end = periodEnd(profile, days, todayIso);
   const out = new Set();
   for (let d = profile.lastPeriod, guard = 0; d <= end && guard < 15; d = addDays(d, 1), guard++) out.add(d);
   return out;
@@ -63,7 +96,7 @@ export const loggedFlow = (day) => {
 /** Everything the calendar needs for one month, keyed by date. */
 export const monthDays = ({ year, month, profile = {}, days = {}, todayIso, length }) => {
   const known = Boolean(profile.lastPeriod);
-  const period = recordedPeriod(profile, todayIso);
+  const period = recordedPeriod(profile, todayIso, days);
   const ovu = ovulationDay(length);
   const count = new Date(year, month + 1, 0).getDate();
   const out = {};

@@ -11,6 +11,7 @@ import { Screen, Serif, MenuRow } from "../ui/kit";
 import { shortDate } from "../ui/Calendar";
 import { DEFAULT_GOAL } from "../lib/food";
 import { DIET } from "../lib/energy";
+import { periodEnd, periodOngoingOn } from "../lib/cycleMonth";
 
 /* ---------------------------------------------------------------
    PROFILE — a short menu.
@@ -24,16 +25,16 @@ export const NOT_SURE = "Not sure yet";
 const days = (n) => `${n} day${n === 1 ? "" : "s"}`;
 
 /** Plain-language summaries of what the engine is working with. */
-export const describeCycle = (p) => {
+export const describeCycle = (p, logged = {}, todayKey) => {
   const cycle = resolveCycleLength(p);
   const period = resolvePeriodLength(p);
   const lastPeriod = !p.lastPeriod
     ? NOT_SURE
     : p.lastPeriodEnd
     ? `${shortDate(p.lastPeriod)} to ${shortDate(p.lastPeriodEnd)}`
-    : p.periodOngoing
+    : todayKey && periodOngoingOn(p, logged, todayKey)
     ? `Since ${shortDate(p.lastPeriod)}, still going`
-    : `Started ${shortDate(p.lastPeriod)}`;
+    : `${shortDate(p.lastPeriod)} to ${shortDate(periodEnd(p, logged, todayKey))}`;
   const periodLength =
     period.source === "unknown"
       ? NOT_SURE

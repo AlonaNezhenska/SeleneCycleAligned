@@ -1,4 +1,4 @@
-import { projectedDay, ovulationDay, monthDays, describeJournal, PHASE_TINT } from "../lib/cycleMonth";
+import { projectedDay, ovulationDay, monthDays, describeJournal, PHASE_TINT, periodEnd, periodOngoingOn } from "../lib/cycleMonth";
 
 const profile = { lastPeriod: "2026-10-09", periodLength: 5 };
 const october = (extra = {}) => monthDays({ year: 2026, month: 9, profile, days: {}, todayIso: "2026-10-29", length: 28, ...extra });
@@ -56,5 +56,24 @@ describe("reading back a logged day", () => {
     expect(out[1].lines).toEqual(["Flow today: Medium", "Spotting between periods"]);
     expect(out[2].lines).toEqual(["Magnesium · 200 mg"]);
     expect(describeJournal(undefined)).toEqual([]);
+  });
+});
+
+describe("a period ends by itself", () => {
+  const profile = { lastPeriod: "2026-11-06", periodOngoing: true, periodLength: 5 };
+
+  it("stops after her usual length when no end was logged", () => {
+    expect(periodEnd(profile, {}, "2026-11-20")).toBe("2026-11-10");
+    expect(periodOngoingOn(profile, {}, "2026-11-08")).toBe(true);
+    expect(periodOngoingOn(profile, {}, "2026-11-20")).toBe(false);
+    const month = monthDays({ year: 2026, month: 10, profile, days: {}, todayIso: "2026-11-20", length: 28 });
+    expect(month["2026-11-10"].period).toBe(true);
+    expect(month["2026-11-14"].period).toBe(false);
+  });
+
+  it("stretches to flow logged later, and a logged end wins", () => {
+    const days = { "2026-11-12": { journal: { flow: { choices: { level: "light" } } } } };
+    expect(periodEnd(profile, days, "2026-11-20")).toBe("2026-11-12");
+    expect(periodEnd({ ...profile, lastPeriodEnd: "2026-11-09" }, days, "2026-11-20")).toBe("2026-11-09");
   });
 });

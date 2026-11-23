@@ -141,7 +141,7 @@ export const TodayActivity = ({ day, profile, hidden, onSteps, onRemove, onEdit,
               {a.title || KIND[a.kind]?.label}
             </Text>
             <Body size={12.5}>
-              {[`${KIND[a.kind]?.label} · ${a.minutes} min`, !hidden && KIND[a.kind]?.met ? `${caloriesFor(a, kg)} kcal` : null, a.source === "tracker" ? "from your tracker" : null]
+              {[`${KIND[a.kind]?.label} · ${a.minutes} min${a.intensity && a.intensity !== "moderate" ? ` · ${a.intensity}` : ""}`, !hidden && KIND[a.kind]?.met ? `${caloriesFor(a, kg)} kcal` : null, a.source === "tracker" ? "from your tracker" : null]
                 .filter(Boolean)
                 .join(" · ")}
             </Body>

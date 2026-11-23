@@ -344,7 +344,7 @@ export function WorkoutDetail() {
               <Text style={styles.entryDate}>{ex?.name ?? e.id}</Text>
               {e.sets.map((st, k) => (
                 <Body key={k} size={13.5} color={T.ink}>
-                  {`${st.warmup ? "Warm-up" : `Set ${k + 1}`}: ${e.type === "breaths" ? `${st.breaths} breaths` : e.type === "duration" ? `${st.seconds} s` : `${st.kg ? `${st.kg} kg × ` : ""}${st.reps} reps`}`}
+                  {`${st.warmup ? "Warm-up" : st.kind === "failure" ? "To failure" : st.kind === "drop" ? "Drop set" : `Set ${k + 1}`}: ${e.type === "breaths" ? `${st.breaths} breaths` : e.type === "duration" ? `${st.seconds} s` : `${st.kg ? `${st.kg} kg × ` : ""}${st.reps} reps`}`}
                 </Body>
               ))}
             </Card>

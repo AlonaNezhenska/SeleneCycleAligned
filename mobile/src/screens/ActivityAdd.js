@@ -4,7 +4,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 import { TimeWheel } from "../ui/TimeWheel";
 import { useApp } from "../state/AppState";
-import { ACTIVITY_KINDS, KIND, caloriesFor, weightOf, youTubeId, fetchVideoTitle } from "../lib/activity";
+import { ACTIVITY_KINDS, KIND, INTENSITY, caloriesFor, weightOf, youTubeId, fetchVideoTitle, readVideo } from "../lib/activity";
 import { diaryDay, dayLabel, OLIVE } from "../ui/food";
 import { T, F } from "../ui/theme";
 import { Screen, Body, Serif, Chip, IconBtn, s } from "../ui/kit";
@@ -26,6 +26,9 @@ export function ActivityAdd() {
   const [title, setTitle] = useState("");
   const [note, setNote] = useState("");
   const [looking, setLooking] = useState(false);
+  const [intensity, setIntensity] = useState("moderate");
+  // what the video's title told us, shown so she can see why the form changed
+  const [fromVideo, setFromVideo] = useState(null);
   const back = () => (router.canGoBack?.() ? router.back() : router.replace("/workouts"));
   const videoId = youTubeId(url);
 
@@ -35,7 +38,16 @@ export function ActivityAdd() {
     let alive = true;
     setLooking(true);
     fetchVideoTitle(url)
-      .then((t) => alive && t && setTitle((cur) => cur || t))
+      .then((t) => {
+        if (!alive || !t) return;
+        setTitle((cur) => cur || t);
+        // the title says what kind of workout it is and how long: use it
+        const seen = readVideo(t);
+        if (seen.kind) setKind(seen.kind);
+        if (seen.minutes) setMinutes(seen.minutes);
+        if (seen.intensity) setIntensity(seen.intensity);
+        setFromVideo(seen.kind || seen.minutes || seen.intensity ? seen : null);
+      })
       .catch(() => {})
       .finally(() => alive && setLooking(false));
     return () => {
@@ -43,12 +55,13 @@ export function ActivityAdd() {
     };
   }, [videoId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const kcal = caloriesFor({ kind, minutes }, weightOf(profile));
+  const kcal = caloriesFor({ kind, minutes, intensity }, weightOf(profile));
   const save = () => {
     addActivity(
       {
         kind,
         minutes,
+        intensity: KIND[kind].met > 0 ? intensity : null,
         title: title.trim() || null,
         url: videoId ? `https://www.youtube.com/watch?v=${videoId}` : null,
         note: note.trim() || null,
@@ -87,6 +100,17 @@ export function ActivityAdd() {
         ))}
       </View>
 
+      {KIND[kind].met > 0 && (
+        <>
+          <Text style={styles.label}>How hard did it feel?</Text>
+          <View style={[s.row, { gap: 8, marginBottom: 18 }]}>
+            {INTENSITY.map((i) => (
+              <Chip key={i.key} label={i.label} selected={intensity === i.key} onPress={() => setIntensity(i.key)} />
+            ))}
+          </View>
+        </>
+      )}
+
       <Text style={styles.label}>How long?</Text>
       <View style={{ marginBottom: 18 }}>
         <TimeWheel minutes={minutes} onChange={setMinutes} />
@@ -106,6 +130,11 @@ export function ActivityAdd() {
       />
       {!!url && !videoId && <Body size={12.5}>That doesn't look like a YouTube link yet.</Body>}
       {looking && <Body size={12.5}>Finding the video's title…</Body>}
+      {fromVideo && (
+        <Body size={12.5} testID="from-video">
+          {`From the video: ${[fromVideo.kind && KIND[fromVideo.kind].label, fromVideo.minutes && `${fromVideo.minutes} min`, fromVideo.intensity && INTENSITY.find((i) => i.key === fromVideo.intensity).label.toLowerCase()].filter(Boolean).join(", ")}. Change anything that's off.`}
+        </Body>
+      )}
 
       <Text style={[styles.label, { marginTop: 14 }]}>Name (optional)</Text>
       <TextInput
